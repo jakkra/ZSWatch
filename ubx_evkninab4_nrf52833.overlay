@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,display = &gc9a01;
+	};
+};
+
+&spi0  {
+	status = "okay";
+	compatible = "nordic,nrf-spi";
+	cs-gpios = <&arduino_header 10 GPIO_ACTIVE_LOW>;//,	/* D4 */
+	//<&arduino_header 10 GPIO_ACTIVE_LOW>;	/* D04 */
+	//sck-pin = < 12 >;
+	//miso-pin = < 14 >;
+	//mosi-pin = < 18 >;
+	//cs-gpios = < &gpio0 15 GPIO_ACTIVE_LOW >;
+	gc9a01: gc9a01@0 {
+		compatible = "jkra,gc9a01";
+		status = "okay";
+		spi-max-frequency = <15151515>;
+		//spi-max-frequency = <1000000>;
+		reg = <0>;
+		width = <320>;
+		label = "jkra_gd0a401";
+		height = <240>;
+		//bl-gpios = <&arduino_header 7 GPIO_ACTIVE_LOW>;	/* D1 */
+		bl-gpios = <&arduino_header 21 GPIO_ACTIVE_HIGH>;	/* NOT WORKING */
+		reset-gpios = <&arduino_header 0 GPIO_ACTIVE_HIGH>;	/* A0 */
+		dc-gpios = <&arduino_header 14 GPIO_ACTIVE_HIGH>;		/* D8 */
+		//reset-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+		//pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
+		//rotation = <90>;
+		//frmctr1 = [00 18];
+		//pwctrl1 = [23 00];
+		//vmctrl1 = [3e 28];
+		//vmctrl2 = [86];
+		//pgamctrl = [0f 31 2b 0c 0e 08 4e f1 37 07 10 03 0e 09 00];
+		//ngamctrl = [00 0e 14 03 11 07 31 c1 48 08 0f 0c 31 36 0f];
+	};
+
+
+};
