@@ -1,9 +1,3 @@
-build
-.vscode
-build*
-*.code-workspace
-
-# KiCad
 # Temporary files
 *.000
 *.bak
