@@ -55,7 +55,11 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [],
+      "drc_exclusions": [
+        "courtyards_overlap|100399092|100519439|12fe2652-9c62-4603-9c67-3e8f3d40146f|e2fd1082-7929-463d-8a38-8d0c9af8a961",
+        "courtyards_overlap|100825000|100844503|12fe2652-9c62-4603-9c67-3e8f3d40146f|14ab14dc-eeab-4034-932e-09d1c6200091",
+        "courtyards_overlap|95933295|103257980|d7e86387-3179-4201-8155-8601e1f9b9c4|fbca412a-db2f-4753-aeae-bae6fd73ac8c"
+      ],
       "meta": {
         "version": 2
       },
@@ -134,7 +138,7 @@
           "drill": 0.0
         },
         {
-          "diameter": 0.45,
+          "diameter": 0.47,
           "drill": 0.2
         },
         {
@@ -468,7 +472,7 @@
       "idf": "",
       "netlist": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "nrf-watch-kicad.step",
       "vrml": ""
     },
     "page_layout_descr_file": ""
