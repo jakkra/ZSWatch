@@ -10,14 +10,20 @@
 #include <stdio.h>
 #include <string.h>
 #include <zephyr.h>
+#include <buttons.h>
+#include <battery.h>
+#include <drivers/sensor.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(app);
 const struct device *ds = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 
+static void onButtonPressCb(buttonPressType_t type);
+
 static void example_lvgl_demo_ui(void);
 static void set_value(void *indic, int32_t v);
+static void test_battery_read(void);
 
 static lv_obj_t *meter;
 //static lv_obj_t * btn;
@@ -26,7 +32,6 @@ static lv_meter_indicator_t *indic;
 void main(void)
 {
 	uint32_t count = 0U;
-	char count_str[11] = {0};
 	const struct device *display_dev;
 
 	printk("%p", DEVICE_DT_GET(DT_CHOSEN(zephyr_display)));
@@ -36,6 +41,16 @@ void main(void)
 		LOG_ERR("Device not ready, aborting test");
 		return;
 	}
+
+	buttonsInit(&onButtonPressCb);
+/*
+	int rc = battery_measure_enable(true);
+
+	if (rc != 0) {
+		printk("Failed initialize battery measurement: %d\n", rc);
+		return;
+	}
+*/
 	lv_obj_clean(lv_scr_act());
 	example_lvgl_demo_ui();
 	/*
@@ -73,8 +88,99 @@ void main(void)
 		lv_timer_handler();
 		k_sleep(K_MSEC(2));
 		++count;
+		//test_battery_read();
 	}
 	
+}
+
+/** A discharge curve specific to the power source. */
+static const struct battery_level_point levels[] = {
+	/* "Curve" here eyeballed from captured data for the [Adafruit
+	 * 3.7v 2000 mAh](https://www.adafruit.com/product/2011) LIPO
+	 * under full load that started with a charge of 3.96 V and
+	 * dropped about linearly to 3.58 V over 15 hours.  It then
+	 * dropped rapidly to 3.10 V over one hour, at which point it
+	 * stopped transmitting.
+	 *
+	 * Based on eyeball comparisons we'll say that 15/16 of life
+	 * goes between 3.95 and 3.55 V, and 1/16 goes between 3.55 V
+	 * and 3.1 V.
+	 */
+
+	{ 10000, 3950 },
+	{ 625, 3550 },
+	{ 0, 3100 },
+};
+
+static const char *now_str(void)
+{
+	static char buf[16]; /* ...HH:MM:SS.MMM */
+	uint32_t now = k_uptime_get_32();
+	unsigned int ms = now % MSEC_PER_SEC;
+	unsigned int s;
+	unsigned int min;
+	unsigned int h;
+
+	now /= MSEC_PER_SEC;
+	s = now % 60U;
+	now /= 60U;
+	min = now % 60U;
+	now /= 60U;
+	h = now;
+
+	snprintf(buf, sizeof(buf), "%u:%02u:%02u.%03u",
+		 h, min, s, ms);
+	return buf;
+}
+
+static void test_battery_read(void)
+{
+	// From https://github.com/zephyrproject-rtos/zephyr/blob/main/samples/boards/nrf/battery/src/main.c
+	int batt_mV = battery_sample();
+
+	if (batt_mV < 0) {
+		printk("Failed to read battery voltage: %d\n", batt_mV);
+		return;
+	}
+
+	unsigned int batt_pptt = battery_level_pptt(batt_mV, levels);
+
+	printk("[%s]: %d mV; %u pptt\n", now_str(), batt_mV, batt_pptt);
+}
+
+
+void test_max_30101(void)
+{
+	struct sensor_value green;
+	const struct device *dev = DEVICE_DT_GET_ANY(maxim_max30101);
+
+	if (dev == NULL) {
+		printf("Could not get max30101 device\n");
+		return;
+	}
+
+	if (!device_is_ready(dev)) {
+		printf("max30101 device %s is not ready\n", dev->name);
+		return;
+	}
+
+	sensor_sample_fetch(dev);
+	sensor_channel_get(dev, SENSOR_CHAN_GREEN, &green);
+
+	/* Print green LED data*/
+	printf("GREEN=%d\n", green.val1);
+
+}
+
+
+static void onButtonPressCb(buttonPressType_t type) {
+    LOG_INF("Pressed, type: %d", type);
+
+    if (type == BUTTONS_SHORT_PRESS) {
+		LOG_DBG("BUTTONS_SHORT_PRESS");
+	} else {
+		LOG_DBG("BUTTONS_LONG_PRESS");
+	}
 }
 
 /*
