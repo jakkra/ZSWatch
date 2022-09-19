@@ -13,6 +13,7 @@
 #include <buttons.h>
 #include <battery.h>
 #include <drivers/sensor.h>
+#include <gpio_debug.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
@@ -42,6 +43,9 @@ void main(void)
 		return;
 	}
 
+	//gpio_debug_init();
+	//gpio_debug_test(EVK_RED);
+	//k_msleep(5000);
 	buttonsInit(&onButtonPressCb);
 /*
 	int rc = battery_measure_enable(true);

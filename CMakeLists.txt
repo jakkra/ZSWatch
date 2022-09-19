@@ -12,4 +12,6 @@ FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE 
     src/main.c
     src/img_hand.c
-    src/buttons.c)
+    src/buttons.c
+    src/gpio_debug.c
+    )

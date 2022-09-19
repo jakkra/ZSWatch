@@ -39,7 +39,7 @@ typedef struct buttons_t {
     struct gpio_callback callback_data;
 } buttons_t;
 
-static struct buttons_t buttons[NUM_BUTTONS] = {
+static buttons_t buttons[NUM_BUTTONS] = {
     { .btn = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw0), gpios, {0}) },
     { .btn = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw1), gpios, {0}) }
 };
@@ -58,7 +58,7 @@ void buttonsInit(buttonHandlerCallback_t handler) {
     k_sem_init(&btnSem, 0, 1);
     
     for (int i = 0; i < NUM_BUTTONS; i++) {
-        __ASSERT_NO_MSG(buttons[i].btn.port);
+        __ASSERT(device_is_ready(buttons[i].btn.port), "Error: button device %s is not ready\n",  buttons[i].btn.port->name);
         ret = gpio_pin_configure_dt(&buttons[i].btn, GPIO_INPUT | GPIO_PULL_UP);
         __ASSERT_NO_MSG(ret == 0);
         gpio_init_callback(&buttons[i].callback_data, buttonPressedIsr,  BIT(buttons[i].btn.pin));
