@@ -27,7 +27,15 @@ typedef enum buttonPressType_t {
   BUTTONS_LONG_PRESS
 } buttonPressType_t;
 
-typedef void(*buttonHandlerCallback_t)(buttonPressType_t type);
+/** 
+ * @brief Button id
+ */
+typedef enum buttonId_t {
+  BUTTON_1,
+  BUTTON_2
+} buttonId_t;
+
+typedef void(*buttonHandlerCallback_t)(buttonPressType_t type, buttonId_t id);
 
 /**
  * @brief   Init Button press handler

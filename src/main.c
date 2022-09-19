@@ -19,7 +19,7 @@
 LOG_MODULE_REGISTER(app);
 const struct device *ds = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 
-static void onButtonPressCb(buttonPressType_t type);
+static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
 
 static void example_lvgl_demo_ui(void);
 static void set_value(void *indic, int32_t v);
@@ -173,8 +173,8 @@ void test_max_30101(void)
 }
 
 
-static void onButtonPressCb(buttonPressType_t type) {
-    LOG_INF("Pressed, type: %d", type);
+static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
+    LOG_INF("Pressed %d, type: %d", id, type);
 
     if (type == BUTTONS_SHORT_PRESS) {
 		LOG_DBG("BUTTONS_SHORT_PRESS");
