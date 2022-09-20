@@ -14,4 +14,5 @@ target_sources(app PRIVATE
     src/img_hand.c
     src/buttons.c
     src/gpio_debug.c
+    src/hr_service.c
     )

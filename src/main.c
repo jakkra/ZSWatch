@@ -1,9 +1,3 @@
-/*
- * Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
 #include <device.h>
 #include <drivers/display.h>
 #include <lvgl.h>
@@ -14,6 +8,7 @@
 #include <battery.h>
 #include <drivers/sensor.h>
 #include <gpio_debug.h>
+#include <hr_service.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
@@ -47,6 +42,7 @@ void main(void)
 	//gpio_debug_test(EVK_RED);
 	//k_msleep(5000);
 	buttonsInit(&onButtonPressCb);
+	bluetooth_init();
 /*
 	int rc = battery_measure_enable(true);
 
