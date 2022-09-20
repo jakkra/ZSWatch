@@ -135,6 +135,8 @@ void bluetooth_init(void)
 		return;
 	}
 
+	settings_load();
+
 	bt_ready();
 
 	bt_conn_auth_cb_register(&auth_cb_display);
