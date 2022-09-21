@@ -132,7 +132,7 @@
 		spi-max-frequency = <15151515>;
 		//spi-max-frequency = <1000000>;
 		reg = <0>;
-		width = <320>;
+		width = <240>;
 		label = "jkra_gd0a401";
 		height = <240>;
 		//bl-gpios = <&arduino_header 7 GPIO_ACTIVE_LOW>;	/* D1 */

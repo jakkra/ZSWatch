@@ -15,4 +15,8 @@ target_sources(app PRIVATE
     src/buttons.c
     src/gpio_debug.c
     src/hr_service.c
+    src/hour.c
+    src/minute.c
+    src/second.c
+    src/watch_bg.c
     )

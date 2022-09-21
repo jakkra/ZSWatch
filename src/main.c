@@ -208,7 +208,9 @@ static void example_lvgl_demo_ui(void)
     /*Create a scale for the minutes*/
     /*61 ticks in a 360 degrees range (the last and the first line overlaps)*/
     lv_meter_scale_t * scale_min = lv_meter_add_scale(meter);
-    lv_meter_set_scale_ticks(meter, scale_min, 61, 1, 10, lv_palette_main(LV_PALETTE_GREY));
+	lv_obj_set_style_border_color(meter, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+	lv_obj_set_style_pad_all(meter, 0, LV_PART_MAIN);
+    lv_meter_set_scale_ticks(meter, scale_min, 61, 1, 10, lv_palette_main(LV_PALETTE_DEEP_ORANGE));
     lv_meter_set_scale_range(meter, scale_min, 0, 60, 360, 270);
 
     /*Create another scale for the hours. It's only visual and contains only major ticks*/
@@ -220,8 +222,10 @@ static void example_lvgl_demo_ui(void)
     LV_IMG_DECLARE(img_hand)
 
     /*Add a the hands from images*/
+	
+	//lv_meter_indicator_t * indic_min = lv_meter_add_needle_line(meter, scale_min, 2, lv_color_hex(0x00FF00), 1);
     lv_meter_indicator_t * indic_min = lv_meter_add_needle_img(meter, scale_min, &img_hand, 5, 5);
-    lv_meter_indicator_t * indic_hour = lv_meter_add_needle_img(meter, scale_min, &img_hand, 5, 5);
+    lv_meter_indicator_t * indic_hour = lv_meter_add_needle_img(meter, scale_hour, &img_hand, 5, 5);
 
     /*Create an animation to set the value*/
     lv_anim_t a;
@@ -229,12 +233,13 @@ static void example_lvgl_demo_ui(void)
     lv_anim_set_exec_cb(&a, set_value);
     lv_anim_set_values(&a, 0, 60);
     lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
-    lv_anim_set_time(&a, 20000);     /*2 sec for 1 turn of the minute hand (1 hour)*/
+    lv_anim_set_time(&a, 60000);     /*2 sec for 1 turn of the minute hand (1 hour)*/
     lv_anim_set_var(&a, indic_min);
     lv_anim_start(&a);
 
     lv_anim_set_var(&a, indic_hour);
-    lv_anim_set_time(&a, 24000);    /*24 sec for 1 turn of the hour hand*/
+    lv_anim_set_time(&a, 60000);    /*24 sec for 1 turn of the hour hand*/
     lv_anim_set_values(&a, 0, 60);
+	lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE);
     lv_anim_start(&a);
 }
