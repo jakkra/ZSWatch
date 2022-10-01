@@ -32,15 +32,13 @@
 		};
 	};
 	
-/* Enable when on real board
 	vbatt {
 		compatible = "voltage-divider";
-		io-channels = <&adc 7>;
+		io-channels = <&adc 3>;
 		output-ohms = <220000>;
 		full-ohms = <(1500000 + 220000)>;
 		power-gpios = <&gpio0 4 0>;
 	};
-*/
 
 	regulator_3v3: regulator-3v3-ctrl {
 		compatible = "regulator-fixed-sync", "regulator-fixed";
@@ -103,7 +101,7 @@
 	lis2ds12: lis2ds12@19 {
 		compatible = "st,lis2ds12", "st,lis2ds";
 		label = "lis2ds12";
-		reg = <0x19>;
+		reg = <0x1D>;
 		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH &gpio0 29 GPIO_ACTIVE_HIGH>;
 	};
 	max30101@57 {
