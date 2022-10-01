@@ -175,7 +175,7 @@ int battery_sample(void)
 		struct adc_sequence *sp = &ddp->adc_seq;
 
 		rc = adc_read(ddp->adc, sp);
-		sp->calibrate = false;
+		sp->calibrate = true;
 		if (rc == 0) {
 			int32_t val = ddp->raw;
 

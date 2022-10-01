@@ -9,6 +9,8 @@
 #include <drivers/sensor.h>
 #include <gpio_debug.h>
 #include <hr_service.h>
+#include <drivers/sensor.h>
+
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
@@ -37,20 +39,21 @@ void main(void)
 		LOG_ERR("Device not ready, aborting test");
 		return;
 	}
-
+	//gpio_debug_test_all();
 	//gpio_debug_init();
-	//gpio_debug_test(EVK_RED);
-	//k_msleep(5000);
+	gpio_debug_test(BAT_MON_EN, 0);
+	k_msleep(1000);
 	buttonsInit(&onButtonPressCb);
-	bluetooth_init();
-/*
+	
+
 	int rc = battery_measure_enable(true);
 
 	if (rc != 0) {
 		printk("Failed initialize battery measurement: %d\n", rc);
 		return;
 	}
-*/
+
+	//bluetooth_init();
 	lv_obj_clean(lv_scr_act());
 	example_lvgl_demo_ui();
 	/*
@@ -75,11 +78,33 @@ void main(void)
 
 	lv_task_handler();
 
+	const struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, st_lis2ds12)));
+	if (!device_is_ready(sensor)) {
+		LOG_ERR("Error: Device \"%s\" is not ready; "
+                "check the driver initialization logs for errors.",
+                sensor->name);
+	}
+
 	while (1) {
 		if ((count % 1000) == 0U) {
 			//sprintf(count_str, "%d", count/100U);
 			//lv_label_set_text(count_label, count_str);
 			//set_value(indic, count);
+			test_battery_read();
+			int err = sensor_sample_fetch(sensor);
+			if (err) {
+				LOG_ERR("Could not fetch sample from %s", sensor->name);
+			}
+			struct sensor_value acc_val[3];
+			if (!err) {
+				sensor_channel_get(sensor, SENSOR_CHAN_ACCEL_XYZ, acc_val);
+				int16_t x_scaled = (int16_t)(sensor_value_to_double(&acc_val[0])*(32768/16));
+				int16_t y_scaled = (int16_t)(sensor_value_to_double(&acc_val[1])*(32768/16));
+				int16_t z_scaled = (int16_t)(sensor_value_to_double(&acc_val[2])*(32768/16));
+				LOG_INF("x: %d y: %d z: %d", x_scaled, y_scaled, z_scaled);
+			} else {
+				LOG_ERR("Failed fetching sample from %s", sensor->name);
+    		}
 		}
 
 		/* Tell LVGL how many milliseconds has elapsed */
@@ -88,7 +113,6 @@ void main(void)
 		lv_timer_handler();
 		k_sleep(K_MSEC(2));
 		++count;
-		//test_battery_read();
 	}
 	
 }

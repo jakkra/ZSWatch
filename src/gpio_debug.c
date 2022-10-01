@@ -52,8 +52,9 @@ static struct gpio_dt_spec watch_gpios[] = {
     [QSPI_CS] = { .port = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpio0)), .pin = 15 },
     [QSPI_3_RST] = { .port = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpio0)), .pin = 20 },
     [QSPI_CLK] = { .port = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpio0)), .pin = 14 },
-    [EVK_RED] = { .port = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpio0)), .pin = 13 },
 };
+
+static uint8_t pinDefaultState[ARRAY_SIZE(watch_gpios)];
 
 
 
@@ -69,21 +70,78 @@ void gpio_debug_init(void) {
     }
 }
 
-void gpio_debug_test(gpioWatchId_t gpioId)
+static bool check_all_match(gpioWatchId_t skip)
+{
+    int val;
+    bool ret = true;
+
+    for (int i = 0; i < ARRAY_SIZE(watch_gpios); i++) {
+        if (i == (int)skip) {
+            continue;
+        }
+        val = gpio_pin_get_dt(&watch_gpios[i]);
+        if (val != pinDefaultState[i]) {
+            LOG_ERR("Missmatch, pin %d changed value of %d, was %d, expected %d", skip, i, val, pinDefaultState[i]);
+            ret = false;
+        }
+    }
+    return ret;
+}
+
+void gpio_debug_test_all(void)
+{
+    int ret;
+    bool pass = true;
+
+    // Configure all as input
+    for (int i = 0; i < ARRAY_SIZE(watch_gpios); i++) {
+        __ASSERT(device_is_ready(watch_gpios[i].port), "Error: button device %s is not ready\n",  watch_gpios[i].port->name);
+        ret = gpio_pin_configure_dt(&watch_gpios[i], GPIO_OUTPUT);
+        __ASSERT_NO_MSG(ret == 0);
+        ret = gpio_pin_set_dt(&watch_gpios[i], 0);
+        __ASSERT_NO_MSG(ret == 0);
+        k_msleep(10);
+        ret = gpio_pin_configure_dt(&watch_gpios[i], GPIO_INPUT | GPIO_PULL_DOWN);
+        __ASSERT_NO_MSG(ret == 0);
+    }
+    k_msleep(1000);
+    for (int i = 0; i < ARRAY_SIZE(watch_gpios); i++) {
+        int val = gpio_pin_get_dt(&watch_gpios[i]);
+        printk("%d => %d\n", i, val);
+        pinDefaultState[i] = val;
+        k_msleep(10);
+    }
+
+    for (int i = 0; i < ARRAY_SIZE(watch_gpios); i++) {
+        printk("Check: %d\n", i);
+        k_msleep(250);
+        ret = gpio_pin_configure_dt(&watch_gpios[i], GPIO_OUTPUT);
+        __ASSERT_NO_MSG(ret == 0);
+        ret = gpio_pin_set_dt(&watch_gpios[i], 1);
+        __ASSERT_NO_MSG(ret == 0);
+        k_msleep(250);
+        ret = check_all_match(i);
+        if (!ret) {
+            pass = false;
+            printk("Short detected for %d", i);
+        }
+        ret = gpio_pin_set_dt(&watch_gpios[i], 0);
+        __ASSERT_NO_MSG(ret == 0);
+        ret = gpio_pin_configure_dt(&watch_gpios[i], GPIO_INPUT | GPIO_PULL_DOWN);
+        __ASSERT_NO_MSG(ret == 0);
+        k_msleep(250);
+    }
+
+    if (pass) {
+        printk("No shorts detected!");
+    } else {
+        printk("Shorts detected!");
+    }
+}
+
+void gpio_debug_test(gpioWatchId_t gpioId, int val)
 {
     LOG_INF("Testing %d (%s.%d)", gpioId, watch_gpios[gpioId].port->name, watch_gpios[gpioId].pin);
-    gpio_pin_set_dt(&watch_gpios[gpioId], 0);
-    __ASSERT_NO_MSG(ret == 0);
-    k_msleep(500);
-    gpio_pin_set_dt(&watch_gpios[gpioId], 1);
-    __ASSERT_NO_MSG(ret == 0);
-    k_msleep(500);
-    gpio_pin_set_dt(&watch_gpios[gpioId], 0);
-    __ASSERT_NO_MSG(ret == 0);
-    k_msleep(500);
-    gpio_pin_set_dt(&watch_gpios[gpioId], 1);
-    __ASSERT_NO_MSG(ret == 0);
-    k_msleep(500);
-    gpio_pin_set_dt(&watch_gpios[gpioId], 0);
+    gpio_pin_set_dt(&watch_gpios[gpioId], val);
     __ASSERT_NO_MSG(ret == 0);
 }

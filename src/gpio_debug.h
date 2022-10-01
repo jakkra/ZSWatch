@@ -32,10 +32,10 @@ typedef enum gpioWatchId_t {
     QSPI_CS,
     QSPI_3_RST,
     QSPI_CLK,
-    EVK_RED,
 } gpioWatchId_t;
 
 void gpio_debug_init(void);
-void gpio_debug_test(gpioWatchId_t gpioId);
+void gpio_debug_test_all(void);
+void gpio_debug_test(gpioWatchId_t gpioId, int val);
 
 #endif
