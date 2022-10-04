@@ -6,11 +6,13 @@
 #include <zephyr.h>
 #include <buttons.h>
 #include <battery.h>
-#include <drivers/sensor.h>
 #include <gpio_debug.h>
 #include <hr_service.h>
 #include <drivers/sensor.h>
-
+#include <zephyr/drivers/pwm.h>
+#include <drivers/led.h>
+#include "lis2ds12_reg.h"
+#include <filesystem.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
@@ -22,6 +24,9 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
 static void example_lvgl_demo_ui(void);
 static void set_value(void *indic, int32_t v);
 static void test_battery_read(void);
+static void test_lis_read(const struct device *sensor);
+static void test_vibrator(void);
+static void test_display_blk(void);
 
 static lv_obj_t *meter;
 //static lv_obj_t * btn;
@@ -39,10 +44,24 @@ void main(void)
 		LOG_ERR("Device not ready, aborting test");
 		return;
 	}
+	//filesystem_test();
+	bluetooth_init();
+
 	//gpio_debug_test_all();
 	//gpio_debug_init();
-	gpio_debug_test(BAT_MON_EN, 0);
-	k_msleep(1000);
+	//gpio_debug_test(BAT_MON_EN, 0);
+	//gpio_debug_test(DRV_VIB_EN, 1);
+	//gpio_debug_test(DRV_VIB_PWM, 1);
+	//gpio_debug_test(DRV_VIB_PWM, 0);
+	//gpio_debug_test(DRV_VIB_EN, 1);
+	//gpio_debug_test(DISPLAY_EN, 1);
+	//gpio_debug_test(DISPLAY_BLK, 1);
+	//gpio_debug_test(V5_REG_EN, 1);
+	//gpio_debug_test(V5_REG_EN, 0);
+	//gpio_debug_test(V5_REG_EN, 1);
+	//test_vibrator();
+	//test_display_blk();
+	//k_msleep(1000);
 	buttonsInit(&onButtonPressCb);
 	
 
@@ -53,29 +72,9 @@ void main(void)
 		return;
 	}
 
-	//bluetooth_init();
+	
 	lv_obj_clean(lv_scr_act());
 	example_lvgl_demo_ui();
-	/*
-	lv_obj_t *hello_world_label;
-	lv_obj_t *count_label;
-	if (IS_ENABLED(CONFIG_LV_Z_POINTER_KSCAN)) {
-		lv_obj_t *hello_world_button;
-
-		hello_world_button = lv_btn_create(lv_scr_act());
-		lv_obj_align(hello_world_button, LV_ALIGN_CENTER, 0, 0);
-		hello_world_label = lv_label_create(hello_world_button);
-	} else {
-		hello_world_label = lv_label_create(lv_scr_act());
-	}
-
-	lv_label_set_text(hello_world_label, "Hello world!");
-	lv_obj_align(hello_world_label, LV_ALIGN_CENTER, 0, 0);
-
-	count_label = lv_label_create(lv_scr_act());
-	lv_obj_align(count_label, LV_ALIGN_BOTTOM_MID, 0, 0);
-	*/
-
 	lv_task_handler();
 
 	const struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, st_lis2ds12)));
@@ -87,24 +86,10 @@ void main(void)
 
 	while (1) {
 		if ((count % 1000) == 0U) {
-			//sprintf(count_str, "%d", count/100U);
 			//lv_label_set_text(count_label, count_str);
 			//set_value(indic, count);
 			test_battery_read();
-			int err = sensor_sample_fetch(sensor);
-			if (err) {
-				LOG_ERR("Could not fetch sample from %s", sensor->name);
-			}
-			struct sensor_value acc_val[3];
-			if (!err) {
-				sensor_channel_get(sensor, SENSOR_CHAN_ACCEL_XYZ, acc_val);
-				int16_t x_scaled = (int16_t)(sensor_value_to_double(&acc_val[0])*(32768/16));
-				int16_t y_scaled = (int16_t)(sensor_value_to_double(&acc_val[1])*(32768/16));
-				int16_t z_scaled = (int16_t)(sensor_value_to_double(&acc_val[2])*(32768/16));
-				LOG_INF("x: %d y: %d z: %d", x_scaled, y_scaled, z_scaled);
-			} else {
-				LOG_ERR("Failed fetching sample from %s", sensor->name);
-    		}
+			test_lis_read(sensor);
 		}
 
 		/* Tell LVGL how many milliseconds has elapsed */
@@ -172,6 +157,102 @@ static void test_battery_read(void)
 	printk("[%s]: %d mV; %u pptt\n", now_str(), batt_mV, batt_pptt);
 }
 
+static void test_lis_read(const struct device *sensor)
+{
+	struct sensor_value odr;
+	odr.val1 = 12; // 12HZ LP
+	odr.val2 = 0;
+	int err = sensor_attr_set(sensor, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY, &odr);
+	if (err) {
+		LOG_INF("sensor_attr_set fail: %d", err);
+	} else {
+		LOG_INF("sensor_attr_set Success");
+	}
+
+	err = sensor_sample_fetch(sensor);
+	if (err) {
+		LOG_ERR("Could not fetch sample from %s", sensor->name);
+	}
+	struct sensor_value acc_val[3];
+	struct sensor_value temperature;
+	if (!err) {
+		stmdev_ctx_t *ctx = (stmdev_ctx_t *)sensor->config;
+		err = lis2ds12_temperature_raw_get(ctx, (uint8_t*)&temperature);
+		if (err < 0) {
+			LOG_INF("\nERROR: Unable to read temperature:%d\n", err);
+		} else {
+			LOG_INF("Temp (TODO convert from 2 complement) %d\n", temperature.val1);
+		}
+		err = sensor_channel_get(sensor, SENSOR_CHAN_ACCEL_XYZ, acc_val);
+		if (err < 0) {
+			LOG_INF("\nERROR: Unable to read accel XYZ:%d\n", err);
+		} else {
+			int16_t x_scaled = (int16_t)(sensor_value_to_double(&acc_val[0])*(32768/16));
+			int16_t y_scaled = (int16_t)(sensor_value_to_double(&acc_val[1])*(32768/16));
+			int16_t z_scaled = (int16_t)(sensor_value_to_double(&acc_val[2])*(32768/16));
+			LOG_INF("x: %d y: %d z: %d", x_scaled, y_scaled, z_scaled);
+		}
+	} else {
+		LOG_ERR("Failed fetching sample from %s", sensor->name);
+	}
+}
+
+//static const struct pwm_dt_spec pwm_led0 = PWM_DT_SPEC_GET(DT_NODELABEL(vib));
+//#define test DT_COMPAT_GET_ANY_STATUS_OKAY(vibration)
+static const struct pwm_dt_spec pwm_led1 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led1));
+
+#define NUM_STEPS 50
+#define SLEEP_MSEC	50U
+static void test_vibrator(void)
+{
+
+	if (!device_is_ready(pwm_led1.dev)) {
+		printk("Error: PWM device %s is not ready\n",
+		       pwm_led1.dev->name);
+		return;
+	}
+
+	uint32_t step = pwm_led1.period / NUM_STEPS;
+	uint32_t pulse_width = 0;//pwm_led1.period/2;
+	uint8_t dir = 1U;
+	int ret;
+
+	printk("PWM-based LED fade\n");
+
+	if (!device_is_ready(pwm_led1.dev)) {
+		printk("Error: PWM device %s is not ready\n",
+		       pwm_led1.dev->name);
+		return;
+	}
+	ret = pwm_set_pulse_dt(&pwm_led1, pwm_led1.period/10);
+}
+
+static const struct pwm_dt_spec pwm_led0 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led0));
+
+static void test_display_blk(void)
+{
+
+	if (!device_is_ready(pwm_led0.dev)) {
+		printk("Error: PWM device %s is not ready\n",
+		       pwm_led0.dev->name);
+		return;
+	}
+
+	uint32_t step = pwm_led0.period / NUM_STEPS;
+	uint32_t pulse_width = 0;//pwm_led0.period/2;
+	uint8_t dir = 1U;
+	int ret;
+
+	printk("PWM-based LED fade\n");
+
+	if (!device_is_ready(pwm_led0.dev)) {
+		printk("Error: PWM device %s is not ready\n",
+		       pwm_led0.dev->name);
+		return;
+	}
+	ret = pwm_set_pulse_dt(&pwm_led0, pwm_led0.period/2);
+	__ASSERT_NO_MSG(ret == 0);
+}
 
 void test_max_30101(void)
 {
@@ -179,12 +260,12 @@ void test_max_30101(void)
 	const struct device *dev = DEVICE_DT_GET_ANY(maxim_max30101);
 
 	if (dev == NULL) {
-		printf("Could not get max30101 device\n");
+		LOG_INF("Could not get max30101 device\n");
 		return;
 	}
 
 	if (!device_is_ready(dev)) {
-		printf("max30101 device %s is not ready\n", dev->name);
+		LOG_INF("max30101 device %s is not ready\n", dev->name);
 		return;
 	}
 
@@ -192,7 +273,7 @@ void test_max_30101(void)
 	sensor_channel_get(dev, SENSOR_CHAN_GREEN, &green);
 
 	/* Print green LED data*/
-	printf("GREEN=%d\n", green.val1);
+	LOG_INF("GREEN=%d\n", green.val1);
 
 }
 

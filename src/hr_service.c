@@ -135,7 +135,7 @@ void bluetooth_init(void)
 		return;
 	}
 
-	settings_load();
+	//settings_load();
 
 	bt_ready();
 

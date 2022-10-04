@@ -142,6 +142,8 @@ void gpio_debug_test_all(void)
 void gpio_debug_test(gpioWatchId_t gpioId, int val)
 {
     LOG_INF("Testing %d (%s.%d)", gpioId, watch_gpios[gpioId].port->name, watch_gpios[gpioId].pin);
+    int ret = gpio_pin_configure_dt(&watch_gpios[gpioId], GPIO_OUTPUT);
+    __ASSERT_NO_MSG(ret == 0);
     gpio_pin_set_dt(&watch_gpios[gpioId], val);
     __ASSERT_NO_MSG(ret == 0);
 }

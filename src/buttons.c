@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(buttons, LOG_LEVEL_DBG);
 #define PRIORITY                7
 
 #define BTN_LONG_PRESS_LIMIT  1000
-#define NUM_BUTTONS           2
+#define NUM_BUTTONS           3
 
 static void buttonPressedIsr(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
 static void handleButtonThread(void);
@@ -41,7 +41,8 @@ typedef struct buttons_t {
 
 static buttons_t buttons[NUM_BUTTONS] = {
     { .btn = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw0), gpios, {0}) },
-    { .btn = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw1), gpios, {0}) }
+    { .btn = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw1), gpios, {0}) },
+    { .btn = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw2), gpios, {0}) }
 };
 
 static buttonHandlerCallback_t callback;
@@ -64,7 +65,7 @@ void buttonsInit(buttonHandlerCallback_t handler) {
         gpio_init_callback(&buttons[i].callback_data, buttonPressedIsr,  BIT(buttons[i].btn.pin));
         ret = gpio_add_callback(buttons[i].btn.port, &buttons[i].callback_data);
         __ASSERT_NO_MSG(ret == 0);
-        ret = gpio_pin_interrupt_configure_dt(&buttons[i].btn, GPIO_INT_EDGE_TO_INACTIVE);
+        ret = gpio_pin_interrupt_configure_dt(&buttons[i].btn, GPIO_INT_EDGE_TO_ACTIVE);
         __ASSERT_NO_MSG(ret == 0);
         LOG_INF("Registrated Button %d", i);
     }
@@ -100,7 +101,7 @@ static void handleButtonThread(void) {
         k_sleep(K_MSEC(100)); // Let debounce stabalize
         val = gpio_pin_get_dt(&buttons[pressed_button_id].btn);
 
-        while (!val) {
+        while (val) {
             val = gpio_pin_get_dt(&buttons[pressed_button_id].btn);
             k_sleep(K_MSEC(10));
         }
@@ -114,7 +115,7 @@ static void handleButtonThread(void) {
         }
         callback(press_type, pressed_button_id);
         for (int i = 0; i < NUM_BUTTONS; i++) {
-            gpio_pin_interrupt_configure(buttons[i].btn.port, buttons[i].btn.pin, GPIO_INT_EDGE_TO_INACTIVE);
+            gpio_pin_interrupt_configure(buttons[i].btn.port, buttons[i].btn.pin, GPIO_INT_EDGE_TO_ACTIVE);
         }
     }
 }

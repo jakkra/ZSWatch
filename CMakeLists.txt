@@ -11,9 +11,11 @@ FILE(GLOB app_sources src/*.c)
 #target_sources(app PRIVATE ${app_sources})
 target_sources(app PRIVATE 
     src/main.c
-    src/img_hand.c
+    #src/img_hand.c
     src/buttons.c
     src/gpio_debug.c
     src/hr_service.c
     src/battery.c
+    src/filesystem.c
+    src/img_hand.c
     )

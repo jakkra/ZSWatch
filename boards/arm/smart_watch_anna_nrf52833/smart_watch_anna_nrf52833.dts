@@ -21,14 +21,16 @@
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
-			/* EVK-NINA-B4 SW1 button */
-			gpios = <&gpio1 1 (GPIO_PULL_UP)>;
+			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 0";
 		};
 		button1: button_1 {
-			/* EVK-NINA-B4 SW2 button */
-			gpios = <&gpio0 2 (GPIO_PULL_UP)>;
+			gpios = <&gpio0 23 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 1";
+		};
+		button2: button2 {
+			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 2";
 		};
 	};
 	
@@ -62,10 +64,23 @@
 		enable-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 	};
 
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm0 0 PWM_MSEC(20) 0>;
+		};
+		pwm_led1: pwm_led_1 {
+			pwms = <&pwm1 0 PWM_MSEC(20) 0>;
+		};
+	};
+
 	aliases {
 		sw0 = &button0;
 		sw1 = &button1;
+		sw2 = &button2;
 		accelerometer = &lis2ds12;
+		pwm-led0 = &pwm_led0;
+		pwm-led1 = &pwm_led1;
 	};
 };
 
@@ -98,7 +113,7 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
-	lis2ds12: lis2ds12@19 {
+	lis2ds12: lis2ds12@1D {
 		compatible = "st,lis2ds12", "st,lis2ds";
 		label = "lis2ds12";
 		reg = <0x1D>;
@@ -118,7 +133,7 @@
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
-	cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;//,	/* D4 */
+	cs-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;//,	/* D4 */
 	//<&arduino_header 10 GPIO_ACTIVE_LOW>;	/* D04 */
 	//sck-pin = < 12 >;
 	//miso-pin = < 14 >;
@@ -134,9 +149,9 @@
 		label = "jkra_gd0a401";
 		height = <240>;
 		//bl-gpios = <&arduino_header 7 GPIO_ACTIVE_LOW>;	/* D1 */
-		bl-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;	/* NOT WORKING */
-		reset-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;	/* A0 */
-		dc-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;		/* D8 */
+		bl-gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;	/* NOT WORKING */
+		reset-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;	/* A0 */
+		dc-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>;		/* D8 */
 		//reset-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		//pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
 		//rotation = <90>;
@@ -161,35 +176,37 @@
 		reg = <0>;
 		spi-max-frequency = <8000000>;
 		label = "MX25R32";
+		size = <33554432>;
 		jedec-id = [c2 28 16];
+		/*
 		sfdp-bfp = [
 			e5 20 f1 ff  ff ff ff 03  44 eb 08 6b  08 3b 04 bb
 			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 0f 52
 			10 d8 00 ff  23 72 f5 00  82 ed 04 cc  44 83 68 44
 			30 b0 30 b0  f7 c4 d5 5c  00 be 29 ff  f0 d0 ff ff
 		];
-		size = <33554432>;
 		has-dpd;
 		t-enter-dpd = <10000>;
-		t-exit-dpd = <35000>;
+		t-exit-dpd = <35000>;*/
+		reset-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+		wp-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 	};
 };
 
-
-/* 
-&spi2 {
+&pwm0 {
 	status = "okay";
-	cs-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
-	mx25r32: mx25r3235f@0 {
-		compatible = "jedec,spi-nor";
-		reg = <0>;
-		spi-max-frequency = <80000000>;
-		label = "MX25R32";
-		jedec-id = [c2 28 16];
-		size = <33554432>;
-	};
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
-*/
+
+&pwm1 {
+	status = "okay";
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-1 = <&pwm1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
 &flash0 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -212,10 +229,18 @@
 			label = "image-scratch";
 			reg = <0x70000 0xa000>;
 		};
-		storage_partition: partition@7a000 {
-			label = "storage";
-			reg = <0x7a000 0x6000>;
-		};
 	};
 };
 
+&mx25r32 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		lfs1_part: partition@0 {
+			label = "storage";
+			reg = <0x00000000 0x00010000>;
+		};
+	};
+};
