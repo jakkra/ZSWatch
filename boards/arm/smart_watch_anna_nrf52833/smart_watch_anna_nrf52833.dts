@@ -73,7 +73,21 @@
 			pwms = <&pwm1 0 PWM_MSEC(20) 0>;
 		};
 	};
-
+	/*
+	fstab {
+		compatible = "zephyr,fstab";
+		lfs: lfs {
+		  compatible = "zephyr,fstab,littlefs";
+		  mount-point = "/lfs";
+		  partition = <&lfs1_part>;
+		  read-size = <16>;
+		  prog-size = <16>;
+		  cache-size = <64>;
+		  lookahead-size = <32>;
+		  block-cycles = <512>;
+		};
+	  };
+	*/
 	aliases {
 		sw0 = &button0;
 		sw1 = &button1;
@@ -188,7 +202,7 @@
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <35000>;*/
-		reset-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio0 20 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		wp-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
 	};
 };
@@ -229,6 +243,10 @@
 			label = "image-scratch";
 			reg = <0x70000 0xa000>;
 		};
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x7a000 0x6000>;
+		};
 	};
 };
 
@@ -238,9 +256,15 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		lfs1_part: partition@0 {
-			label = "storage";
-			reg = <0x00000000 0x00010000>;
+		partition_cfg: partition@0 {
+			label = "littlefs_cfg";
+			reg = <0x00000000 0x000010000>;
+		};
+		partition_lfs: partition@10000 {
+			label = "littlefs";
+			reg = <0x000010000 0x00080000>;
 		};
 	};
 };
+
+

@@ -44,7 +44,7 @@ void main(void)
 		LOG_ERR("Device not ready, aborting test");
 		return;
 	}
-	//filesystem_test();
+	filesystem_test();
 	bluetooth_init();
 
 	//gpio_debug_test_all();
@@ -61,7 +61,7 @@ void main(void)
 	//gpio_debug_test(V5_REG_EN, 1);
 	//test_vibrator();
 	//test_display_blk();
-	//k_msleep(1000);
+	//k_msleep(600000);
 	buttonsInit(&onButtonPressCb);
 	
 
