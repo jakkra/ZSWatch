@@ -6,6 +6,8 @@ void watchface_init(void);
 
 void watchface_show(void);
 
+void watchface_remove(void);
+
 void watchface_set_battery_percent(int32_t value);
 
 void watchface_set_hrm(int32_t value);

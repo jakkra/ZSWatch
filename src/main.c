@@ -15,6 +15,7 @@
 #include <clock.h>
 #include <lvgl.h>
 #include "watchface.h"
+#include "stats_page.h"
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
@@ -40,7 +41,6 @@ void main(void)
     uint32_t count = 0U;
     const struct device *display_dev;
     watchface_init();
-
     printk("%p", DEVICE_DT_GET(DT_CHOSEN(zephyr_display)));
     
     display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
@@ -94,6 +94,9 @@ void main(void)
             watchface_set_hrm(bat % 220);
             watchface_set_step(count % 20000);
             bat++;
+        }
+        if ((count % 50) == 0U) {
+            test_lis_read(sensor);
         }
 
         /* Tell LVGL how many milliseconds has elapsed */
@@ -189,18 +192,19 @@ static void test_lis_read(const struct device *sensor)
         stmdev_ctx_t *ctx = (stmdev_ctx_t *)sensor->config;
         err = lis2ds12_temperature_raw_get(ctx, (uint8_t*)&temperature);
         if (err < 0) {
-            LOG_INF("\nERROR: Unable to read temperature:%d\n", err);
+            //LOG_INF("\nERROR: Unable to read temperature:%d\n", err);
         } else {
-            LOG_INF("Temp (TODO convert from 2 complement) %d\n", temperature.val1);
+            //LOG_INF("Temp (TODO convert from 2 complement) %d\n", temperature.val1);
         }
         err = sensor_channel_get(sensor, SENSOR_CHAN_ACCEL_XYZ, acc_val);
         if (err < 0) {
-            LOG_INF("\nERROR: Unable to read accel XYZ:%d\n", err);
+            //LOG_INF("\nERROR: Unable to read accel XYZ:%d\n", err);
         } else {
             int16_t x_scaled = (int16_t)(sensor_value_to_double(&acc_val[0])*(32768/16));
             int16_t y_scaled = (int16_t)(sensor_value_to_double(&acc_val[1])*(32768/16));
             int16_t z_scaled = (int16_t)(sensor_value_to_double(&acc_val[2])*(32768/16));
-            LOG_INF("x: %d y: %d z: %d", x_scaled, y_scaled, z_scaled);
+            //LOG_INF("x: %d y: %d z: %d", x_scaled, y_scaled, z_scaled);
+            states_page_accelerometer_values(x_scaled, y_scaled, z_scaled);
         }
     } else {
         LOG_ERR("Failed fetching sample from %s", sensor->name);
@@ -287,9 +291,18 @@ void test_max_30101(void)
 
 }
 
+static bool show_watchface = true;
+
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
     LOG_INF("Pressed %d, type: %d", id, type);
-
+    show_watchface = !show_watchface;
+    if (show_watchface) {
+        states_page_remove();
+        watchface_show();
+    } else {
+        watchface_remove();
+        states_page_show();
+    }
     if (type == BUTTONS_SHORT_PRESS) {
         LOG_DBG("BUTTONS_SHORT_PRESS");
     } else {
