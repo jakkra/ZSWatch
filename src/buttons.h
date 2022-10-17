@@ -32,7 +32,8 @@ typedef enum buttonPressType_t {
  */
 typedef enum buttonId_t {
   BUTTON_1,
-  BUTTON_2
+  BUTTON_2,
+  BUTTON_3
 } buttonId_t;
 
 typedef void(*buttonHandlerCallback_t)(buttonPressType_t type, buttonId_t id);
@@ -43,5 +44,7 @@ typedef void(*buttonHandlerCallback_t)(buttonPressType_t type, buttonId_t id);
  * @param   handler          Pointer to callback function for button events.
  */
 void buttonsInit(buttonHandlerCallback_t handler);
+
+int button_read(buttonId_t button);
 
 #endif

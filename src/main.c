@@ -16,6 +16,7 @@
 #include <lvgl.h>
 #include "watchface.h"
 #include "stats_page.h"
+#include <general_ui.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
@@ -34,7 +35,13 @@ static void set_value_minute(int32_t value);
 static void set_value_hour(int32_t value);
 static void add_battery_indicator(void);
 static void add_battery_percent_text(void);
+static void set_vibrator(uint8_t percent);
+static void set_display_blk(uint8_t percent);
 
+static void enocoder_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * data);
+static void encoder_vibration(struct _lv_indev_drv_t * drv, uint8_t e);
+
+static lv_group_t * input_group;
 
 void main(void)
 {
@@ -49,7 +56,7 @@ void main(void)
         return;
     }
     filesystem_test();
-    bluetooth_init();
+    //bluetooth_init();
     clock_init(clock_handler);
 
     //gpio_debug_test_all();
@@ -64,10 +71,36 @@ void main(void)
     //gpio_debug_test(V5_REG_EN, 1);
     //gpio_debug_test(V5_REG_EN, 0);
     //gpio_debug_test(V5_REG_EN, 1);
-    //test_vibrator();
+
+    for (int i = 50; i <= 100; i+=10) {
+        gpio_debug_test(DRV_VIB_EN, 0);
+        set_vibrator(100);
+        set_display_blk(100);
+        gpio_debug_test(DRV_VIB_EN, 1);
+        k_msleep(100);
+        gpio_debug_test(DRV_VIB_EN, 0);
+        k_msleep(500);
+        set_vibrator(10);
+        set_display_blk(10);
+        gpio_debug_test(DRV_VIB_EN, 1);
+        k_msleep(50);
+        gpio_debug_test(DRV_VIB_EN, 0);
+        k_msleep(500);
+    }
+    set_display_blk(100);
     //test_display_blk();
     //k_msleep(600000);
     buttonsInit(&onButtonPressCb);
+
+    lv_indev_drv_t enc_drv;
+    lv_indev_drv_init(&enc_drv);
+    enc_drv.type = LV_INDEV_TYPE_ENCODER;
+    enc_drv.read_cb = enocoder_read;
+	enc_drv.feedback_cb = encoder_vibration;
+    lv_indev_t * enc_indev = lv_indev_drv_register(&enc_drv);
+
+    input_group = lv_group_create();
+    lv_indev_set_group(enc_indev, input_group);
     
 
     int rc = battery_measure_enable(true);
@@ -89,7 +122,7 @@ void main(void)
     while (1) {
         if ((count % 1000) == 0U) {
             test_battery_read();
-            test_lis_read(sensor);
+            //test_lis_read(sensor);
             watchface_set_battery_percent(bat % 100);
             watchface_set_hrm(bat % 220);
             watchface_set_step(count % 20000);
@@ -215,57 +248,38 @@ static void test_lis_read(const struct device *sensor)
 //#define test DT_COMPAT_GET_ANY_STATUS_OKAY(vibration)
 static const struct pwm_dt_spec pwm_led1 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led1));
 
-#define NUM_STEPS 50
-#define SLEEP_MSEC	50U
-static void test_vibrator(void)
+static void set_vibrator(uint8_t percent)
 {
-
-    if (!device_is_ready(pwm_led1.dev)) {
-        printk("Error: PWM device %s is not ready\n",
-               pwm_led1.dev->name);
-        return;
-    }
-
-    uint32_t step = pwm_led1.period / NUM_STEPS;
-    uint32_t pulse_width = 0;//pwm_led1.period/2;
-    uint8_t dir = 1U;
     int ret;
-
-    printk("PWM-based LED fade\n");
+    uint32_t step = pwm_led1.period / 100;
+    uint32_t pulse_width = step * percent;
 
     if (!device_is_ready(pwm_led1.dev)) {
         printk("Error: PWM device %s is not ready\n",
                pwm_led1.dev->name);
         return;
     }
-    ret = pwm_set_pulse_dt(&pwm_led1, pwm_led1.period/10);
+
+    ret = pwm_set_pulse_dt(&pwm_led1, pulse_width);
+    __ASSERT(ret == 0, "pwm error: %d for pulse: %d", ret, pulse_width);
 }
 
 static const struct pwm_dt_spec pwm_led0 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led0));
 
-static void test_display_blk(void)
+static void set_display_blk(uint8_t percent)
 {
-
-    if (!device_is_ready(pwm_led0.dev)) {
-        printk("Error: PWM device %s is not ready\n",
-               pwm_led0.dev->name);
-        return;
-    }
-
-    uint32_t step = pwm_led0.period / NUM_STEPS;
-    uint32_t pulse_width = 0;//pwm_led0.period/2;
-    uint8_t dir = 1U;
     int ret;
-
-    printk("PWM-based LED fade\n");
+    uint32_t step = pwm_led0.period / 100;
+    uint32_t pulse_width = step * percent;
 
     if (!device_is_ready(pwm_led0.dev)) {
         printk("Error: PWM device %s is not ready\n",
                pwm_led0.dev->name);
         return;
     }
-    ret = pwm_set_pulse_dt(&pwm_led0, pwm_led0.period/2);
-    __ASSERT_NO_MSG(ret == 0);
+
+    ret = pwm_set_pulse_dt(&pwm_led0, pulse_width);
+    __ASSERT(ret == 0, "pwm error: %d for pulse: %d", ret, pulse_width);
 }
 
 void test_max_30101(void)
@@ -291,21 +305,79 @@ void test_max_30101(void)
 
 }
 
+#define REFLOW_OVEN_TITLE_PAD 10
+
+static lv_obj_t * add_title(const char * txt, lv_obj_t * src){
+    lv_obj_t * title = lv_label_create(src);
+    //lv_theme_apply(title, theme);
+    lv_label_set_text(title, txt);
+    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, REFLOW_OVEN_TITLE_PAD);
+    return title;
+}
+
+static void open_settings(void)
+{
+    general_ui_anim_out_all(lv_scr_act(), 0);
+
+    lv_obj_t * title = add_title("Settings", lv_scr_act());
+    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, REFLOW_OVEN_TITLE_PAD);
+
+    lv_coord_t box_w = 160;
+    lv_obj_t * box = lv_obj_create(lv_scr_act());
+    lv_obj_set_size(box, box_w, box_w);
+    lv_obj_align(box, LV_ALIGN_CENTER, 0, 0);
+
+    lv_group_remove_all_objs(input_group);
+
+    //lv_ex_settings_2(box);
+}
+
 static bool show_watchface = true;
 
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
     LOG_INF("Pressed %d, type: %d", id, type);
+    // TODO only change if not something that needs interaction with is shown.
     show_watchface = !show_watchface;
-    if (show_watchface) {
-        states_page_remove();
-        watchface_show();
-    } else {
-        watchface_remove();
-        states_page_show();
-    }
+    /*
+        UP down Buttons change screens
+        Enter button shows settings?
+    */
     if (type == BUTTONS_SHORT_PRESS) {
+        if (show_watchface) {
+            states_page_remove();
+            watchface_show();
+        } else {
+            watchface_remove();
+            states_page_show();
+        }
         LOG_DBG("BUTTONS_SHORT_PRESS");
     } else {
         LOG_DBG("BUTTONS_LONG_PRESS");
+        open_settings();
     }
+}
+
+static void enocoder_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * data)
+{
+    // TODO maybe only report presses if we opened some menu for example
+    if (button_read(BUTTON_1)) {
+        data->key = LV_KEY_ENTER;
+        data->state = LV_INDEV_STATE_PR;
+    } else if (button_read(BUTTON_2)) {
+        data->key = LV_KEY_UP;
+        data->state = LV_INDEV_STATE_PR;
+    } else if (button_read(BUTTON_3)) {
+        data->key = LV_KEY_DOWN;
+        data->state = LV_INDEV_STATE_PR;
+    } else {
+        data->state = LV_INDEV_STATE_REL;
+    }
+}
+
+void encoder_vibration(struct _lv_indev_drv_t * drv, uint8_t e)
+{
+    // TODO Vibrate motor for example!
+	//if (e == LV_EVENT_FOCUSED) {
+    //    
+    //}
 }

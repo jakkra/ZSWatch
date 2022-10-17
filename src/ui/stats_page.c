@@ -64,13 +64,15 @@ void states_page_show(void)
     lv_label_set_text(acc_z_label, "00000");
     lv_obj_align_to(acc_z_label, bar_acc_z, LV_ALIGN_CENTER, 0, -15);
 
+    general_ui_anim_in(root_page, 100);
 }
 
 void states_page_remove(void)
 {
-    if (!root_page) return;
-    lv_obj_del(root_page);
     root_page = NULL;
+    general_ui_anim_out_all(lv_scr_act(), 0);
+    //if (!root_page) return;
+    //lv_obj_del(root_page);
 }
 
 void states_page_accelerometer_values(int32_t x, int32_t y, int32_t z)

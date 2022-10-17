@@ -18,6 +18,7 @@ static lv_obj_t * hrm_arc;
 static lv_obj_t * step_label;
 static lv_obj_t * step_arc;
 
+
 static void add_clock(lv_obj_t* parent)
 {
     clock_meter = lv_meter_create(parent);
@@ -150,13 +151,16 @@ void watchface_show(void)
     add_pulse_indicator(root_page);
     add_step_indicator(root_page);
     add_clock(root_page);
+
+    general_ui_anim_in(root_page, 100);
 }
 
 void watchface_remove(void)
 {
-    if (!root_page) return;
-    lv_obj_del(root_page);
     root_page = NULL;
+    general_ui_anim_out_all(lv_scr_act(), 0);
+    //if (!root_page) return;
+    //lv_obj_del(root_page);
 }
 
 void watchface_set_battery_percent(int32_t value)
