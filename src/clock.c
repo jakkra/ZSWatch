@@ -35,7 +35,6 @@ static void clockThread(void)
 		if (res < 0) {
 			printf("Error in gettimeofday(): %d\n", errno);
 		}
-        printk("H: %d, M: %d, S: %d\n", tm.tm_hour, tm.tm_min, tm.tm_sec);
         if (tick_callback) {
             tick_callback(tm.tm_hour, tm.tm_sec, tm.tm_sec);
         }

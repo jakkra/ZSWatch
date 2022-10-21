@@ -3,7 +3,7 @@
 
 #define SMALL_WATCHFACE_CENTER_OFFSET 37
 
-static lv_obj_t * root_page;
+static lv_obj_t * root_page = NULL;
 
 static lv_obj_t * clock_meter;
 static lv_meter_indicator_t * indic_min;
@@ -141,6 +141,11 @@ void watchface_init(void)
 
 void watchface_show(void)
 {
+    if (root_page != NULL) {
+        lv_obj_clear_flag(root_page, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
+
     root_page = lv_obj_create(lv_scr_act());
     lv_obj_set_scrollbar_mode(root_page, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_bg_opa(root_page, LV_OPA_TRANSP, LV_PART_MAIN);
@@ -157,8 +162,10 @@ void watchface_show(void)
 
 void watchface_remove(void)
 {
-    root_page = NULL;
-    general_ui_anim_out_all(lv_scr_act(), 0);
+    lv_obj_add_flag(root_page, LV_OBJ_FLAG_HIDDEN);
+    //root_page = NULL;
+    //general_ui_anim_out_all(lv_scr_act(), 0);
+
     //if (!root_page) return;
     //lv_obj_del(root_page);
 }

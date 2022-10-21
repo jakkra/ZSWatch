@@ -75,7 +75,7 @@ void buttonsInit(buttonHandlerCallback_t handler) {
 
 int button_read(buttonId_t button)
 {
-    return gpio_pin_get_dt(&buttons[pressed_button_id].btn);
+    return gpio_pin_get_dt(&buttons[button].btn);
 }
 
 static void buttonPressedIsr(const struct device *dev, struct gpio_callback *cb, uint32_t pins)

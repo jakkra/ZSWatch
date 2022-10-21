@@ -1,7 +1,7 @@
 #include <stats_page.h>
 #include <lvgl.h>
 
-static lv_obj_t * root_page;
+static lv_obj_t * root_page = NULL;
 
 static lv_obj_t * bar_acc_x;
 static lv_obj_t * bar_acc_y;
@@ -22,6 +22,11 @@ void states_page_show(void)
     static lv_style_t style_indic_red;
     static lv_style_t style_indic_green;
     static lv_style_t style_indic_blue;
+
+    if (root_page != NULL) {
+        lv_obj_clear_flag(root_page, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
     
     root_page = lv_obj_create(lv_scr_act());
     lv_obj_set_scrollbar_mode(root_page, LV_SCROLLBAR_MODE_OFF);
@@ -69,8 +74,9 @@ void states_page_show(void)
 
 void states_page_remove(void)
 {
-    root_page = NULL;
-    general_ui_anim_out_all(lv_scr_act(), 0);
+    lv_obj_add_flag(root_page, LV_OBJ_FLAG_HIDDEN);
+    //root_page = NULL;
+    //general_ui_anim_out_all(lv_scr_act(), 0);
     //if (!root_page) return;
     //lv_obj_del(root_page);
 }

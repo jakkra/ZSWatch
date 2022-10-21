@@ -49,6 +49,9 @@ typedef struct slider_config{
     uint16_t max_step;
 } slider_config_t;
 
+typedef void(*on_close_cb)(void);
+
+
 /**********************
  * GLOBAL PROTOTYPES
  **********************/
@@ -59,7 +62,7 @@ typedef struct slider_config{
  * `lv_settings_menu_item_t root_item = {.name = "Settings", .event_cb = root_event_cb};`
  * @return the created settings button
  */
-void lv_settings_create(lv_settings_item_t * root_item, lv_obj_t * parent, uint8_t original_tab, lv_event_cb_t event_cb);
+void lv_settings_create(lv_obj_t * root_item, lv_group_t * input_group, on_close_cb close_cb);
 
 /**
  * Automatically add the item to a group to allow navigation with keypad or encoder.
@@ -68,31 +71,5 @@ void lv_settings_create(lv_settings_item_t * root_item, lv_obj_t * parent, uint8
  * @param g the group to use. `NULL` to not use this feature.
  */
 void lv_settings_set_group(lv_group_t * g);
-
-/**
- * Change the maximum width of settings dialog object
- * @param max_width maximum width of the settings container page
- */
-void lv_settings_set_max_width(lv_coord_t max_width);
-
-/**
- * Create a new page ask `event_cb` to add the item with `LV_EVENT_REFRESH`
- * @param parent_item pointer to an item which open the the new page. Its `name` will be the title
- * @param event_cb event handler of the menu page
- */
-void lv_settings_open_page(lv_settings_item_t * parent_item, lv_event_cb_t event_cb);
-
-/**
- * Add a list element to the page. With `item->name` and `item->value` texts.
- * @param page pointer to a menu page created by `lv_settings_create_page`
- */
-lv_obj_t * lv_settings_add(lv_settings_item_t * item);
-
-
-/**
- * Refresh an item's name value and state.
- * @param item pointer to a an `lv_settings_item _t` item.
- */
-void lv_settings_refr(lv_settings_item_t * item);
 
 #endif /*LV_SETTINGS_H*/

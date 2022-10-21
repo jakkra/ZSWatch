@@ -28,7 +28,7 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
 static void clock_handler(int hour, int minute, int second);
 
 static void test_battery_read(void);
-static void test_lis_read(const struct device *sensor);
+static void test_lis_read(void);
 static void test_vibrator(void);
 static void test_display_blk(void);
 static void set_value_minute(int32_t value);
@@ -37,105 +37,68 @@ static void add_battery_indicator(void);
 static void add_battery_percent_text(void);
 static void set_vibrator(uint8_t percent);
 static void set_display_blk(uint8_t percent);
+static void open_settings(void);
 
 static void enocoder_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * data);
 static void encoder_vibration(struct _lv_indev_drv_t * drv, uint8_t e);
 
 static lv_group_t * input_group;
 
+static bool buttons_allocated = false;
+
+
 void main(void)
 {
+    int rc;
     uint32_t count = 0U;
+    lv_indev_drv_t enc_drv;
+    lv_indev_t * enc_indev;
     const struct device *display_dev;
-    watchface_init();
-    printk("%p", DEVICE_DT_GET(DT_CHOSEN(zephyr_display)));
     
     display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
     if (!device_is_ready(display_dev)) {
         LOG_ERR("Device not ready, aborting test");
         return;
     }
+
+    watchface_init();
     filesystem_test();
     //bluetooth_init();
     clock_init(clock_handler);
-
-    //gpio_debug_test_all();
-    //gpio_debug_init();
-    //gpio_debug_test(BAT_MON_EN, 0);
-    //gpio_debug_test(DRV_VIB_EN, 1);
-    //gpio_debug_test(DRV_VIB_PWM, 1);
-    //gpio_debug_test(DRV_VIB_PWM, 0);
-    //gpio_debug_test(DRV_VIB_EN, 1);
-    //gpio_debug_test(DISPLAY_EN, 1);
-    //gpio_debug_test(DISPLAY_BLK, 1);
-    //gpio_debug_test(V5_REG_EN, 1);
-    //gpio_debug_test(V5_REG_EN, 0);
-    //gpio_debug_test(V5_REG_EN, 1);
-
-    for (int i = 50; i <= 100; i+=10) {
-        gpio_debug_test(DRV_VIB_EN, 0);
-        set_vibrator(100);
-        set_display_blk(100);
-        gpio_debug_test(DRV_VIB_EN, 1);
-        k_msleep(100);
-        gpio_debug_test(DRV_VIB_EN, 0);
-        k_msleep(500);
-        set_vibrator(10);
-        set_display_blk(10);
-        gpio_debug_test(DRV_VIB_EN, 1);
-        k_msleep(50);
-        gpio_debug_test(DRV_VIB_EN, 0);
-        k_msleep(500);
-    }
-    set_display_blk(100);
-    //test_display_blk();
-    //k_msleep(600000);
     buttonsInit(&onButtonPressCb);
 
-    lv_indev_drv_t enc_drv;
+    gpio_debug_test(DRV_VIB_EN, 0);
+    set_display_blk(100);
+
     lv_indev_drv_init(&enc_drv);
+
+    
     enc_drv.type = LV_INDEV_TYPE_ENCODER;
     enc_drv.read_cb = enocoder_read;
 	enc_drv.feedback_cb = encoder_vibration;
-    lv_indev_t * enc_indev = lv_indev_drv_register(&enc_drv);
+    enc_indev = lv_indev_drv_register(&enc_drv);
 
     input_group = lv_group_create();
+    lv_group_set_default(input_group);
     lv_indev_set_group(enc_indev, input_group);
-    
-
-    int rc = battery_measure_enable(true);
-    if (rc != 0) {
-        printk("Failed initialize battery measurement: %d\n", rc);
-        return;
-    }
-
-    const struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, st_lis2ds12)));
-    if (!device_is_ready(sensor)) {
-        LOG_ERR("Error: Device \"%s\" is not ready; "
-                "check the driver initialization logs for errors.",
-                sensor->name);
-    }
 
     watchface_show();
-
-    int bat = 30;
+    //open_settings();
+    
     while (1) {
-        if ((count % 1000) == 0U) {
+        if ((count % 100) == 0U) {
             test_battery_read();
-            //test_lis_read(sensor);
-            watchface_set_battery_percent(bat % 100);
-            watchface_set_hrm(bat % 220);
+            watchface_set_hrm(count % 220);
             watchface_set_step(count % 20000);
-            bat++;
         }
-        if ((count % 50) == 0U) {
-            test_lis_read(sensor);
+        if ((count % 10) == 0U) {
+            test_lis_read();
         }
 
         /* Tell LVGL how many milliseconds has elapsed */
         lv_task_handler();
         lv_timer_handler();
-        k_sleep(K_MSEC(2));
+        k_sleep(K_MSEC(10));
         ++count;
     }
     
@@ -162,7 +125,7 @@ static const struct battery_level_point levels[] = {
      * and 3.1 V.
      */
 
-    { 10000, 3950 },
+    { 10000, 4150 },
     { 625, 3550 },
     { 0, 3100 },
 };
@@ -190,6 +153,11 @@ static const char *now_str(void)
 
 static void test_battery_read(void)
 {
+    int rc = battery_measure_enable(true);
+    if (rc != 0) {
+        printk("Failed initialize battery measurement: %d\n", rc);
+        return;
+    }
     // From https://github.com/zephyrproject-rtos/zephyr/blob/main/samples/boards/nrf/battery/src/main.c
     int batt_mV = battery_sample();
 
@@ -200,12 +168,26 @@ static void test_battery_read(void)
 
     unsigned int batt_pptt = battery_level_pptt(batt_mV, levels);
 
-    printk("[%s]: %d mV; %u pptt\n", now_str(), batt_mV, batt_pptt);
+    //printk("[%s]: %d mV; %u pptt\n", now_str(), batt_mV, batt_pptt);
+
+    rc = battery_measure_enable(false);
+    if (rc != 0) {
+        printk("Failed disable battery measurement: %d\n", rc);
+        return;
+    }
+
+    watchface_set_battery_percent(batt_pptt / 100);
 }
 
-static void test_lis_read(const struct device *sensor)
+static void test_lis_read(void)
 {
     struct sensor_value odr;
+    const struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, st_lis2ds12)));
+    if (!device_is_ready(sensor)) {
+        LOG_ERR("Error: Device \"%s\" is not ready; "
+                "check the driver initialization logs for errors.",
+                sensor->name);
+    }
     odr.val1 = 12; // 12HZ LP
     odr.val2 = 0;
     int err = sensor_attr_set(sensor, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY, &odr);
@@ -315,20 +297,30 @@ static lv_obj_t * add_title(const char * txt, lv_obj_t * src){
     return title;
 }
 
+static void on_close_settings(void)
+{
+    printk("on_close_settings\n");
+    watchface_show();
+    buttons_allocated = false;
+}
+
 static void open_settings(void)
 {
-    general_ui_anim_out_all(lv_scr_act(), 0);
+    //general_ui_anim_out_all(lv_scr_act(), 0);
 
-    lv_obj_t * title = add_title("Settings", lv_scr_act());
-    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, REFLOW_OVEN_TITLE_PAD);
+    //lv_obj_t * title = add_title("Settings", lv_scr_act());
+    //lv_obj_align(title, LV_ALIGN_TOP_MID, 0, REFLOW_OVEN_TITLE_PAD);
 
-    lv_coord_t box_w = 160;
-    lv_obj_t * box = lv_obj_create(lv_scr_act());
-    lv_obj_set_size(box, box_w, box_w);
-    lv_obj_align(box, LV_ALIGN_CENTER, 0, 0);
+    //lv_coord_t box_w = 160;
+    //lv_obj_t * box = lv_obj_create(lv_scr_act());
+    //lv_obj_set_size(box, box_w, box_w);
+    //lv_obj_align(box, LV_ALIGN_CENTER, 0, 0);
 
-    lv_group_remove_all_objs(input_group);
+    buttons_allocated = true;
 
+    //lv_group_remove_all_objs(input_group);
+
+    lv_settings_create(NULL, input_group, on_close_settings);
     //lv_ex_settings_2(box);
 }
 
@@ -336,13 +328,18 @@ static bool show_watchface = true;
 
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
     LOG_INF("Pressed %d, type: %d", id, type);
+
+    if (buttons_allocated) {
+        // Handled by LVGL
+        return;
+    }
     // TODO only change if not something that needs interaction with is shown.
-    show_watchface = !show_watchface;
     /*
         UP down Buttons change screens
         Enter button shows settings?
     */
     if (type == BUTTONS_SHORT_PRESS) {
+        show_watchface = !show_watchface;
         if (show_watchface) {
             states_page_remove();
             watchface_show();
@@ -352,25 +349,49 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
         }
         LOG_DBG("BUTTONS_SHORT_PRESS");
     } else {
-        LOG_DBG("BUTTONS_LONG_PRESS");
-        open_settings();
+        LOG_ERR("BUTTONS_LONG_PRESS, open settings");
+        if (id == BUTTON_2) {
+            if (show_watchface) {
+                watchface_remove();
+                open_settings();
+            }
+        }
     }
 }
 
+static buttonId_t last_pressed;
+
 static void enocoder_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * data)
 {
-    // TODO maybe only report presses if we opened some menu for example
     if (button_read(BUTTON_1)) {
+        data->key = LV_KEY_RIGHT;
+        data->state = LV_INDEV_STATE_PR;
+        last_pressed = BUTTON_1;
+    } else if (button_read(BUTTON_2)) {
         data->key = LV_KEY_ENTER;
         data->state = LV_INDEV_STATE_PR;
-    } else if (button_read(BUTTON_2)) {
-        data->key = LV_KEY_UP;
-        data->state = LV_INDEV_STATE_PR;
+        last_pressed = BUTTON_2;
     } else if (button_read(BUTTON_3)) {
-        data->key = LV_KEY_DOWN;
+        data->key = LV_KEY_LEFT;
         data->state = LV_INDEV_STATE_PR;
+        last_pressed = BUTTON_3;
     } else {
+        if (last_pressed == 0xFF) {
+            return;
+        }
         data->state = LV_INDEV_STATE_REL;
+        switch (last_pressed) {
+        case BUTTON_1:
+            data->key = LV_KEY_RIGHT;
+            break;
+        case BUTTON_2:
+            data->key = LV_KEY_ENTER;
+            break;
+        case BUTTON_3:
+            data->key = LV_KEY_LEFT;
+            break;
+        }
+        last_pressed = 0xFF;
     }
 }
 
