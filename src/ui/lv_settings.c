@@ -15,6 +15,12 @@
 #define LV_SETTINGS_ANIM_TIME   300 /*[ms]*/
 #define LV_SETTINGS_MAX_WIDTH   250
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
+#endif
+
+
+
 /**********************
  *      TYPEDEFS
  **********************/
@@ -27,9 +33,10 @@
  *  STATIC VARIABLES
  **********************/
 
-static on_close_cb close_callback;
+static on_close_cb_t close_callback;
 
 static lv_obj_t * _menu = NULL;
+
 
 /**********************
  *      MACROS
@@ -41,7 +48,7 @@ static lv_obj_t * _menu = NULL;
 
 static void close_button_pressed(lv_event_t* e)
 {
-    printk("Close settings\n");
+    printf("Close settings\n");
     lv_obj_add_flag(_menu, LV_OBJ_FLAG_HIDDEN);
     lv_obj_remove_event_cb(_menu, close_button_pressed);
     close_callback();
@@ -142,45 +149,40 @@ static void test(lv_obj_t * root_item, lv_group_t * group)
     lv_obj_set_size(_menu, 180, 180);
     lv_obj_center(_menu);
     
+     // Page 1 content
     lv_obj_t * sub_1_page = lv_menu_page_create(_menu, "General Settings");
-
     cont = lv_menu_cont_create(sub_1_page);
     lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN);
     create_slider(cont, LV_SYMBOL_SETTINGS, "Brightness", 0, 150, 120);
     create_switch(cont, LV_SYMBOL_MUTE, "Vibration", false);
     create_slider(cont, LV_SYMBOL_SETTINGS, "Update rate", 0, 150, 50);
-    
 
+    // Page 2 content
     lv_obj_t * sub_2_page = lv_menu_page_create(_menu, "Page 2");
-
     cont = lv_menu_cont_create(sub_2_page);
-    label = lv_label_create(cont);
-    lv_label_set_text(label, "Hello, I am hiding here on page 2");
+    create_switch(cont, LV_SYMBOL_MUTE, "Vibration", false);
 
-    // Create a main page
+    // Main page
     _mainPage = lv_menu_page_create(_menu, NULL);
 
+    // Create a main page first item
     cont = lv_menu_cont_create(_mainPage);
     label = lv_label_create(cont);
-    lv_label_set_text(label, "Item 1");
+    lv_label_set_text(label, "First page");
     lv_menu_set_load_page_event(_menu, cont, sub_1_page);
-
     lv_group_add_obj(group, cont);
-    //lv_obj_clear_flag(cont, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(cont, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
 
+    // Create a main page second item
     cont = lv_menu_cont_create(_mainPage);
     label = lv_label_create(cont);
-    lv_label_set_text(label, "Item 2");
+    lv_label_set_text(label, "Page Two");
     lv_menu_set_load_page_event(_menu, cont, sub_2_page);
-
     lv_group_add_obj(group, cont);
     lv_obj_add_flag(cont, LV_OBJ_FLAG_CLICKABLE);
     lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_flag(cont, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
-
-    //cont = create_slider(_mainPage, "Kd", 0, 150, 120);
     
 
     lv_menu_set_page(_menu, _mainPage);
@@ -190,11 +192,79 @@ static void test(lv_obj_t * root_item, lv_group_t * group)
 
 static void slider_event_cb(lv_event_t * e)
 {
+    lv_settings_changed_cb_t callback;
+    lv_setting_value_t settings_value;
+    lv_event_code_t code = lv_event_get_code(e);
     lv_obj_t * slider = lv_event_get_target(e);
-    char buf[8];
-    lv_snprintf(buf, sizeof(buf), "%d%%", (int)lv_slider_get_value(slider));
-    //lv_label_set_text(slider_label, buf);
-    //lv_obj_align_to(slider_label, slider, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+    int32_t val = lv_slider_get_value(slider);
+
+    settings_value.item.slider = val;
+    settings_value.type = LV_SETTINGS_TYPE_SLIDER;
+    callback = (lv_settings_changed_cb_t)lv_event_get_user_data(e);
+    if (callback != NULL && code == LV_EVENT_VALUE_CHANGED) {
+        printk("Slider code: %d, val: %d\n", code, val);
+        //callback(settings_value, code == LV_EVENT_RELEASED);
+    }
+}
+
+void lv_settings_create(lv_settings_page_t* pages, uint8_t num_pages, const char* title, lv_group_t * input_group, on_close_cb_t close_cb)
+{
+    lv_obj_t* label;
+    lv_obj_t* sub_page;
+    lv_obj_t* cont;
+    lv_settings_item_t* item;
+    lv_obj_t* _mainPage;
+    lv_obj_t* obj;
+
+    if (_menu != NULL) {
+        lv_obj_clear_flag(_menu, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_event_cb(_menu, close_button_pressed, LV_EVENT_CLICKED, _menu);
+        return;
+    }
+
+    // Draw menu screen
+    _menu = lv_menu_create(lv_scr_act());
+    lv_menu_set_mode_root_back_btn(_menu, LV_MENU_ROOT_BACK_BTN_ENABLED);
+    lv_obj_add_event_cb(_menu, close_button_pressed, LV_EVENT_CLICKED, _menu);
+    lv_obj_set_size(_menu, 180, 180);
+    lv_obj_center(_menu);
+
+    // Main page
+    _mainPage = lv_menu_page_create(_menu, NULL);
+
+    for (int i = 0; i < num_pages; i++) {
+        sub_page = lv_menu_page_create(_menu, "Settings");
+        cont = lv_menu_cont_create(sub_page);
+        lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN);
+        for (int j = 0; j < pages[i].num_items; j++) {
+            item = &pages[i].items[j];
+            switch (item->type) {
+            case LV_SETTINGS_TYPE_LABEL:
+                create_text(cont, item->icon, item->item.label.name, LV_MENU_ITEM_BUILDER_VARIANT_1);
+                break;
+            case LV_SETTINGS_TYPE_SWITCH:
+                create_switch(cont, item->icon, item->item.sw.name, item->item.sw.inital_val);
+                break;
+            case LV_SETTINGS_TYPE_SLIDER:
+                obj = create_slider(cont, item->icon, item->item.slider.name, item->item.slider.min_val, item->item.slider.max_val, item->item.slider.inital_val);
+                lv_obj_add_event_cb(obj, slider_event_cb, LV_EVENT_ALL, item->change_callback);
+                break;
+            default:
+                printf("Unsupported settings type %d\n", item->type);
+            }
+        }
+        // Create a main page item
+        cont = lv_menu_cont_create(_mainPage);
+        label = lv_label_create(cont);
+        lv_label_set_text(label, pages[i].name);
+        lv_menu_set_load_page_event(_menu, cont, sub_page);
+        lv_group_add_obj(input_group, cont);
+        lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_add_flag(cont, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+    }
+
+    lv_menu_set_page(_menu, _mainPage);
+    lv_group_focus_next(input_group);
 }
 
 
@@ -204,7 +274,7 @@ static void slider_event_cb(lv_event_t * e)
  * `lv_settings_menu_item_t root_item = {.name = "Settings", .event_cb = root_event_cb};`
  * @return the created settings button
  */
-void lv_settings_create(lv_obj_t * root_item, lv_group_t * input_group, on_close_cb close_cb)
+void lv_settings_create_old(lv_obj_t * root_item, lv_group_t * input_group, on_close_cb_t close_cb)
 {
     close_callback = close_cb;
     test(root_item, input_group);

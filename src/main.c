@@ -17,6 +17,7 @@
 #include "watchface.h"
 #include "stats_page.h"
 #include <general_ui.h>
+#include <lv_settings.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
@@ -41,6 +42,94 @@ static void open_settings(void);
 
 static void enocoder_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * data);
 static void encoder_vibration(struct _lv_indev_drv_t * drv, uint8_t e);
+
+static void on_brightness_changed(lv_setting_value_t value, bool final);
+
+static lv_settings_item_t general_page_items[] = 
+{
+    {
+        .type = LV_SETTINGS_TYPE_SLIDER,
+        .icon = LV_SYMBOL_SETTINGS,
+        .change_callback = on_brightness_changed,
+        .item = {
+            .slider = {
+                .name = "Brightness",
+                .inital_val = 10,
+                .min_val = 0,
+                .max_val = 10,
+            }
+        }
+    },
+    {
+        .type = LV_SETTINGS_TYPE_SWITCH,
+        .icon = LV_SYMBOL_AUDIO,
+        .item = {
+            .sw = {
+                .name = "Vibrate on click",
+                .inital_val = true
+            }
+        }
+    },
+    {
+        .type = LV_SETTINGS_TYPE_SWITCH,
+        .icon = LV_SYMBOL_TINT,
+        .item = {
+            .sw = {
+                .name = "Display always on",
+                .inital_val = true
+            }
+        }
+    },
+};
+
+static lv_settings_item_t bluetooth_page_items[] = 
+{
+    {
+        .type = LV_SETTINGS_TYPE_SWITCH,
+        .icon = LV_SYMBOL_BLUETOOTH,
+        .item = {
+            .sw = {
+                .name = "Bluetooth",
+                .inital_val = true
+            }
+        }
+    },
+    {
+        .type = LV_SETTINGS_TYPE_SWITCH,
+        .icon = "",
+        .item = {
+            .sw = {
+                .name = "AoA",
+                .inital_val = false
+            }
+        }
+    },
+    {
+        .type = LV_SETTINGS_TYPE_SLIDER,
+        .icon = LV_SYMBOL_SHUFFLE,
+        .item = {
+            .slider = {
+                .name = "CTE Tx interval",
+                .inital_val = 100,
+                .min_val = 1,
+                .max_val = 10 // Map to array index or something, having 8-5000ms will make slider very slow
+            }
+        }
+    },
+};
+
+static lv_settings_page_t settings_menu[] = {
+   {
+       .name = "General",
+       .num_items = ARRAY_SIZE(general_page_items),
+       .items = general_page_items
+   },
+   {
+       .name = "Bluetooth",
+       .num_items = ARRAY_SIZE(bluetooth_page_items),
+       .items = bluetooth_page_items
+   },
+};
 
 static lv_group_t * input_group;
 
@@ -319,8 +408,8 @@ static void open_settings(void)
     buttons_allocated = true;
 
     //lv_group_remove_all_objs(input_group);
-
-    lv_settings_create(NULL, input_group, on_close_settings);
+    lv_settings_create(settings_menu, ARRAY_SIZE(settings_menu), "N/A", input_group, on_close_settings);
+    //lv_settings_create_old(NULL, input_group, on_close_settings);
     //lv_ex_settings_2(box);
 }
 
@@ -401,4 +490,9 @@ void encoder_vibration(struct _lv_indev_drv_t * drv, uint8_t e)
 	//if (e == LV_EVENT_FOCUSED) {
     //    
     //}
+}
+
+static void on_brightness_changed(lv_setting_value_t value, bool final)
+{
+    set_display_blk(value.item.slider);
 }
