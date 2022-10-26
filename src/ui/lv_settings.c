@@ -109,7 +109,7 @@ static lv_obj_t * create_switch(lv_obj_t * parent, const char * icon, const char
     lv_obj_t * sw = lv_switch_create(obj);
     lv_obj_add_state(sw, chk ? LV_STATE_CHECKED : 0);
 
-    return obj;
+    return sw;
 }
 
 static void slider_event_cb(lv_event_t * e);
@@ -129,7 +129,7 @@ static lv_obj_t * create_slider(lv_obj_t * parent, const char * icon, const char
         lv_obj_add_flag(slider, LV_OBJ_FLAG_FLEX_IN_NEW_TRACK);
     }
 
-    return obj;
+    return slider;
 }
 
 static void test(lv_obj_t * root_item, lv_group_t * group)
@@ -195,15 +195,32 @@ static void slider_event_cb(lv_event_t * e)
     lv_settings_changed_cb_t callback;
     lv_setting_value_t settings_value;
     lv_event_code_t code = lv_event_get_code(e);
-    lv_obj_t * slider = lv_event_get_target(e);
-    int32_t val = lv_slider_get_value(slider);
 
-    settings_value.item.slider = val;
+    settings_value.item.slider = lv_slider_get_value(lv_event_get_target(e));
     settings_value.type = LV_SETTINGS_TYPE_SLIDER;
     callback = (lv_settings_changed_cb_t)lv_event_get_user_data(e);
-    if (callback != NULL && code == LV_EVENT_VALUE_CHANGED) {
-        printk("Slider code: %d, val: %d\n", code, val);
-        //callback(settings_value, code == LV_EVENT_RELEASED);
+
+    if ((callback != NULL) && ((code == LV_EVENT_VALUE_CHANGED) || (code == LV_EVENT_RELEASED))) {
+        callback(settings_value, code == LV_EVENT_RELEASED);
+    }
+}
+
+static void switch_event_cb(lv_event_t * e)
+{
+    lv_settings_changed_cb_t callback;
+    lv_setting_value_t settings_value;
+    lv_event_code_t code = lv_event_get_code(e);
+    bool val = lv_obj_has_state(lv_event_get_target(e), LV_STATE_CHECKED);
+
+    settings_value.item.sw = val;
+    settings_value.type = LV_SETTINGS_TYPE_SWITCH;
+    callback = (lv_settings_changed_cb_t)lv_event_get_user_data(e);
+    if (code == LV_EVENT_VALUE_CHANGED) {
+        printk("Switch: %d\n", val);
+    }
+
+    if ((callback != NULL) && ((code == LV_EVENT_VALUE_CHANGED) || (code == LV_EVENT_RELEASED))) {
+        callback(settings_value, code == LV_EVENT_RELEASED);
     }
 }
 
@@ -243,7 +260,8 @@ void lv_settings_create(lv_settings_page_t* pages, uint8_t num_pages, const char
                 create_text(cont, item->icon, item->item.label.name, LV_MENU_ITEM_BUILDER_VARIANT_1);
                 break;
             case LV_SETTINGS_TYPE_SWITCH:
-                create_switch(cont, item->icon, item->item.sw.name, item->item.sw.inital_val);
+                obj = create_switch(cont, item->icon, item->item.sw.name, item->item.sw.inital_val);
+                lv_obj_add_event_cb(obj, switch_event_cb, LV_EVENT_ALL, item->change_callback);
                 break;
             case LV_SETTINGS_TYPE_SLIDER:
                 obj = create_slider(cont, item->icon, item->item.slider.name, item->item.slider.min_val, item->item.slider.max_val, item->item.slider.inital_val);

@@ -16,8 +16,10 @@
 #include <lvgl.h>
 #include "watchface.h"
 #include "stats_page.h"
+#include "plot_page.h"
 #include <general_ui.h>
 #include <lv_settings.h>
+#include <heart_rate_sensor.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
@@ -44,6 +46,7 @@ static void enocoder_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * 
 static void encoder_vibration(struct _lv_indev_drv_t * drv, uint8_t e);
 
 static void on_brightness_changed(lv_setting_value_t value, bool final);
+static void on_display_always_on_changed(lv_setting_value_t value, bool final);
 
 static lv_settings_item_t general_page_items[] = 
 {
@@ -73,6 +76,7 @@ static lv_settings_item_t general_page_items[] =
     {
         .type = LV_SETTINGS_TYPE_SWITCH,
         .icon = LV_SYMBOL_TINT,
+        .change_callback = on_display_always_on_changed,
         .item = {
             .sw = {
                 .name = "Display always on",
@@ -138,10 +142,11 @@ static bool buttons_allocated = false;
 
 void main(void)
 {
-    int rc;
     uint32_t count = 0U;
     lv_indev_drv_t enc_drv;
     lv_indev_t * enc_indev;
+    plot_page_led_values_t hr_sample;
+    uint32_t render_start_ms;
     const struct device *display_dev;
     
     display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
@@ -150,7 +155,10 @@ void main(void)
         return;
     }
 
-    watchface_init();
+    heart_rate_sensor_init();
+
+    //watchface_init();
+    plot_page_init();
     filesystem_test();
     //bluetooth_init();
     clock_init(clock_handler);
@@ -171,7 +179,8 @@ void main(void)
     lv_group_set_default(input_group);
     lv_indev_set_group(enc_indev, input_group);
 
-    watchface_show();
+    plot_page_show();
+    //watchface_show();
     //open_settings();
     
     while (1) {
@@ -180,15 +189,21 @@ void main(void)
             watchface_set_hrm(count % 220);
             watchface_set_step(count % 20000);
         }
-        if ((count % 10) == 0U) {
+        if ((count % 100) == 0U) {
             test_lis_read();
+            heart_rate_sensor_fetch(&hr_sample);
+            plot_page_led_values(hr_sample.red, hr_sample.green, hr_sample.ir);
         }
 
         /* Tell LVGL how many milliseconds has elapsed */
-        lv_task_handler();
-        lv_timer_handler();
-        k_sleep(K_MSEC(10));
-        ++count;
+        if ((count % 33) == 0U) {
+            render_start_ms = k_uptime_get_32();
+            lv_task_handler();
+            printk("Render: %d\n", k_uptime_get_32() - render_start_ms);
+        }
+        count++;
+        k_msleep(1);
+        //printk("c: %d\n", count);
     }
     
 }
@@ -277,13 +292,14 @@ static void test_lis_read(void)
                 "check the driver initialization logs for errors.",
                 sensor->name);
     }
+
     odr.val1 = 12; // 12HZ LP
     odr.val2 = 0;
     int err = sensor_attr_set(sensor, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY, &odr);
     if (err) {
-        LOG_INF("sensor_attr_set fail: %d", err);
+        LOG_DBG("sensor_attr_set fail: %d", err);
     } else {
-        LOG_INF("sensor_attr_set Success");
+        LOG_DBG("sensor_attr_set Success");
     }
 
     err = sensor_sample_fetch(sensor);
@@ -389,7 +405,8 @@ static lv_obj_t * add_title(const char * txt, lv_obj_t * src){
 static void on_close_settings(void)
 {
     printk("on_close_settings\n");
-    watchface_show();
+    //watchface_show();
+    plot_page_show();
     buttons_allocated = false;
 }
 
@@ -431,9 +448,11 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
         show_watchface = !show_watchface;
         if (show_watchface) {
             states_page_remove();
-            watchface_show();
+            //watchface_show();
+            plot_page_show();
         } else {
-            watchface_remove();
+            //watchface_remove();
+            plot_page_remove();
             states_page_show();
         }
         LOG_DBG("BUTTONS_SHORT_PRESS");
@@ -441,7 +460,8 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
         LOG_ERR("BUTTONS_LONG_PRESS, open settings");
         if (id == BUTTON_2) {
             if (show_watchface) {
-                watchface_remove();
+                //watchface_remove();
+                plot_page_remove();
                 open_settings();
             }
         }
@@ -494,5 +514,15 @@ void encoder_vibration(struct _lv_indev_drv_t * drv, uint8_t e)
 
 static void on_brightness_changed(lv_setting_value_t value, bool final)
 {
-    set_display_blk(value.item.slider);
+    // Slider have values 0-10 hence multiply with 10 to get brightness in percent
+    set_display_blk(value.item.slider * 10);
+}
+
+static void on_display_always_on_changed(lv_setting_value_t value, bool final)
+{
+    if (value.item.sw) {
+        set_display_blk(100);
+    } else {
+        set_display_blk(10);
+    }
 }
