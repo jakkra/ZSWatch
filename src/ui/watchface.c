@@ -1,5 +1,6 @@
 #include <watchface.h>
 #include <lvgl.h>
+#include <logging/log.h>
 
 #define SMALL_WATCHFACE_CENTER_OFFSET 37
 
@@ -170,13 +171,13 @@ void watchface_remove(void)
     //lv_obj_del(root_page);
 }
 
-void watchface_set_battery_percent(int32_t value)
+void watchface_set_battery_percent(int32_t percent, int32_t value)
 {
     if (!root_page) return;
     char buf[5];
     memset(buf, 0, sizeof(buf));
-    snprintf(buf, sizeof(buf), "%d%%", value);
-    lv_arc_set_value(battery_arc, value);
+    snprintf(buf, sizeof(buf), "%dmV", value);
+    lv_arc_set_value(battery_arc, percent);
     lv_label_set_text(battery_label, buf);
     lv_obj_align_to(battery_label, battery_arc, LV_ALIGN_CENTER, 0, -9);
 }
@@ -206,11 +207,11 @@ void watchface_set_step(int32_t value)
 void watchface_set_value_minute(int32_t value)
 {
     if (!root_page) return;
-    lv_meter_set_indicator_end_value(clock_meter, indic_min, value);
+    lv_meter_set_indicator_end_value(clock_meter, indic_min, (value + 15) % 60);
 }
 
 void watchface_set_value_hour(int32_t value)
 {
     if (!root_page) return;
-    lv_meter_set_indicator_end_value(clock_meter, indic_hour, value);
+    lv_meter_set_indicator_end_value(clock_meter, indic_hour, (value + 3) % 12);
 }

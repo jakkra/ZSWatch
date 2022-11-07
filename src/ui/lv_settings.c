@@ -215,9 +215,6 @@ static void switch_event_cb(lv_event_t * e)
     settings_value.item.sw = val;
     settings_value.type = LV_SETTINGS_TYPE_SWITCH;
     callback = (lv_settings_changed_cb_t)lv_event_get_user_data(e);
-    if (code == LV_EVENT_VALUE_CHANGED) {
-        printk("Switch: %d\n", val);
-    }
 
     if ((callback != NULL) && ((code == LV_EVENT_VALUE_CHANGED) || (code == LV_EVENT_RELEASED))) {
         callback(settings_value, code == LV_EVENT_RELEASED);

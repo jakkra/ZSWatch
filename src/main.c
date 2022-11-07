@@ -1,5 +1,6 @@
 #include <device.h>
 #include <drivers/display.h>
+#include <zephyr/sys/reboot.h>
 #include <stdio.h>
 #include <string.h>
 #include <zephyr.h>
@@ -9,6 +10,10 @@
 #include <hr_service.h>
 #include <drivers/sensor.h>
 #include <zephyr/drivers/pwm.h>
+#include <zephyr/bluetooth/services/hrs.h>
+#include <zephyr/bluetooth/services/bas.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/settings/settings.h>
 #include <drivers/led.h>
 #include "lis2ds12_reg.h"
 #include <filesystem.h>
@@ -20,15 +25,33 @@
 #include <general_ui.h>
 #include <lv_settings.h>
 #include <heart_rate_sensor.h>
+#include <ble_aoa.h>
+#include <sys/time.h>
+#include <ram_retention_storage.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(app);
+
+#define RENDER_INTERVAL_LVGL (1000 / 500) // 500 Hz
+#define ACCEL_INTERVAL (1000 / 10) // 10 Hz
+#define BATTERY_INTERVAL (1000) // 1 Hz
+
+#define COMPUTE_BUILD_HOUR ((__TIME__[0] - '0') * 10 + __TIME__[1] - '0')
+#define COMPUTE_BUILD_MIN  ((__TIME__[3] - '0') * 10 + __TIME__[4] - '0')
+#define COMPUTE_BUILD_SEC  ((__TIME__[6] - '0') * 10 + __TIME__[7] - '0')
+
 const struct device *ds = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+
+static bool do_open_settings = false;
+
+static bool update_clock = false;
+
+static void enable_bluetoth(void);
 
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
 
-static void clock_handler(int hour, int minute, int second);
+static void clock_handler(struct bt_cts_exact_time_256* time);
 
 static void test_battery_read(void);
 static void test_lis_read(void);
@@ -41,12 +64,13 @@ static void add_battery_percent_text(void);
 static void set_vibrator(uint8_t percent);
 static void set_display_blk(uint8_t percent);
 static void open_settings(void);
-
+static bool load_retention_ram(void);
 static void enocoder_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * data);
 static void encoder_vibration(struct _lv_indev_drv_t * drv, uint8_t e);
 
 static void on_brightness_changed(lv_setting_value_t value, bool final);
 static void on_display_always_on_changed(lv_setting_value_t value, bool final);
+static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
 
 static lv_settings_item_t general_page_items[] = 
 {
@@ -91,6 +115,7 @@ static lv_settings_item_t bluetooth_page_items[] =
     {
         .type = LV_SETTINGS_TYPE_SWITCH,
         .icon = LV_SYMBOL_BLUETOOTH,
+        .change_callback = on_aoa_enable_changed,
         .item = {
             .sw = {
                 .name = "Bluetooth",
@@ -147,6 +172,7 @@ void main(void)
     lv_indev_t * enc_indev;
     plot_page_led_values_t hr_sample;
     uint32_t render_start_ms;
+    bool retention_ok;
     const struct device *display_dev;
     
     display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
@@ -154,14 +180,18 @@ void main(void)
         LOG_ERR("Device not ready, aborting test");
         return;
     }
-
+    k_msleep(500);
+    load_retention_ram();
+    k_msleep(500);
     heart_rate_sensor_init();
 
-    //watchface_init();
-    plot_page_init();
+    watchface_init();
+    //plot_page_init();
     filesystem_test();
-    //bluetooth_init();
-    clock_init(clock_handler);
+    enable_bluetoth();
+
+    clock_init(clock_handler, &retained.current_time);
+
     buttonsInit(&onButtonPressCb);
 
     gpio_debug_test(DRV_VIB_EN, 0);
@@ -179,39 +209,81 @@ void main(void)
     lv_group_set_default(input_group);
     lv_indev_set_group(enc_indev, input_group);
 
-    plot_page_show();
-    //watchface_show();
+    //plot_page_show();
+    watchface_show();
     //open_settings();
-    
+    uint32_t last_render = 0;
+    uint32_t last_accel = 0;
+    uint32_t last_battery = 0;
+    uint32_t now;
+    bool showed = false;
     while (1) {
-        if ((count % 100) == 0U) {
+        now = k_uptime_get_32();
+        if ((now - last_battery) >= BATTERY_INTERVAL) {
             test_battery_read();
+            last_battery = k_uptime_get_32();
+
+            bt_hrs_notify(count % 220);
             watchface_set_hrm(count % 220);
-            watchface_set_step(count % 20000);
-        }
-        if ((count % 100) == 0U) {
-            test_lis_read();
-            heart_rate_sensor_fetch(&hr_sample);
-            plot_page_led_values(hr_sample.red, hr_sample.green, hr_sample.ir);
+            watchface_set_step(count * 10 % 20000);
+            //heart_rate_sensor_fetch(&hr_sample);
+
         }
 
-        /* Tell LVGL how many milliseconds has elapsed */
-        if ((count % 33) == 0U) {
-            render_start_ms = k_uptime_get_32();
+        if ((now - last_accel) >= ACCEL_INTERVAL) {
+            test_lis_read();
+            last_accel = k_uptime_get_32();
+            //plot_page_led_values(hr_sample.red, hr_sample.green, hr_sample.ir);
+        }
+
+        if ((now - last_render) >= RENDER_INTERVAL_LVGL) {
             lv_task_handler();
-            printk("Render: %d\n", k_uptime_get_32() - render_start_ms);
+            last_render = k_uptime_get_32();
+            //printk("Render: %d\n", last_render - now);
+        }
+        if (do_open_settings) {
+            //watchface_remove();
+            //plot_page_remove();
+            open_settings();
+            do_open_settings = false;
+        }
+
+        if (update_clock) {
+            LOG_PRINTK("%d, %d, %d\n", retained.current_time.hours, retained.current_time.minutes, retained.current_time.seconds);
+            watchface_set_value_minute(retained.current_time.minutes);
+            watchface_set_value_hour(retained.current_time.hours % 12);
+            // Store current time
+            retained_update();
+            update_clock = false;
         }
         count++;
-        k_msleep(1);
-        //printk("c: %d\n", count);
+        k_msleep(10);
+
+        if (!showed) {
+            //open_settings();
+            showed = true;
+        }
     }
-    
 }
 
-static void clock_handler(int hour, int minute, int second)
+static void enable_bluetoth(void)
 {
-    watchface_set_value_minute(minute);
-    watchface_set_value_hour(minute % 12);
+    int err;
+
+    err = bt_enable(NULL);
+    __ASSERT(err == 0,"Failed to enable Bluetooth, err: %d", err);
+
+    settings_load();
+
+    ble_hr_init();
+    
+    //bleAoaInit();
+}
+
+static void clock_handler(struct bt_cts_exact_time_256* time)
+{
+    memcpy(&retained.current_time, time, sizeof(struct bt_cts_exact_time_256));
+    update_clock = true;
 }
 
 
@@ -272,7 +344,7 @@ static void test_battery_read(void)
 
     unsigned int batt_pptt = battery_level_pptt(batt_mV, levels);
 
-    //printk("[%s]: %d mV; %u pptt\n", now_str(), batt_mV, batt_pptt);
+    printk("[%s]: %d mV; %u pptt\n", now_str(), batt_mV, batt_pptt);
 
     rc = battery_measure_enable(false);
     if (rc != 0) {
@@ -280,7 +352,8 @@ static void test_battery_read(void)
         return;
     }
 
-    watchface_set_battery_percent(batt_pptt / 100);
+    watchface_set_battery_percent(batt_pptt / 100, batt_mV);
+    bt_bas_set_battery_level(batt_pptt / 100);
 }
 
 static void test_lis_read(void)
@@ -392,6 +465,22 @@ void test_max_30101(void)
 
 }
 
+static bool load_retention_ram(void)
+{
+    bool retained_ok = retained_validate();
+    //memset(&retained, 0, sizeof(retained));
+    /* Increment for this boot attempt and update. */
+    retained.boots += 1;
+    retained_update();
+
+    printk("Retained data: %s\n", retained_ok ? "valid" : "INVALID");
+    printk("Boot count: %u\n", retained.boots);
+    printk("uptime_latest: %" PRIu64 "\n", retained.uptime_latest);
+    printk("Active Ticks: %" PRIu64 "\n", retained.uptime_sum);
+
+    return retained_ok;
+}
+
 #define REFLOW_OVEN_TITLE_PAD 10
 
 static lv_obj_t * add_title(const char * txt, lv_obj_t * src){
@@ -406,7 +495,7 @@ static void on_close_settings(void)
 {
     printk("on_close_settings\n");
     //watchface_show();
-    plot_page_show();
+    //plot_page_show();
     buttons_allocated = false;
 }
 
@@ -448,11 +537,11 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
         show_watchface = !show_watchface;
         if (show_watchface) {
             states_page_remove();
-            //watchface_show();
-            plot_page_show();
+            watchface_show();
+            //plot_page_show();
         } else {
-            //watchface_remove();
-            plot_page_remove();
+            watchface_remove();
+            //plot_page_remove();
             states_page_show();
         }
         LOG_DBG("BUTTONS_SHORT_PRESS");
@@ -460,10 +549,15 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
         LOG_ERR("BUTTONS_LONG_PRESS, open settings");
         if (id == BUTTON_2) {
             if (show_watchface) {
+                do_open_settings = true;
                 //watchface_remove();
-                plot_page_remove();
-                open_settings();
+                //plot_page_remove();
+                //open_settings();
             }
+        } else if (id == BUTTON_3) {
+            sys_reboot(SYS_REBOOT_COLD);
+            retained.off_count += 1;
+            retained_update();
         }
     }
 }
@@ -507,9 +601,14 @@ static void enocoder_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * 
 void encoder_vibration(struct _lv_indev_drv_t * drv, uint8_t e)
 {
     // TODO Vibrate motor for example!
-	//if (e == LV_EVENT_FOCUSED) {
-    //    
-    //}
+	if (e == LV_EVENT_PRESSED) {
+        printk("Clicked\n");
+        gpio_debug_test(DRV_VIB_EN, 1);
+        set_vibrator(65);
+        k_msleep(250);
+        set_vibrator(65);
+        gpio_debug_test(DRV_VIB_EN, 0);
+    }
 }
 
 static void on_brightness_changed(lv_setting_value_t value, bool final)
@@ -524,5 +623,14 @@ static void on_display_always_on_changed(lv_setting_value_t value, bool final)
         set_display_blk(100);
     } else {
         set_display_blk(10);
+    }
+}
+
+static void on_aoa_enable_changed(lv_setting_value_t value, bool final)
+{
+    if (value.item.sw) {
+        bleAoaAdvertise(100, 100, 1);
+    } else {
+        bleAoaAdvertise(100, 100, 0);
     }
 }

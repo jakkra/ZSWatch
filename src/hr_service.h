@@ -1,3 +1,3 @@
 #pragma once
 
-void bluetooth_init(void);
+void ble_hr_init(void);

@@ -5939,7 +5939,7 @@
     (property "Value" "Conn_01x01_Male" (id 1) (at 34.29 37.4649 90)
       (effects (font (size 1.27 1.27)) (justify left) hide)
     )
-    (property "Footprint" "TestPoint:TestPoint_Pad_1.5x1.5mm" (id 2) (at 33.02 35.56 0)
+    (property "Footprint" "TestPoint:TestPoint_THTPad_D1.0mm_Drill0.5mm" (id 2) (at 33.02 35.56 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 33.02 35.56 0)
@@ -6063,7 +6063,7 @@
     (property "Value" "MR" (id 1) (at 140.825 175.3936 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm" (id 2) (at 147.32 180.34 0)
+    (property "Footprint" "TestPoint:TestPoint_THTPad_D1.0mm_Drill0.5mm" (id 2) (at 147.32 180.34 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 147.32 180.34 0)
@@ -6909,7 +6909,7 @@
     (property "Value" "MR" (id 1) (at 133.205 175.3936 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm" (id 2) (at 139.7 180.34 0)
+    (property "Footprint" "TestPoint:TestPoint_THTPad_D1.0mm_Drill0.5mm" (id 2) (at 139.7 180.34 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 139.7 180.34 0)
@@ -7136,7 +7136,7 @@
     (property "Value" "1V8" (id 1) (at 259.08 38.1 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm" (id 2) (at 266.7 43.18 0)
+    (property "Footprint" "TestPoint:TestPoint_THTPad_D1.0mm_Drill0.5mm" (id 2) (at 266.7 43.18 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 266.7 43.18 0)
@@ -7562,7 +7562,7 @@
     (property "Value" "MR" (id 1) (at 125.585 175.3936 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
-    (property "Footprint" "TestPoint:TestPoint_Pad_D1.0mm" (id 2) (at 132.08 180.34 0)
+    (property "Footprint" "TestPoint:TestPoint_THTPad_D1.0mm_Drill0.5mm" (id 2) (at 132.08 180.34 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 132.08 180.34 0)
@@ -7812,7 +7812,7 @@
   (symbol (lib_id "user_library:NINA-B406") (at -153.9421 180.655 0) (unit 1)
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid bc223fa1-6d6e-482b-8f2d-79b246ea5c7d)
-    (property "Reference" "U?" (id 0) (at -116.0833 167.5309 0)
+    (property "Reference" "U10" (id 0) (at -116.0833 167.5309 0)
       (effects (font (size 1.524 1.524)) (justify left))
     )
     (property "Value" "NINA-B406" (id 1) (at -116.0833 171.3409 0)
@@ -8204,7 +8204,7 @@
     (property "Value" "Conn_01x01_Male" (id 1) (at 31.75 37.4649 90)
       (effects (font (size 1.27 1.27)) (justify left) hide)
     )
-    (property "Footprint" "TestPoint:TestPoint_Pad_D1.5mm" (id 2) (at 30.48 35.56 0)
+    (property "Footprint" "TestPoint:TestPoint_THTPad_D1.0mm_Drill0.5mm" (id 2) (at 30.48 35.56 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (id 3) (at 30.48 35.56 0)
@@ -8741,10 +8741,10 @@
       (reference "C19") (unit 1) (value "4.7uF") (footprint "Capacitor_SMD:C_0603_1608Metric_Pad1.08x0.95mm_HandSolder")
     )
     (path "/de456328-f504-4677-938f-38bfdca72aa8"
-      (reference "CHG+1") (unit 1) (value "Conn_01x01_Male") (footprint "TestPoint:TestPoint_Pad_D1.5mm")
+      (reference "CHG+1") (unit 1) (value "Conn_01x01_Male") (footprint "TestPoint:TestPoint_THTPad_D1.0mm_Drill0.5mm")
     )
     (path "/108f71b5-6a25-47e4-8610-963b7bfe276c"
-      (reference "CHG-1") (unit 1) (value "Conn_01x01_Male") (footprint "TestPoint:TestPoint_Pad_1.5x1.5mm")
+      (reference "CHG-1") (unit 1) (value "Conn_01x01_Male") (footprint "TestPoint:TestPoint_THTPad_D1.0mm_Drill0.5mm")
     )
     (path "/d11282ce-8047-4886-8af8-708426f64b4b"
       (reference "D1") (unit 1) (value "1PS79SB30,135") (footprint "user_library:SOD523")
@@ -8858,13 +8858,13 @@
       (reference "TP1") (unit 1) (value "CHG") (footprint "TestPoint:TestPoint_Pad_D1.0mm")
     )
     (path "/687ce67f-1f86-4d71-82bb-8f0aec146ef8"
-      (reference "TP2") (unit 1) (value "MR") (footprint "TestPoint:TestPoint_Pad_D1.0mm")
+      (reference "TP2") (unit 1) (value "MR") (footprint "TestPoint:TestPoint_THTPad_D1.0mm_Drill0.5mm")
     )
     (path "/f6304d4c-731d-49c2-a494-dc5b8b3a7156"
       (reference "TP3") (unit 1) (value "BAT_MON") (footprint "TestPoint:TestPoint_Pad_D1.0mm")
     )
     (path "/1b717e34-7b2a-413d-beb9-dece96db388a"
-      (reference "TP4") (unit 1) (value "MR") (footprint "TestPoint:TestPoint_Pad_D1.0mm")
+      (reference "TP4") (unit 1) (value "MR") (footprint "TestPoint:TestPoint_THTPad_D1.0mm_Drill0.5mm")
     )
     (path "/0d429f8b-e614-4807-b8b7-ade9fbecccf8"
       (reference "TP5") (unit 1) (value "V_BAT") (footprint "TestPoint:TestPoint_Pad_D1.0mm")
@@ -8876,7 +8876,7 @@
       (reference "TP7") (unit 1) (value "RESET") (footprint "TestPoint:TestPoint_Pad_D1.0mm")
     )
     (path "/7d3d73ab-e60f-4595-b58d-3a77b4c7c767"
-      (reference "TP8") (unit 1) (value "1V8") (footprint "TestPoint:TestPoint_Pad_D1.0mm")
+      (reference "TP8") (unit 1) (value "1V8") (footprint "TestPoint:TestPoint_THTPad_D1.0mm_Drill0.5mm")
     )
     (path "/0fe871c1-4641-46c3-a67b-3235850e9592"
       (reference "TP9") (unit 1) (value "MR") (footprint "TestPoint:TestPoint_Pad_D1.0mm")
@@ -8888,7 +8888,7 @@
       (reference "TP11") (unit 1) (value "MR") (footprint "TestPoint:TestPoint_Pad_D1.0mm")
     )
     (path "/a72e2a2f-0ae6-4e4a-b949-4618826dfa2b"
-      (reference "TP12") (unit 1) (value "MR") (footprint "TestPoint:TestPoint_Pad_D1.0mm")
+      (reference "TP12") (unit 1) (value "MR") (footprint "TestPoint:TestPoint_THTPad_D1.0mm_Drill0.5mm")
     )
     (path "/ac0310d6-e2c2-402b-85e7-52ac9f2a21a1"
       (reference "TP13") (unit 1) (value "MR") (footprint "TestPoint:TestPoint_Pad_D1.0mm")
@@ -8951,7 +8951,7 @@
       (reference "U9") (unit 1) (value "GC9A01") (footprint "user_library:GC9A01_disp")
     )
     (path "/bc223fa1-6d6e-482b-8f2d-79b246ea5c7d"
-      (reference "U?") (unit 1) (value "NINA-B406") (footprint "user_library:NINA_B406")
+      (reference "U10") (unit 1) (value "NINA-B406") (footprint "user_library:NINA_B406")
     )
   )
 )

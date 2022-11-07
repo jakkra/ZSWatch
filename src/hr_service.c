@@ -30,6 +30,9 @@ struct k_thread bt_thread_data;
 static void bt_thread(void * arg1, void * arg2, void * arg3);
 
 static const struct bt_data ad[] = {
+	BT_DATA_BYTES(BT_DATA_GAP_APPEARANCE,
+		      (CONFIG_BT_DEVICE_APPEARANCE >> 0) & 0xff,
+		      (CONFIG_BT_DEVICE_APPEARANCE >> 8) & 0xff),
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL,
 		      BT_UUID_16_ENCODE(BT_UUID_HRS_VAL),
@@ -73,19 +76,6 @@ static void bt_ready(void)
 	printk("Advertising successfully started\n");
 }
 
-static void auth_cancel(struct bt_conn *conn)
-{
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Pairing cancelled: %s\n", addr);
-}
-
-static struct bt_conn_auth_cb auth_cb_display = {
-	.cancel = auth_cancel,
-};
-
 static void bas_notify(void)
 {
 	uint8_t battery_level = bt_bas_get_battery_level();
@@ -96,7 +86,7 @@ static void bas_notify(void)
 		battery_level = 100U;
 	}
 
-	bt_bas_set_battery_level(battery_level);
+	//bt_bas_set_battery_level(battery_level);
 }
 
 static void hrs_notify(void)
@@ -109,7 +99,7 @@ static void hrs_notify(void)
 		heartrate = 90U;
 	}
 
-	bt_hrs_notify(heartrate);
+	//bt_hrs_notify(heartrate);
 }
 
 static void bt_thread(void * arg1, void * arg2, void * arg3)
@@ -125,21 +115,9 @@ static void bt_thread(void * arg1, void * arg2, void * arg3)
 	}
 }
 
-void bluetooth_init(void)
+void ble_hr_init(void)
 {
-	int err;
-
-	err = bt_enable(NULL);
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
-
-	settings_load();
-
 	bt_ready();
-
-	bt_conn_auth_cb_register(&auth_cb_display);
 
     k_thread_create(&bt_thread_data, thread_stack,
         K_THREAD_STACK_SIZEOF(thread_stack),
