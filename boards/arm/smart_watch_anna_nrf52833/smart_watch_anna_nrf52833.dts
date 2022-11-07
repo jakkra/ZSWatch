@@ -267,4 +267,13 @@
 	};
 };
 
-
+// Zephyr gets mad if this is not set, even thought we don't do any switching
+&radio {
+	status = "okay";
+	dfe-antenna-num = <10>;
+	dfe-pdu-antenna = <0x1>;
+	dfegpio0-gpios = <&gpio0 3 0>;
+	dfegpio1-gpios = <&gpio0 4 0>;
+	dfegpio2-gpios = <&gpio0 28 0>;
+	dfegpio3-gpios = <&gpio0 29 0>;
+};

@@ -277,7 +277,8 @@ static void enable_bluetoth(void)
 
     ble_hr_init();
     
-    //bleAoaInit();
+    __ASSERT_NO_MSG(bleAoaInit());
+    __ASSERT_NO_MSG(bleAoaAdvertise(250, 250, true));
 }
 
 static void clock_handler(struct bt_cts_exact_time_256* time)
