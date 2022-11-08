@@ -19,6 +19,22 @@ static lv_obj_t * hrm_arc;
 static lv_obj_t * step_label;
 static lv_obj_t * step_arc;
 
+static void tick_draw_event_cb(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    
+    if(code == LV_EVENT_DRAW_PART_BEGIN) {
+        lv_obj_draw_part_dsc_t * dsc = lv_event_get_param(e);
+        if (dsc->type == LV_METER_DRAW_PART_TICK && dsc->text != NULL) {
+            if (dsc->value > 0) {
+                dsc->text_length = snprintf(dsc->text, 16, "%d", dsc->value / 5);
+            } else {
+                dsc->text[0] = '\0';
+                dsc->text_length = 0;
+            }
+        }
+    }
+}
 
 static void add_clock(lv_obj_t* parent)
 {
@@ -38,10 +54,13 @@ static void add_clock(lv_obj_t* parent)
 
     /*Create another scale for the hours. It's only visual and contains only major ticks*/
     lv_meter_scale_t * scale_hour = lv_meter_add_scale(clock_meter);
-    lv_meter_set_scale_ticks(clock_meter, scale_hour, 12, 0, 0, lv_palette_main(LV_PALETTE_GREY));               /*12 ticks*/
-    lv_meter_set_scale_major_ticks(clock_meter, scale_hour, 1, 2, 20, lv_color_black(), 10);    /*Every tick is major*/
-    lv_meter_set_scale_range(clock_meter, scale_hour, 1, 12, 330, 300);       /*[1..12] values in an almost full circle*/
-    
+    //lv_meter_set_scale_ticks(clock_meter, scale_hour, 12, 0, 0, lv_palette_main(LV_PALETTE_GREY));               /*12 ticks*/
+    //lv_meter_set_scale_range(clock_meter, scale_hour, 1, 12, 330, 300);       /*[1..12] values in an almost full circle*/
+    lv_meter_set_scale_ticks(clock_meter, scale_hour, 61, 1, 10, lv_palette_main(LV_PALETTE_DEEP_ORANGE));
+    lv_meter_set_scale_range(clock_meter, scale_hour, 0, 60, 360, 270);
+    lv_meter_set_scale_major_ticks(clock_meter, scale_hour, 5, 2, 20, lv_color_black(), 10);    /*Every tick is major*/
+
+    lv_obj_add_event_cb(clock_meter, tick_draw_event_cb, LV_EVENT_DRAW_PART_BEGIN, NULL);
     lv_obj_remove_style(clock_meter, NULL, LV_PART_INDICATOR);
     
     LV_IMG_DECLARE(minute_hand)
@@ -204,14 +223,17 @@ void watchface_set_step(int32_t value)
     lv_obj_align_to(step_label, step_arc, LV_ALIGN_CENTER, 0, -9);
 }
 
-void watchface_set_value_minute(int32_t value)
+void watchface_set_time(int32_t hour, int32_t minute)
 {
     if (!root_page) return;
-    lv_meter_set_indicator_end_value(clock_meter, indic_min, (value + 15) % 60);
-}
-
-void watchface_set_value_hour(int32_t value)
-{
-    if (!root_page) return;
-    lv_meter_set_indicator_end_value(clock_meter, indic_hour, (value + 3) % 12);
+    hour = (hour + 3) % 12;
+    int hour_offset = hour * 5;
+    hour_offset += minute / 10;
+    if (hour_offset >= 60) {
+        hour_offset = 60;
+    }
+    minute = (minute + 15) % 60;
+    //LOG_PRINTK("Offset: %d\n", hour_offset);
+    lv_meter_set_indicator_end_value(clock_meter, indic_min, minute);
+    lv_meter_set_indicator_end_value(clock_meter, indic_hour, hour_offset);
 }

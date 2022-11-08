@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
+#include <logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -68,49 +68,49 @@ struct bt_cts_exact_time_256 clock_current_time;
  
 static void current_time_print(struct bt_cts_current_time *current_time)
 {
-	printk("\nCurrent Time:\n");
-	printk("\nDate:\n");
+	LOG_PRINTK("\nCurrent Time:\n");
+	LOG_PRINTK("\nDate:\n");
 
-	printk("\tDay of week   %s\n",
+	LOG_PRINTK("\tDay of week   %s\n",
 	       day_of_week[current_time->exact_time_256.day_of_week]);
 
 	if (current_time->exact_time_256.day == 0) {
-		printk("\tDay of month  Unknown\n");
+		LOG_PRINTK("\tDay of month  Unknown\n");
 	} else {
-		printk("\tDay of month  %u\n",
+		LOG_PRINTK("\tDay of month  %u\n",
 		       current_time->exact_time_256.day);
 	}
 
-	printk("\tMonth of year %s\n",
+	LOG_PRINTK("\tMonth of year %s\n",
 	       month_of_year[current_time->exact_time_256.month]);
 	if (current_time->exact_time_256.year == 0) {
-		printk("\tYear          Unknown\n");
+		LOG_PRINTK("\tYear          Unknown\n");
 	} else {
-		printk("\tYear          %u\n",
+		LOG_PRINTK("\tYear          %u\n",
 		       current_time->exact_time_256.year);
 	}
-	printk("\nTime:\n");
-	printk("\tHours     %u\n", current_time->exact_time_256.hours);
-	printk("\tMinutes   %u\n", current_time->exact_time_256.minutes);
-	printk("\tSeconds   %u\n", current_time->exact_time_256.seconds);
-	printk("\tFractions %u/256 of a second\n",
+	LOG_PRINTK("\nTime:\n");
+	LOG_PRINTK("\tHours     %u\n", current_time->exact_time_256.hours);
+	LOG_PRINTK("\tMinutes   %u\n", current_time->exact_time_256.minutes);
+	LOG_PRINTK("\tSeconds   %u\n", current_time->exact_time_256.seconds);
+	LOG_PRINTK("\tFractions %u/256 of a second\n",
 	       current_time->exact_time_256.fractions256);
 
-	printk("\nAdjust reason:\n");
-	printk("\tDaylight savings %x\n",
+	LOG_PRINTK("\nAdjust reason:\n");
+	LOG_PRINTK("\tDaylight savings %x\n",
 	       current_time->adjust_reason.change_of_daylight_savings_time);
-	printk("\tTime zone        %x\n",
+	LOG_PRINTK("\tTime zone        %x\n",
 	       current_time->adjust_reason.change_of_time_zone);
-	printk("\tExternal update  %x\n",
+	LOG_PRINTK("\tExternal update  %x\n",
 	       current_time->adjust_reason.external_reference_time_update);
-	printk("\tManual update    %x\n",
+	LOG_PRINTK("\tManual update    %x\n",
 	       current_time->adjust_reason.manual_time_update);
 }
 
 static void notify_current_time_cb(struct bt_cts_client *cts_c,
 				   struct bt_cts_current_time *current_time)
 {
-	current_time_print(current_time);
+	//current_time_print(current_time);
 	memcpy(&clock_current_time, &current_time->exact_time_256, sizeof(struct bt_cts_exact_time_256));
 	if (tick_callback) {
 		tick_callback(&clock_current_time);
@@ -121,13 +121,13 @@ static void enable_notifications(void)
 {
 	int err;
 
-	printk("Enable not\n");
+	LOG_PRINTK("Enable not\n");
 
 	if (has_cts && (bt_conn_get_security(cts_c.conn) >= BT_SECURITY_L2)) {
 		err = bt_cts_subscribe_current_time(&cts_c,
 						    notify_current_time_cb);
 		if (err) {
-			printk("Cannot subscribe to current time value notification (err %d)\n",
+			LOG_PRINTK("Cannot subscribe to current time value notification (err %d)\n",
 			       err);
 		}
 	}
@@ -137,20 +137,20 @@ static void discover_completed_cb(struct bt_gatt_dm *dm, void *ctx)
 {
 	int err;
 
-	printk("The discovery procedure succeeded\n");
+	LOG_PRINTK("The discovery procedure succeeded\n");
 
 	bt_gatt_dm_data_print(dm);
 
 	err = bt_cts_handles_assign(dm, &cts_c);
 	if (err) {
-		printk("Could not assign CTS client handles, error: %d\n", err);
+		LOG_PRINTK("Could not assign CTS client handles, error: %d\n", err);
 	} else {
 		has_cts = true;
 		do_read = true;
 		if (bt_conn_get_security(cts_c.conn) < BT_SECURITY_L2) {
 			err = bt_conn_set_security(cts_c.conn, BT_SECURITY_L2);
 			if (err) {
-				printk("Failed to set security (err %d)\n",
+				LOG_PRINTK("Failed to set security (err %d)\n",
 				       err);
 			}
 		} else {
@@ -161,25 +161,25 @@ static void discover_completed_cb(struct bt_gatt_dm *dm, void *ctx)
 
 	err = bt_gatt_dm_data_release(dm);
 	if (err) {
-		printk("Could not release the discovery data, error "
+		LOG_PRINTK("Could not release the discovery data, error "
 		       "code: %d\n",
 		       err);
 	}
 
 	err = bt_cts_read_current_time(&cts_c, read_current_time_cb);
 	if (err) {
-		printk("Failed reading current time (err: %d)\n", err);
+		LOG_PRINTK("Failed reading current time (err: %d)\n", err);
 	}
 }
 
 static void discover_service_not_found_cb(struct bt_conn *conn, void *ctx)
 {
-	printk("The service could not be found during the discovery\n");
+	LOG_PRINTK("The service could not be found during the discovery\n");
 }
 
 static void discover_error_found_cb(struct bt_conn *conn, int err, void *ctx)
 {
-	printk("The discovery procedure failed, err %d\n", err);
+	LOG_PRINTK("The discovery procedure failed, err %d\n", err);
 }
 
 static const struct bt_gatt_dm_cb discover_cb = {
@@ -193,18 +193,18 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	char addr[BT_ADDR_LE_STR_LEN];
 
 	if (err) {
-		printk("Connection failed (err 0x%02x)\n", err);
+		LOG_PRINTK("Connection failed (err 0x%02x)\n", err);
 		return;
 	}
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-	printk("Connected %s\n", addr);
+	LOG_PRINTK("Connected %s\n", addr);
 
 	has_cts = false;
 
 	err = bt_gatt_dm_start(conn, BT_UUID_CTS, &discover_cb, NULL);
 	if (err) {
-		printk("Failed to start discovery (err %d)\n", err);
+		LOG_PRINTK("Failed to start discovery (err %d)\n", err);
 	}
 }
 
@@ -213,7 +213,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	char addr[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-	printk("Disconnected from %s (reason 0x%02x)\n", addr, reason);
+	LOG_PRINTK("Disconnected from %s (reason 0x%02x)\n", addr, reason);
 	do_read = false;
 }
 
@@ -225,11 +225,11 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (!err) {
-		printk("Security changed: %s level %u\n", addr, level);
+		LOG_PRINTK("Security changed: %s level %u\n", addr, level);
 
 		enable_notifications();
 	} else {
-		printk("Security failed: %s level %u err %d\n", addr, level,
+		LOG_PRINTK("Security failed: %s level %u err %d\n", addr, level,
 		       err);
 	}
 }
@@ -246,7 +246,7 @@ static void auth_cancel(struct bt_conn *conn)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Pairing cancelled: %s\n", addr);
+	LOG_PRINTK("Pairing cancelled: %s\n", addr);
 
 	bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 }
@@ -257,7 +257,7 @@ static void pairing_complete(struct bt_conn *conn, bool bonded)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Pairing completed: %s, bonded: %d\n", addr, bonded);
+	LOG_PRINTK("Pairing completed: %s, bonded: %d\n", addr, bonded);
 }
 
 static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
@@ -266,7 +266,7 @@ static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Pairing failed conn: %s, reason %d\n", addr, reason);
+	LOG_PRINTK("Pairing failed conn: %s, reason %d\n", addr, reason);
 
 	bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 }
@@ -289,13 +289,12 @@ static void read_current_time_cb(struct bt_cts_client *cts_c,
 	bt_addr_le_to_str(bt_conn_get_dst(cts_c->conn), addr, sizeof(addr));
 
 	if (err) {
-		printk("Cannot read Current Time: %s, error: %d\n", addr, err);
+		LOG_PRINTK("Cannot read Current Time: %s, error: %d\n", addr, err);
 		return;
 	}
-	current_time_print(current_time);
+	//current_time_print(current_time);
 	memcpy(&clock_current_time, &current_time->exact_time_256, sizeof(struct bt_cts_exact_time_256));
 	if (tick_callback && current_time) {
-		// Manually handle timezone GMT + 1. TODO fix.
 		tick_callback(&clock_current_time);
 	}
 }
@@ -306,19 +305,19 @@ void clock_init(clock_tick_callback tick_cb, struct bt_cts_exact_time_256* start
 	memcpy(&clock_current_time, start_time, sizeof(struct bt_cts_exact_time_256));
 	int err = bt_cts_client_init(&cts_c);
 	if (err) {
-		printk("CTS client init failed (err %d)\n", err);
+		LOG_PRINTK("CTS client init failed (err %d)\n", err);
 		return;
 	}
 
 	err = bt_conn_auth_cb_register(&conn_auth_callbacks);
 	if (err) {
-		printk("Failed to register authorization callbacks %d\n", err);
+		LOG_PRINTK("Failed to register authorization callbacks %d\n", err);
 		return;
 	}
 
 	err = bt_conn_auth_info_cb_register(&conn_auth_info_callbacks);
 	if (err) {
-		printk("Failed to register authorization info callbacks.\n");
+		LOG_PRINTK("Failed to register authorization info callbacks.\n");
 		return;
 	}
 
@@ -358,15 +357,10 @@ static void increment_current_time_simple(void)
 static void tick_work_handler(struct k_work *work)
 {
 	if (do_read) {
-		increment_current_time_simple();
-		if (tick_callback) {
-			tick_callback(&clock_current_time);
+		int err = bt_cts_read_current_time(&cts_c, read_current_time_cb);
+		if (err) {
+			LOG_PRINTK("Failed reading current time (err: %d)\n", err);
 		}
-		// TODO Why crasing?
-		//int err = bt_cts_read_current_time(&cts_c, read_current_time_cb);
-		//if (err) {
-		//	printk("Failed reading current time (err: %d)\n", err);
-		//}
 	} else {
 		increment_current_time_simple();
 		if (tick_callback) {

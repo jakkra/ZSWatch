@@ -126,6 +126,7 @@ static lv_settings_item_t bluetooth_page_items[] =
     {
         .type = LV_SETTINGS_TYPE_SWITCH,
         .icon = "",
+        .change_callback = on_aoa_enable_changed,
         .item = {
             .sw = {
                 .name = "AoA",
@@ -250,8 +251,7 @@ void main(void)
 
         if (update_clock) {
             LOG_PRINTK("%d, %d, %d\n", retained.current_time.hours, retained.current_time.minutes, retained.current_time.seconds);
-            watchface_set_value_minute(retained.current_time.minutes);
-            watchface_set_value_hour(retained.current_time.hours % 12);
+            watchface_set_time(retained.current_time.hours, retained.current_time.minutes);
             // Store current time
             retained_update();
             update_clock = false;
@@ -278,7 +278,6 @@ static void enable_bluetoth(void)
     ble_hr_init();
     
     __ASSERT_NO_MSG(bleAoaInit());
-    __ASSERT_NO_MSG(bleAoaAdvertise(250, 250, true));
 }
 
 static void clock_handler(struct bt_cts_exact_time_256* time)
@@ -521,7 +520,8 @@ static void open_settings(void)
 }
 
 static bool show_watchface = true;
-
+static int h = 0;
+static int m = 0;
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
     LOG_INF("Pressed %d, type: %d", id, type);
 
@@ -536,15 +536,19 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
     */
     if (type == BUTTONS_SHORT_PRESS) {
         show_watchface = !show_watchface;
-        if (show_watchface) {
-            states_page_remove();
-            watchface_show();
-            //plot_page_show();
-        } else {
-            watchface_remove();
-            //plot_page_remove();
-            states_page_show();
-        }
+        //h = (h + 1) % 12;
+        //m = (m + 1) % 60;;
+        //LOG_WRN("%d:%d\n", h, m);
+        //watchface_set_time(h, m);
+        //if (show_watchface) {
+        //    states_page_remove();
+        //    watchface_show();
+        //    //plot_page_show();
+        //} else {
+        //    watchface_remove();
+        //    //plot_page_remove();
+        //    states_page_show();
+        //}
         LOG_DBG("BUTTONS_SHORT_PRESS");
     } else {
         LOG_ERR("BUTTONS_LONG_PRESS, open settings");

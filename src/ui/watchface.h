@@ -14,8 +14,6 @@ void watchface_set_hrm(int32_t value);
 
 void watchface_set_step(int32_t value);
 
-void watchface_set_value_minute(int32_t value);
-
-void watchface_set_value_hour(int32_t value);
+void watchface_set_time(int32_t hour, int32_t minute);
 
 #endif
