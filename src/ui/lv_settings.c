@@ -8,6 +8,7 @@
  *********************/
 #include "lv_settings.h"
 #include "lvgl.h"
+#include "logging/log.h"
 
 /*********************
  *      DEFINES
@@ -48,10 +49,11 @@ static lv_obj_t * _menu = NULL;
 
 static void close_button_pressed(lv_event_t* e)
 {
-    printf("Close settings\n");
-    lv_obj_add_flag(_menu, LV_OBJ_FLAG_HIDDEN);
-    lv_obj_remove_event_cb(_menu, close_button_pressed);
-    close_callback();
+    if (lv_menu_back_btn_is_root(_menu, lv_event_get_target(e))) {
+        lv_obj_add_flag(_menu, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_remove_event_cb(_menu, close_button_pressed);
+        close_callback();
+    }
 }
 
 enum {
@@ -66,8 +68,9 @@ static lv_obj_t * create_slider(lv_obj_t * parent,
                                 const char * icon, const char * txt, int32_t min, int32_t max, int32_t val);
 static lv_obj_t * create_switch(lv_obj_t * parent,
                                 const char * icon, const char * txt, bool chk);
-
                                 
+static void slider_event_cb(lv_event_t * e);
+
 static lv_obj_t * create_text(lv_obj_t * parent, const char * icon, const char * txt,
                               lv_menu_builder_variant_t builder_variant)
 {
@@ -101,7 +104,6 @@ static lv_obj_t * create_text(lv_obj_t * parent, const char * icon, const char *
     return obj;
 }
 
-
 static lv_obj_t * create_switch(lv_obj_t * parent, const char * icon, const char * txt, bool chk)
 {
     lv_obj_t * obj = create_text(parent, icon, txt, LV_MENU_ITEM_BUILDER_VARIANT_1);
@@ -111,8 +113,6 @@ static lv_obj_t * create_switch(lv_obj_t * parent, const char * icon, const char
 
     return sw;
 }
-
-static void slider_event_cb(lv_event_t * e);
 
 static lv_obj_t * create_slider(lv_obj_t * parent, const char * icon, const char * txt, int32_t min, int32_t max,
                                 int32_t val)
@@ -130,64 +130,6 @@ static lv_obj_t * create_slider(lv_obj_t * parent, const char * icon, const char
     }
 
     return slider;
-}
-
-static void test(lv_obj_t * root_item, lv_group_t * group)
-{
-    if (_menu != NULL) {
-        lv_obj_clear_flag(_menu, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_event_cb(_menu, close_button_pressed, LV_EVENT_CLICKED, _menu);
-        return;
-    }
-    // // draw menu screen //
-    lv_obj_t * label;
-    lv_obj_t * cont;
-    lv_obj_t * _mainPage;
-    _menu = lv_menu_create(lv_scr_act());
-    lv_menu_set_mode_root_back_btn(_menu, LV_MENU_ROOT_BACK_BTN_ENABLED);
-    lv_obj_add_event_cb(_menu, close_button_pressed, LV_EVENT_CLICKED, _menu);
-    lv_obj_set_size(_menu, 180, 180);
-    lv_obj_center(_menu);
-    
-     // Page 1 content
-    lv_obj_t * sub_1_page = lv_menu_page_create(_menu, "General Settings");
-    cont = lv_menu_cont_create(sub_1_page);
-    lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN);
-    create_slider(cont, LV_SYMBOL_SETTINGS, "Brightness", 0, 150, 120);
-    create_switch(cont, LV_SYMBOL_MUTE, "Vibration", false);
-    create_slider(cont, LV_SYMBOL_SETTINGS, "Update rate", 0, 150, 50);
-
-    // Page 2 content
-    lv_obj_t * sub_2_page = lv_menu_page_create(_menu, "Page 2");
-    cont = lv_menu_cont_create(sub_2_page);
-    create_switch(cont, LV_SYMBOL_MUTE, "Vibration", false);
-
-    // Main page
-    _mainPage = lv_menu_page_create(_menu, NULL);
-
-    // Create a main page first item
-    cont = lv_menu_cont_create(_mainPage);
-    label = lv_label_create(cont);
-    lv_label_set_text(label, "First page");
-    lv_menu_set_load_page_event(_menu, cont, sub_1_page);
-    lv_group_add_obj(group, cont);
-    lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_add_flag(cont, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
-
-    // Create a main page second item
-    cont = lv_menu_cont_create(_mainPage);
-    label = lv_label_create(cont);
-    lv_label_set_text(label, "Page Two");
-    lv_menu_set_load_page_event(_menu, cont, sub_2_page);
-    lv_group_add_obj(group, cont);
-    lv_obj_add_flag(cont, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_add_flag(cont, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
-    
-
-    lv_menu_set_page(_menu, _mainPage);
-
-    lv_group_focus_next(group);
 }
 
 static void slider_event_cb(lv_event_t * e)
@@ -236,6 +178,8 @@ void lv_settings_create(lv_settings_page_t* pages, uint8_t num_pages, const char
         return;
     }
 
+    close_callback = close_cb;
+
     // Draw menu screen
     _menu = lv_menu_create(lv_scr_act());
     lv_menu_set_mode_root_back_btn(_menu, LV_MENU_ROOT_BACK_BTN_ENABLED);
@@ -280,19 +224,6 @@ void lv_settings_create(lv_settings_page_t* pages, uint8_t num_pages, const char
 
     lv_menu_set_page(_menu, _mainPage);
     lv_group_focus_next(input_group);
-}
-
-
-/**
- * Create a settings application
- * @param root_item descriptor of the settings button. For example:
- * `lv_settings_menu_item_t root_item = {.name = "Settings", .event_cb = root_event_cb};`
- * @return the created settings button
- */
-void lv_settings_create_old(lv_obj_t * root_item, lv_group_t * input_group, on_close_cb_t close_cb)
-{
-    close_callback = close_cb;
-    test(root_item, input_group);
 }
 
 /**

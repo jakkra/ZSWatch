@@ -43,9 +43,36 @@ LOG_MODULE_REGISTER(app);
 
 const struct device *ds = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 
-static bool do_open_settings = false;
+typedef enum work_type {
+    INIT,
+    OPEN_SETTINGS,
+    UPDATE_CLOCK,
+    ENABLE_BUTTON_INOUT,
+    BATTERY,
+    RENDER,
+    ACCEL,
+} work_type_t;
 
-static bool update_clock = false;
+typedef struct delayed_work_item {
+    struct k_work_delayable   work;
+    work_type_t     type;
+} delayed_work_item_t;
+
+
+static delayed_work_item_t battery_work = { .type = BATTERY };
+static delayed_work_item_t accel_work = { .type = ACCEL };
+static delayed_work_item_t render_work = { .type = RENDER };
+static delayed_work_item_t clock_work = { .type = UPDATE_CLOCK };
+static delayed_work_item_t general_work_item;
+
+#define MY_STACK_SIZE 2048
+#define MY_PRIORITY 5
+
+K_THREAD_STACK_DEFINE(my_stack_area, MY_STACK_SIZE);
+
+struct k_work_q my_work_q;
+
+static bool show_watchface = true;
 
 static void enable_bluetoth(void);
 
@@ -55,12 +82,6 @@ static void clock_handler(struct bt_cts_exact_time_256* time);
 
 static void test_battery_read(void);
 static void test_lis_read(void);
-static void test_vibrator(void);
-static void test_display_blk(void);
-static void set_value_minute(int32_t value);
-static void set_value_hour(int32_t value);
-static void add_battery_indicator(void);
-static void add_battery_percent_text(void);
 static void set_vibrator(uint8_t percent);
 static void set_display_blk(uint8_t percent);
 static void open_settings(void);
@@ -164,60 +185,130 @@ static lv_settings_page_t settings_menu[] = {
 static lv_group_t * input_group;
 
 static bool buttons_allocated = false;
+static uint32_t count = 0U;
+static lv_indev_drv_t enc_drv;
+static lv_indev_t * enc_indev;
 
+void general_work(struct k_work *item)
+{
+    delayed_work_item_t *the_work = CONTAINER_OF(item, delayed_work_item_t, work);
+
+    switch(the_work->type) {
+        case INIT:
+        {
+            const struct device *display_dev;
+            
+            display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+            if (!device_is_ready(display_dev)) {
+                LOG_ERR("Device not ready, aborting test");
+                return;
+            }
+            k_msleep(500);
+            load_retention_ram();
+            k_msleep(500);
+            heart_rate_sensor_init();
+
+            watchface_init();
+            //plot_page_init();
+            filesystem_test();
+            enable_bluetoth();
+
+            clock_init(clock_handler, &retained.current_time);
+
+            buttonsInit(&onButtonPressCb);
+
+            gpio_debug_test(DRV_VIB_EN, 0);
+            set_display_blk(100);
+
+            lv_indev_drv_init(&enc_drv);
+
+            
+            enc_drv.type = LV_INDEV_TYPE_ENCODER;
+            enc_drv.read_cb = enocoder_read;
+            enc_drv.feedback_cb = encoder_vibration;
+            enc_indev = lv_indev_drv_register(&enc_drv);
+
+            input_group = lv_group_create();
+            lv_group_set_default(input_group);
+            lv_indev_set_group(enc_indev, input_group);
+
+            //plot_page_show();
+            watchface_show();
+            //open_settings();
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &battery_work.work, K_NO_WAIT), "FAIL battery_work");
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &render_work.work, K_NO_WAIT), "FAIL render_work");
+            //__ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_NO_WAIT), "FAIL accel_work");
+            break;
+        }
+        case OPEN_SETTINGS:
+        {
+            //watchface_remove();
+            //plot_page_remove();
+            open_settings();
+            break;
+        }
+        case UPDATE_CLOCK:
+        {
+            LOG_PRINTK("%d, %d, %d\n", retained.current_time.hours, retained.current_time.minutes, retained.current_time.seconds);
+            watchface_set_time(retained.current_time.hours, retained.current_time.minutes);
+            // Store current time
+            retained_update();
+            break;
+        }
+        case ENABLE_BUTTON_INOUT:
+        {
+            buttons_allocated = false;
+            lv_group_remove_all_objs(input_group);
+            break;
+        }
+        case BATTERY:
+        {
+            test_battery_read();
+            bt_hrs_notify(count % 220);
+            watchface_set_hrm(count % 220);
+            watchface_set_step(count * 10 % 20000);
+            //plot_page_led_values_t hr_sample;
+            //heart_rate_sensor_fetch(&hr_sample);
+            count++;
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &battery_work.work, K_MSEC(BATTERY_INTERVAL)), "FAIL battery_work");
+            break;
+        }
+        case RENDER:
+        {
+            lv_task_handler();
+            //printk("Render: %d\n", last_render - now);
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &render_work.work, K_MSEC(RENDER_INTERVAL_LVGL)), "FAIL render_work");
+            break;
+        }
+        case ACCEL:
+        {
+            if (!show_watchface) {
+                test_lis_read();
+                //plot_page_led_values(hr_sample.red, hr_sample.green, hr_sample.ir);
+                __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_MSEC(ACCEL_INTERVAL)), "FAIL accel_work");
+            }
+            break;
+        }
+    }
+}
 
 void main(void)
 {
-    uint32_t count = 0U;
-    lv_indev_drv_t enc_drv;
-    lv_indev_t * enc_indev;
-    plot_page_led_values_t hr_sample;
-    uint32_t render_start_ms;
-    bool retention_ok;
-    const struct device *display_dev;
-    
-    display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
-    if (!device_is_ready(display_dev)) {
-        LOG_ERR("Device not ready, aborting test");
-        return;
-    }
-    k_msleep(500);
-    load_retention_ram();
-    k_msleep(500);
-    heart_rate_sensor_init();
+    k_work_queue_init(&my_work_q);
 
-    watchface_init();
-    //plot_page_init();
-    filesystem_test();
-    enable_bluetoth();
+    k_work_queue_start(&my_work_q, my_stack_area,
+                   K_THREAD_STACK_SIZEOF(my_stack_area), MY_PRIORITY,
+                   NULL);
 
-    clock_init(clock_handler, &retained.current_time);
+    k_work_init_delayable(&general_work_item.work, general_work);
+    k_work_init_delayable(&battery_work.work, general_work);
+    k_work_init_delayable(&accel_work.work, general_work);
+    k_work_init_delayable(&render_work.work, general_work); // TODO malloc and free as we can have multiple
+    k_work_init_delayable(&clock_work.work, general_work);
 
-    buttonsInit(&onButtonPressCb);
-
-    gpio_debug_test(DRV_VIB_EN, 0);
-    set_display_blk(100);
-
-    lv_indev_drv_init(&enc_drv);
-
-    
-    enc_drv.type = LV_INDEV_TYPE_ENCODER;
-    enc_drv.read_cb = enocoder_read;
-	enc_drv.feedback_cb = encoder_vibration;
-    enc_indev = lv_indev_drv_register(&enc_drv);
-
-    input_group = lv_group_create();
-    lv_group_set_default(input_group);
-    lv_indev_set_group(enc_indev, input_group);
-
-    //plot_page_show();
-    watchface_show();
-    //open_settings();
-    uint32_t last_render = 0;
-    uint32_t last_accel = 0;
-    uint32_t last_battery = 0;
-    uint32_t now;
-    bool showed = false;
+    general_work_item.type = INIT;
+    __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");
+   /*
     while (1) {
         now = k_uptime_get_32();
         if ((now - last_battery) >= BATTERY_INTERVAL) {
@@ -258,12 +349,8 @@ void main(void)
         }
         count++;
         k_msleep(10);
-
-        if (!showed) {
-            //open_settings();
-            showed = true;
-        }
     }
+    */
 }
 
 static void enable_bluetoth(void)
@@ -280,10 +367,13 @@ static void enable_bluetoth(void)
     __ASSERT_NO_MSG(bleAoaInit());
 }
 
+static uint8_t last_min = 0;
 static void clock_handler(struct bt_cts_exact_time_256* time)
 {
-    memcpy(&retained.current_time, time, sizeof(struct bt_cts_exact_time_256));
-    update_clock = true;
+    if (last_min != time->minutes) {
+        memcpy(&retained.current_time, time, sizeof(struct bt_cts_exact_time_256));
+        __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &clock_work.work, K_NO_WAIT), "FAIL schedule");
+    }
 }
 
 
@@ -483,20 +573,14 @@ static bool load_retention_ram(void)
 
 #define REFLOW_OVEN_TITLE_PAD 10
 
-static lv_obj_t * add_title(const char * txt, lv_obj_t * src){
-    lv_obj_t * title = lv_label_create(src);
-    //lv_theme_apply(title, theme);
-    lv_label_set_text(title, txt);
-    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, REFLOW_OVEN_TITLE_PAD);
-    return title;
-}
-
 static void on_close_settings(void)
 {
-    printk("on_close_settings\n");
+    //LOG_PRINTK("on_close_settings\n");
     //watchface_show();
     //plot_page_show();
-    buttons_allocated = false;
+    
+    general_work_item.type = ENABLE_BUTTON_INOUT;
+    __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_MSEC(250)), "FAIL schedule");
 }
 
 static void open_settings(void)
@@ -528,8 +612,6 @@ static void play_press_vibration(void)
     gpio_debug_test(DRV_VIB_EN, 0);
 }
 
-static bool show_watchface = true;
-
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
     LOG_INF("Pressed %d, type: %d", id, type);
 
@@ -552,6 +634,7 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
         } else {
             watchface_remove();
             states_page_show();
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_MSEC(1000)), "FAIL accel_work");
             //plot_page_remove();
         }
         LOG_DBG("BUTTONS_SHORT_PRESS");
@@ -559,7 +642,8 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
         LOG_ERR("BUTTONS_LONG_PRESS, open settings");
         if (id == BUTTON_2) {
             if (show_watchface) {
-                do_open_settings = true;
+                general_work_item.type = OPEN_SETTINGS;
+                __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");
                 //watchface_remove();
                 //plot_page_remove();
                 //open_settings();

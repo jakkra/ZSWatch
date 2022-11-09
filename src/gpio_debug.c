@@ -6,7 +6,7 @@
 #include <logging/log.h>
 #include <gpio_debug.h>
 
-LOG_MODULE_REGISTER(gpio_debug, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(gpio_debug, LOG_LEVEL_WRN);
 
 static struct gpio_dt_spec watch_gpios[] = {
     [DISPLAY_EN] = { .port = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpio0)), .pin = 3 },
