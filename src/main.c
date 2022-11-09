@@ -519,9 +519,17 @@ static void open_settings(void)
     //lv_ex_settings_2(box);
 }
 
+static void play_press_vibration(void)
+{
+    gpio_debug_test(DRV_VIB_EN, 1);
+    set_vibrator(80);
+    k_msleep(150);
+    set_vibrator(80);
+    gpio_debug_test(DRV_VIB_EN, 0);
+}
+
 static bool show_watchface = true;
-static int h = 0;
-static int m = 0;
+
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
     LOG_INF("Pressed %d, type: %d", id, type);
 
@@ -536,19 +544,16 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
     */
     if (type == BUTTONS_SHORT_PRESS) {
         show_watchface = !show_watchface;
-        //h = (h + 1) % 12;
-        //m = (m + 1) % 60;;
-        //LOG_WRN("%d:%d\n", h, m);
-        //watchface_set_time(h, m);
-        //if (show_watchface) {
-        //    states_page_remove();
-        //    watchface_show();
-        //    //plot_page_show();
-        //} else {
-        //    watchface_remove();
-        //    //plot_page_remove();
-        //    states_page_show();
-        //}
+        play_press_vibration();
+        if (show_watchface) {
+            states_page_remove();
+            watchface_show();
+            //plot_page_show();
+        } else {
+            watchface_remove();
+            states_page_show();
+            //plot_page_remove();
+        }
         LOG_DBG("BUTTONS_SHORT_PRESS");
     } else {
         LOG_ERR("BUTTONS_LONG_PRESS, open settings");
@@ -608,11 +613,7 @@ void encoder_vibration(struct _lv_indev_drv_t * drv, uint8_t e)
     // TODO Vibrate motor for example!
 	if (e == LV_EVENT_PRESSED) {
         printk("Clicked\n");
-        gpio_debug_test(DRV_VIB_EN, 1);
-        set_vibrator(65);
-        k_msleep(250);
-        set_vibrator(65);
-        gpio_debug_test(DRV_VIB_EN, 0);
+        play_press_vibration();
     }
 }
 

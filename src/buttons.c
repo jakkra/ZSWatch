@@ -25,7 +25,7 @@
 
 LOG_MODULE_REGISTER(buttons, LOG_LEVEL_DBG);
 
-#define STACKSIZE               512
+#define STACKSIZE               1024
 #define PRIORITY                7
 
 #define BTN_LONG_PRESS_LIMIT  1000
