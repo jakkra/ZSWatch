@@ -33,8 +33,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(app);
 
-#define RENDER_INTERVAL_LVGL (1000 / 500) // 500 Hz
-#define ACCEL_INTERVAL (1000 / 10) // 10 Hz
+#define RENDER_INTERVAL_LVGL (1000 / 100) // 10 Hz
+#define ACCEL_INTERVAL (1000 / 100) // 10 Hz
 #define BATTERY_INTERVAL (1000) // 1 Hz
 
 #define COMPUTE_BUILD_HOUR ((__TIME__[0] - '0') * 10 + __TIME__[1] - '0')
@@ -242,7 +242,7 @@ void general_work(struct k_work *item)
         }
         case OPEN_SETTINGS:
         {
-            //watchface_remove();
+            watchface_remove();
             //plot_page_remove();
             open_settings();
             break;
@@ -257,8 +257,9 @@ void general_work(struct k_work *item)
         }
         case ENABLE_BUTTON_INOUT:
         {
+            watchface_show();
             buttons_allocated = false;
-            lv_group_remove_all_objs(input_group);
+            //lv_group_remove_all_objs(input_group);
             break;
         }
         case BATTERY:
@@ -266,7 +267,7 @@ void general_work(struct k_work *item)
             test_battery_read();
             bt_hrs_notify(count % 220);
             watchface_set_hrm(count % 220);
-            watchface_set_step(count * 10 % 20000);
+            watchface_set_step(count * 10 % 10000);
             //plot_page_led_values_t hr_sample;
             //heart_rate_sensor_fetch(&hr_sample);
             count++;
@@ -308,49 +309,6 @@ void main(void)
 
     general_work_item.type = INIT;
     __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");
-   /*
-    while (1) {
-        now = k_uptime_get_32();
-        if ((now - last_battery) >= BATTERY_INTERVAL) {
-            test_battery_read();
-            last_battery = k_uptime_get_32();
-
-            bt_hrs_notify(count % 220);
-            watchface_set_hrm(count % 220);
-            watchface_set_step(count * 10 % 20000);
-            //heart_rate_sensor_fetch(&hr_sample);
-
-        }
-
-        if ((now - last_accel) >= ACCEL_INTERVAL) {
-            test_lis_read();
-            last_accel = k_uptime_get_32();
-            //plot_page_led_values(hr_sample.red, hr_sample.green, hr_sample.ir);
-        }
-
-        if ((now - last_render) >= RENDER_INTERVAL_LVGL) {
-            lv_task_handler();
-            last_render = k_uptime_get_32();
-            //printk("Render: %d\n", last_render - now);
-        }
-        if (do_open_settings) {
-            //watchface_remove();
-            //plot_page_remove();
-            open_settings();
-            do_open_settings = false;
-        }
-
-        if (update_clock) {
-            LOG_PRINTK("%d, %d, %d\n", retained.current_time.hours, retained.current_time.minutes, retained.current_time.seconds);
-            watchface_set_time(retained.current_time.hours, retained.current_time.minutes);
-            // Store current time
-            retained_update();
-            update_clock = false;
-        }
-        count++;
-        k_msleep(10);
-    }
-    */
 }
 
 static void enable_bluetoth(void)
@@ -660,6 +618,9 @@ static buttonId_t last_pressed;
 
 static void enocoder_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * data)
 {
+    if (!buttons_allocated) {
+        return;
+    }
     if (button_read(BUTTON_1)) {
         data->key = LV_KEY_RIGHT;
         data->state = LV_INDEV_STATE_PR;
