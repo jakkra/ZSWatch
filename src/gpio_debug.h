@@ -3,7 +3,7 @@
 
 #include <zephyr.h>
 
-/** 
+/**
  * @brief Button id
  */
 typedef enum gpioWatchId_t {

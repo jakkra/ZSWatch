@@ -1,15 +1,15 @@
 #include <stats_page.h>
 #include <lvgl.h>
 
-static lv_obj_t * root_page = NULL;
+static lv_obj_t *root_page = NULL;
 
-static lv_obj_t * bar_acc_x;
-static lv_obj_t * bar_acc_y;
-static lv_obj_t * bar_acc_z;
+static lv_obj_t *bar_acc_x;
+static lv_obj_t *bar_acc_y;
+static lv_obj_t *bar_acc_z;
 
-static lv_obj_t * acc_x_label;
-static lv_obj_t * acc_y_label;
-static lv_obj_t * acc_z_label;
+static lv_obj_t *acc_x_label;
+static lv_obj_t *acc_y_label;
+static lv_obj_t *acc_z_label;
 
 
 void stats_page_init(void)
@@ -27,7 +27,7 @@ void states_page_show(void)
         lv_obj_clear_flag(root_page, LV_OBJ_FLAG_HIDDEN);
         return;
     }
-    
+
     root_page = lv_obj_create(lv_scr_act());
     lv_obj_set_scrollbar_mode(root_page, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_bg_opa(root_page, LV_OPA_TRANSP, LV_PART_MAIN);
@@ -37,7 +37,7 @@ void states_page_show(void)
     lv_style_init(&style_indic_red);
     lv_style_init(&style_indic_green);
     lv_style_init(&style_indic_blue);
-    
+
     bar_acc_x = lv_bar_create(root_page);
     lv_style_set_bg_color(&style_indic_red, lv_palette_main(LV_PALETTE_RED));
     lv_obj_add_style(bar_acc_x, &style_indic_red, LV_PART_INDICATOR);
@@ -86,7 +86,9 @@ void states_page_accelerometer_values(int32_t x, int32_t y, int32_t z)
     char buf[10];
     memset(buf, 0, sizeof(buf));
 
-    if (!root_page) return;
+    if (!root_page) {
+        return;
+    }
     lv_bar_set_value(bar_acc_x, x, LV_ANIM_ON);
     lv_bar_set_value(bar_acc_y, y, LV_ANIM_ON);
     lv_bar_set_value(bar_acc_z, z, LV_ANIM_ON);

@@ -1,19 +1,3 @@
-/*
- * Copyright 2021 u-blox
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 #include "buttons.h"
 
 #include <zephyr.h>
@@ -52,12 +36,13 @@ static uint8_t pressed_button_id;
 K_THREAD_DEFINE(buttonThreadId, STACKSIZE, handleButtonThread, NULL, NULL, NULL, PRIORITY, 0, K_TICKS_FOREVER);
 
 
-void buttonsInit(buttonHandlerCallback_t handler) {
+void buttonsInit(buttonHandlerCallback_t handler)
+{
     int ret;
     callback = handler;
 
     k_sem_init(&btnSem, 0, 1);
-    
+
     for (int i = 0; i < NUM_BUTTONS; i++) {
         __ASSERT(device_is_ready(buttons[i].btn.port), "Error: button device %s is not ready\n",  buttons[i].btn.port->name);
         ret = gpio_pin_configure_dt(&buttons[i].btn, GPIO_INPUT | GPIO_PULL_UP);
@@ -91,7 +76,8 @@ static void buttonPressedIsr(const struct device *dev, struct gpio_callback *cb,
     k_sem_give(&btnSem);
 }
 
-static void handleButtonThread(void) {
+static void handleButtonThread(void)
+{
     int ret;
     uint32_t val;
     int64_t btn_press_start_ms;
@@ -112,7 +98,7 @@ static void handleButtonThread(void) {
         }
 
         btn_pressed_ms = k_uptime_delta(&btn_press_start_ms);
-        
+
         if (btn_pressed_ms < BTN_LONG_PRESS_LIMIT) {
             press_type = BUTTONS_SHORT_PRESS;
         } else {

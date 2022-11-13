@@ -19,20 +19,21 @@ https://github.com/MikroElektronika/HEXIWEAR/blob/master/SW/FTF/HEXIWEAR_OLED_se
 
 static const struct device *const hr_dev = NULL;//DEVICE_DT_GET_ANY(maxim_max30101);
 
-int heart_rate_sensor_init(void) {
-	if (hr_dev == NULL) {
-		LOG_ERR("Could not get max30101 device\n");
-		return -ENODEV;
-	}
-	if (!device_is_ready(hr_dev)) {
-		LOG_ERR("max30101 device %s is not ready\n", hr_dev->name);
-		return -ENODEV;
-	}
+int heart_rate_sensor_init(void)
+{
+    if (hr_dev == NULL) {
+        LOG_ERR("Could not get max30101 device\n");
+        return -ENODEV;
+    }
+    if (!device_is_ready(hr_dev)) {
+        LOG_ERR("max30101 device %s is not ready\n", hr_dev->name);
+        return -ENODEV;
+    }
 
     return 0;
 }
 
-int heart_rate_sensor_fetch(plot_page_led_values_t* sample)
+int heart_rate_sensor_fetch(plot_page_led_values_t *sample)
 {
     struct sensor_value green, red, ir;
     sensor_sample_fetch(hr_dev);

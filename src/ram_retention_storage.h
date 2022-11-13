@@ -12,29 +12,29 @@
 
 /* Example of validatable retained data. */
 struct retained_data {
-	struct bt_cts_exact_time_256 current_time;
+    struct bt_cts_exact_time_256 current_time;
 
-	/* The uptime from the current session the last time the
-	 * retained data was updated.
-	 */
-	uint64_t uptime_latest;
+    /* The uptime from the current session the last time the
+     * retained data was updated.
+     */
+    uint64_t uptime_latest;
 
-	/* Cumulative uptime from all previous sessions up through
-	 * uptime_latest of this session.
-	 */
-	uint64_t uptime_sum;
+    /* Cumulative uptime from all previous sessions up through
+     * uptime_latest of this session.
+     */
+    uint64_t uptime_sum;
 
-	/* Number of times the application has started. */
-	uint32_t boots;
+    /* Number of times the application has started. */
+    uint32_t boots;
 
-	/* Number of times the application has gone into system off. */
-	uint32_t off_count;
+    /* Number of times the application has gone into system off. */
+    uint32_t off_count;
 
-	/* CRC used to validate the retained data.  This must be
-	 * stored little-endian, and covers everything up to but not
-	 * including this field.
-	 */
-	uint32_t crc;
+    /* CRC used to validate the retained data.  This must be
+     * stored little-endian, and covers everything up to but not
+     * including this field.
+     */
+    uint32_t crc;
 };
 
 /* For simplicity in the sample just allow anybody to see and

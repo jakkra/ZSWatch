@@ -2,11 +2,11 @@
 #include <general_ui.h>
 #include <lvgl.h>
 
-static lv_obj_t * root_page = NULL;
+static lv_obj_t *root_page = NULL;
 
-static lv_obj_t * chart1;
-static lv_chart_series_t * ser1;
-static lv_chart_series_t * ser2;
+static lv_obj_t *chart1;
+static lv_chart_series_t *ser1;
+static lv_chart_series_t *ser2;
 
 void plot_page_init(void)
 {
@@ -20,14 +20,14 @@ void plot_page_show(void)
         lv_obj_clear_flag(root_page, LV_OBJ_FLAG_HIDDEN);
         return;
     }
-    
+
     root_page = lv_obj_create(lv_scr_act());
     lv_obj_set_scrollbar_mode(root_page, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_bg_opa(root_page, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(root_page, 0, LV_PART_MAIN);
     lv_obj_set_size(root_page, 240, 240);
     lv_obj_center(root_page);
-    
+
     /*Create a chart1*/
     chart1 = lv_chart_create(root_page);
     lv_obj_set_size(chart1, 240, 240);

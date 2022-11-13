@@ -78,7 +78,7 @@ static void enable_bluetoth(void);
 
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
 
-static void clock_handler(struct bt_cts_exact_time_256* time);
+static void clock_handler(struct bt_cts_exact_time_256 *time);
 
 static void test_battery_read(void);
 static void test_lis_read(void);
@@ -86,15 +86,14 @@ static void set_vibrator(uint8_t percent);
 static void set_display_blk(uint8_t percent);
 static void open_settings(void);
 static bool load_retention_ram(void);
-static void enocoder_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * data);
-static void encoder_vibration(struct _lv_indev_drv_t * drv, uint8_t e);
+static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
+static void encoder_vibration(struct _lv_indev_drv_t *drv, uint8_t e);
 
 static void on_brightness_changed(lv_setting_value_t value, bool final);
 static void on_display_always_on_changed(lv_setting_value_t value, bool final);
 static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
 
-static lv_settings_item_t general_page_items[] = 
-{
+static lv_settings_item_t general_page_items[] = {
     {
         .type = LV_SETTINGS_TYPE_SLIDER,
         .icon = LV_SYMBOL_SETTINGS,
@@ -131,8 +130,7 @@ static lv_settings_item_t general_page_items[] =
     },
 };
 
-static lv_settings_item_t bluetooth_page_items[] = 
-{
+static lv_settings_item_t bluetooth_page_items[] = {
     {
         .type = LV_SETTINGS_TYPE_SWITCH,
         .icon = LV_SYMBOL_BLUETOOTH,
@@ -170,34 +168,33 @@ static lv_settings_item_t bluetooth_page_items[] =
 };
 
 static lv_settings_page_t settings_menu[] = {
-   {
-       .name = "General",
-       .num_items = ARRAY_SIZE(general_page_items),
-       .items = general_page_items
-   },
-   {
-       .name = "Bluetooth",
-       .num_items = ARRAY_SIZE(bluetooth_page_items),
-       .items = bluetooth_page_items
-   },
+    {
+        .name = "General",
+        .num_items = ARRAY_SIZE(general_page_items),
+        .items = general_page_items
+    },
+    {
+        .name = "Bluetooth",
+        .num_items = ARRAY_SIZE(bluetooth_page_items),
+        .items = bluetooth_page_items
+    },
 };
 
-static lv_group_t * input_group;
+static lv_group_t *input_group;
 
 static bool buttons_allocated = false;
 static uint32_t count = 0U;
 static lv_indev_drv_t enc_drv;
-static lv_indev_t * enc_indev;
+static lv_indev_t *enc_indev;
 
 void general_work(struct k_work *item)
 {
     delayed_work_item_t *the_work = CONTAINER_OF(item, delayed_work_item_t, work);
 
-    switch(the_work->type) {
-        case INIT:
-        {
+    switch (the_work->type) {
+        case INIT: {
             const struct device *display_dev;
-            
+
             display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
             if (!device_is_ready(display_dev)) {
                 LOG_ERR("Device not ready, aborting test");
@@ -209,7 +206,6 @@ void general_work(struct k_work *item)
             heart_rate_sensor_init();
 
             watchface_init();
-            //plot_page_init();
             filesystem_test();
             enable_bluetoth();
 
@@ -222,7 +218,7 @@ void general_work(struct k_work *item)
 
             lv_indev_drv_init(&enc_drv);
 
-            
+
             enc_drv.type = LV_INDEV_TYPE_ENCODER;
             enc_drv.read_cb = enocoder_read;
             enc_drv.feedback_cb = encoder_vibration;
@@ -232,60 +228,49 @@ void general_work(struct k_work *item)
             lv_group_set_default(input_group);
             lv_indev_set_group(enc_indev, input_group);
 
-            //plot_page_show();
             watchface_show();
-            //open_settings();
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &battery_work.work, K_NO_WAIT), "FAIL battery_work");
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &render_work.work, K_NO_WAIT), "FAIL render_work");
             //__ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_NO_WAIT), "FAIL accel_work");
             break;
         }
-        case OPEN_SETTINGS:
-        {
+        case OPEN_SETTINGS: {
             watchface_remove();
-            //plot_page_remove();
             open_settings();
             break;
         }
-        case UPDATE_CLOCK:
-        {
+        case UPDATE_CLOCK: {
             LOG_PRINTK("%d, %d, %d\n", retained.current_time.hours, retained.current_time.minutes, retained.current_time.seconds);
             watchface_set_time(retained.current_time.hours, retained.current_time.minutes);
             // Store current time
             retained_update();
             break;
         }
-        case ENABLE_BUTTON_INOUT:
-        {
+        case ENABLE_BUTTON_INOUT: {
             watchface_show();
             buttons_allocated = false;
-            //lv_group_remove_all_objs(input_group);
             break;
         }
-        case BATTERY:
-        {
+        case BATTERY: {
             test_battery_read();
             bt_hrs_notify(count % 220);
             watchface_set_hrm(count % 220);
             watchface_set_step(count * 10 % 10000);
-            //plot_page_led_values_t hr_sample;
             //heart_rate_sensor_fetch(&hr_sample);
             count++;
-            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &battery_work.work, K_MSEC(BATTERY_INTERVAL)), "FAIL battery_work");
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &battery_work.work, K_MSEC(BATTERY_INTERVAL)),
+                     "FAIL battery_work");
             break;
         }
-        case RENDER:
-        {
+        case RENDER: {
             lv_task_handler();
-            //printk("Render: %d\n", last_render - now);
-            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &render_work.work, K_MSEC(RENDER_INTERVAL_LVGL)), "FAIL render_work");
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &render_work.work, K_MSEC(RENDER_INTERVAL_LVGL)),
+                     "FAIL render_work");
             break;
         }
-        case ACCEL:
-        {
+        case ACCEL: {
             if (!show_watchface) {
                 test_lis_read();
-                //plot_page_led_values(hr_sample.red, hr_sample.green, hr_sample.ir);
                 __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_MSEC(ACCEL_INTERVAL)), "FAIL accel_work");
             }
             break;
@@ -298,8 +283,8 @@ void main(void)
     k_work_queue_init(&my_work_q);
 
     k_work_queue_start(&my_work_q, my_stack_area,
-                   K_THREAD_STACK_SIZEOF(my_stack_area), MY_PRIORITY,
-                   NULL);
+                       K_THREAD_STACK_SIZEOF(my_stack_area), MY_PRIORITY,
+                       NULL);
 
     k_work_init_delayable(&general_work_item.work, general_work);
     k_work_init_delayable(&battery_work.work, general_work);
@@ -316,17 +301,17 @@ static void enable_bluetoth(void)
     int err;
 
     err = bt_enable(NULL);
-    __ASSERT(err == 0,"Failed to enable Bluetooth, err: %d", err);
+    __ASSERT(err == 0, "Failed to enable Bluetooth, err: %d", err);
 
     settings_load();
 
     ble_hr_init();
-    
+
     __ASSERT_NO_MSG(bleAoaInit());
 }
 
 static uint8_t last_min = 0;
-static void clock_handler(struct bt_cts_exact_time_256* time)
+static void clock_handler(struct bt_cts_exact_time_256 *time)
 {
     if (last_min != time->minutes) {
         memcpy(&retained.current_time, time, sizeof(struct bt_cts_exact_time_256));
@@ -371,7 +356,7 @@ static const char *now_str(void)
     h = now;
 
     snprintf(buf, sizeof(buf), "%u:%02u:%02u.%03u",
-         h, min, s, ms);
+             h, min, s, ms);
     return buf;
 }
 
@@ -431,20 +416,20 @@ static void test_lis_read(void)
     struct sensor_value temperature;
     if (!err) {
         stmdev_ctx_t *ctx = (stmdev_ctx_t *)sensor->config;
-        err = lis2ds12_temperature_raw_get(ctx, (uint8_t*)&temperature);
+        err = lis2ds12_temperature_raw_get(ctx, (uint8_t *)&temperature);
         if (err < 0) {
-            //LOG_INF("\nERROR: Unable to read temperature:%d\n", err);
+            LOG_ERR("\nERROR: Unable to read temperature:%d\n", err);
         } else {
-            //LOG_INF("Temp (TODO convert from 2 complement) %d\n", temperature.val1);
+            LOG_INF("Temp (TODO convert from 2 complement) %d\n", temperature.val1);
         }
         err = sensor_channel_get(sensor, SENSOR_CHAN_ACCEL_XYZ, acc_val);
         if (err < 0) {
-            //LOG_INF("\nERROR: Unable to read accel XYZ:%d\n", err);
+            LOG_ERR("\nERROR: Unable to read accel XYZ:%d\n", err);
         } else {
-            int16_t x_scaled = (int16_t)(sensor_value_to_double(&acc_val[0])*(32768/16));
-            int16_t y_scaled = (int16_t)(sensor_value_to_double(&acc_val[1])*(32768/16));
-            int16_t z_scaled = (int16_t)(sensor_value_to_double(&acc_val[2])*(32768/16));
-            //LOG_INF("x: %d y: %d z: %d", x_scaled, y_scaled, z_scaled);
+            int16_t x_scaled = (int16_t)(sensor_value_to_double(&acc_val[0]) * (32768 / 16));
+            int16_t y_scaled = (int16_t)(sensor_value_to_double(&acc_val[1]) * (32768 / 16));
+            int16_t z_scaled = (int16_t)(sensor_value_to_double(&acc_val[2]) * (32768 / 16));
+            LOG_DBG("x: %d y: %d z: %d", x_scaled, y_scaled, z_scaled);
             states_page_accelerometer_values(x_scaled, y_scaled, z_scaled);
         }
     } else {
@@ -452,8 +437,6 @@ static void test_lis_read(void)
     }
 }
 
-//static const struct pwm_dt_spec pwm_led0 = PWM_DT_SPEC_GET(DT_NODELABEL(vib));
-//#define test DT_COMPAT_GET_ANY_STATUS_OKAY(vibration)
 static const struct pwm_dt_spec pwm_led1 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led1));
 
 static void set_vibrator(uint8_t percent)
@@ -533,32 +516,14 @@ static bool load_retention_ram(void)
 
 static void on_close_settings(void)
 {
-    //LOG_PRINTK("on_close_settings\n");
-    //watchface_show();
-    //plot_page_show();
-    
     general_work_item.type = ENABLE_BUTTON_INOUT;
     __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_MSEC(250)), "FAIL schedule");
 }
 
 static void open_settings(void)
 {
-    //general_ui_anim_out_all(lv_scr_act(), 0);
-
-    //lv_obj_t * title = add_title("Settings", lv_scr_act());
-    //lv_obj_align(title, LV_ALIGN_TOP_MID, 0, REFLOW_OVEN_TITLE_PAD);
-
-    //lv_coord_t box_w = 160;
-    //lv_obj_t * box = lv_obj_create(lv_scr_act());
-    //lv_obj_set_size(box, box_w, box_w);
-    //lv_obj_align(box, LV_ALIGN_CENTER, 0, 0);
-
     buttons_allocated = true;
-
-    //lv_group_remove_all_objs(input_group);
     lv_settings_create(settings_menu, ARRAY_SIZE(settings_menu), "N/A", input_group, on_close_settings);
-    //lv_settings_create_old(NULL, input_group, on_close_settings);
-    //lv_ex_settings_2(box);
 }
 
 static void play_press_vibration(void)
@@ -570,7 +535,8 @@ static void play_press_vibration(void)
     gpio_debug_test(DRV_VIB_EN, 0);
 }
 
-static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
+static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
+{
     LOG_INF("Pressed %d, type: %d", id, type);
 
     if (buttons_allocated) {
@@ -588,12 +554,10 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
         if (show_watchface) {
             states_page_remove();
             watchface_show();
-            //plot_page_show();
         } else {
             watchface_remove();
             states_page_show();
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_MSEC(1000)), "FAIL accel_work");
-            //plot_page_remove();
         }
         LOG_DBG("BUTTONS_SHORT_PRESS");
     } else {
@@ -602,9 +566,6 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
             if (show_watchface) {
                 general_work_item.type = OPEN_SETTINGS;
                 __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");
-                //watchface_remove();
-                //plot_page_remove();
-                //open_settings();
             }
         } else if (id == BUTTON_3) {
             sys_reboot(SYS_REBOOT_COLD);
@@ -616,7 +577,7 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id) {
 
 static buttonId_t last_pressed;
 
-static void enocoder_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * data)
+static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
 {
     if (!buttons_allocated) {
         return;
@@ -639,25 +600,23 @@ static void enocoder_read(struct _lv_indev_drv_t * indev_drv, lv_indev_data_t * 
         }
         data->state = LV_INDEV_STATE_REL;
         switch (last_pressed) {
-        case BUTTON_1:
-            data->key = LV_KEY_RIGHT;
-            break;
-        case BUTTON_2:
-            data->key = LV_KEY_ENTER;
-            break;
-        case BUTTON_3:
-            data->key = LV_KEY_LEFT;
-            break;
+            case BUTTON_1:
+                data->key = LV_KEY_RIGHT;
+                break;
+            case BUTTON_2:
+                data->key = LV_KEY_ENTER;
+                break;
+            case BUTTON_3:
+                data->key = LV_KEY_LEFT;
+                break;
         }
         last_pressed = 0xFF;
     }
 }
 
-void encoder_vibration(struct _lv_indev_drv_t * drv, uint8_t e)
+void encoder_vibration(struct _lv_indev_drv_t *drv, uint8_t e)
 {
-    // TODO Vibrate motor for example!
-	if (e == LV_EVENT_PRESSED) {
-        printk("Clicked\n");
+    if (e == LV_EVENT_PRESSED) {
         play_press_vibration();
     }
 }

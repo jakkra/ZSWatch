@@ -1,28 +1,12 @@
-/**
- * @file lv_settings.h
- *
- */
-
 #ifndef LV_SETTINGS_H
 #define LV_SETTINGS_H
 
-/*********************
- *      INCLUDES
- *********************/
 
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE
 #include "lvgl.h"
 #else
 #include "lvgl/lvgl.h"
 #endif
-
-/*********************
- *      DEFINES
- *********************/
-
-/**********************
- *      TYPEDEFS
- **********************/
 
 typedef enum {
     LV_SETTINGS_TYPE_SWITCH,
@@ -43,22 +27,22 @@ typedef struct lv_setting_value {
         bool    sw;
         int32_t slider;
     } item;
-    
+
 } lv_setting_value_t;
 
 typedef void(*lv_settings_changed_cb_t)(lv_setting_value_t value, bool final);
 
 typedef struct {
-    const char* name;
+    const char *name;
 } lv_settings_label_t;
 
 typedef struct {
-    const char* name;
+    const char *name;
     bool        inital_val;
 } lv_settings_switch_t;
 
 typedef struct {
-    const char* name;
+    const char *name;
     int32_t     inital_val;
     int32_t     min_val;
     int32_t     max_val;
@@ -71,37 +55,25 @@ typedef struct lv_settings_item {
         lv_settings_switch_t    sw;
         lv_settings_slider_t    slider;
     } item;
-    const char * icon;
+    const char *icon;
     lv_settings_changed_cb_t    change_callback;
 } lv_settings_item_t;
 
 typedef struct lv_settings_page {
-    const char*         name;
+    const char         *name;
     on_close_cb_t       closed_cb;
     uint8_t             num_items;
-    lv_settings_item_t* items;
+    lv_settings_item_t *items;
 } lv_settings_page_t;
 
-
-/**********************
- * GLOBAL PROTOTYPES
- **********************/
-
 /**
  * Create a settings application
  * @param root_item descriptor of the settings button. For example:
  * `lv_settings_menu_item_t root_item = {.name = "Settings", .event_cb = root_event_cb};`
  * @return the created settings button
  */
-void lv_settings_create(lv_settings_page_t* pages, uint8_t num_pages, const char* title, lv_group_t * input_group, on_close_cb_t close_cb);
-
-/**
- * Create a settings application
- * @param root_item descriptor of the settings button. For example:
- * `lv_settings_menu_item_t root_item = {.name = "Settings", .event_cb = root_event_cb};`
- * @return the created settings button
- */
-void lv_settings_create_old(lv_obj_t * root_item, lv_group_t * input_group, on_close_cb_t close_cb);
+void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char *title, lv_group_t *input_group,
+                        on_close_cb_t close_cb);
 
 /**
  * Automatically add the item to a group to allow navigation with keypad or encoder.
@@ -109,6 +81,6 @@ void lv_settings_create_old(lv_obj_t * root_item, lv_group_t * input_group, on_c
  * The group can be change at any time.
  * @param g the group to use. `NULL` to not use this feature.
  */
-void lv_settings_set_group(lv_group_t * g);
+void lv_settings_set_group(lv_group_t *g);
 
 #endif /*LV_SETTINGS_H*/

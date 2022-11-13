@@ -42,7 +42,8 @@ static uint8_t pinDefaultState[ARRAY_SIZE(watch_gpios)];
 
 
 
-void gpio_debug_init(void) {
+void gpio_debug_init(void)
+{
     int ret;
 
     for (int i = 0; i < ARRAY_SIZE(watch_gpios); i++) {

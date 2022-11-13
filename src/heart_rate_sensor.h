@@ -9,6 +9,6 @@ typedef struct heart_rate_sample {
 
 int heart_rate_sensor_init(void);
 
-int heart_rate_sensor_fetch(plot_page_led_values_t* sample);
+int heart_rate_sensor_fetch(plot_page_led_values_t *sample);
 
 #endif
