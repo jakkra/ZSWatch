@@ -15,7 +15,6 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/settings/settings.h>
 #include <drivers/led.h>
-#include "lis2ds12_reg.h"
 #include <filesystem.h>
 #include <clock.h>
 #include <lvgl.h>
@@ -28,6 +27,7 @@
 #include <ble_aoa.h>
 #include <sys/time.h>
 #include <ram_retention_storage.h>
+#include <accelerometer.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
@@ -81,13 +81,13 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
 static void clock_handler(struct bt_cts_exact_time_256 *time);
 
 static void test_battery_read(void);
-static void test_lis_read(void);
 static void set_vibrator(uint8_t percent);
 static void set_display_blk(uint8_t percent);
 static void open_settings(void);
 static bool load_retention_ram(void);
 static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
 static void encoder_vibration(struct _lv_indev_drv_t *drv, uint8_t e);
+static void accel_evt(accelerometer_evt_t* evt);
 
 static void on_brightness_changed(lv_setting_value_t value, bool final);
 static void on_display_always_on_changed(lv_setting_value_t value, bool final);
@@ -189,6 +189,7 @@ static lv_indev_t *enc_indev;
 
 void general_work(struct k_work *item)
 {
+    int res;
     delayed_work_item_t *the_work = CONTAINER_OF(item, delayed_work_item_t, work);
 
     switch (the_work->type) {
@@ -204,6 +205,8 @@ void general_work(struct k_work *item)
             load_retention_ram();
             k_msleep(500);
             heart_rate_sensor_init();
+            res = accelerometer_init(accel_evt);
+            __ASSERT(res == 0, "Failed init accelerometer");
 
             watchface_init();
             filesystem_test();
@@ -270,7 +273,13 @@ void general_work(struct k_work *item)
         }
         case ACCEL: {
             if (!show_watchface) {
-                test_lis_read();
+                int16_t x;
+                int16_t y;
+                int16_t z;
+                res = accelerometer_fetch_xyz(&x, &y, &z);
+                __ASSERT_NO_MSG(res == 0);
+                LOG_DBG("x: %d y: %d z: %d", x, y, z);
+                states_page_accelerometer_values(x, y, z);
                 __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_MSEC(ACCEL_INTERVAL)), "FAIL accel_work");
             }
             break;
@@ -387,54 +396,6 @@ static void test_battery_read(void)
 
     watchface_set_battery_percent(batt_pptt / 100, batt_mV);
     bt_bas_set_battery_level(batt_pptt / 100);
-}
-
-static void test_lis_read(void)
-{
-    struct sensor_value odr;
-    const struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, st_lis2ds12)));
-    if (!device_is_ready(sensor)) {
-        LOG_ERR("Error: Device \"%s\" is not ready; "
-                "check the driver initialization logs for errors.",
-                sensor->name);
-    }
-
-    odr.val1 = 12; // 12HZ LP
-    odr.val2 = 0;
-    int err = sensor_attr_set(sensor, SENSOR_CHAN_ACCEL_XYZ, SENSOR_ATTR_SAMPLING_FREQUENCY, &odr);
-    if (err) {
-        LOG_DBG("sensor_attr_set fail: %d", err);
-    } else {
-        LOG_DBG("sensor_attr_set Success");
-    }
-
-    err = sensor_sample_fetch(sensor);
-    if (err) {
-        LOG_ERR("Could not fetch sample from %s", sensor->name);
-    }
-    struct sensor_value acc_val[3];
-    struct sensor_value temperature;
-    if (!err) {
-        stmdev_ctx_t *ctx = (stmdev_ctx_t *)sensor->config;
-        err = lis2ds12_temperature_raw_get(ctx, (uint8_t *)&temperature);
-        if (err < 0) {
-            LOG_ERR("\nERROR: Unable to read temperature:%d\n", err);
-        } else {
-            LOG_INF("Temp (TODO convert from 2 complement) %d\n", temperature.val1);
-        }
-        err = sensor_channel_get(sensor, SENSOR_CHAN_ACCEL_XYZ, acc_val);
-        if (err < 0) {
-            LOG_ERR("\nERROR: Unable to read accel XYZ:%d\n", err);
-        } else {
-            int16_t x_scaled = (int16_t)(sensor_value_to_double(&acc_val[0]) * (32768 / 16));
-            int16_t y_scaled = (int16_t)(sensor_value_to_double(&acc_val[1]) * (32768 / 16));
-            int16_t z_scaled = (int16_t)(sensor_value_to_double(&acc_val[2]) * (32768 / 16));
-            LOG_DBG("x: %d y: %d z: %d", x_scaled, y_scaled, z_scaled);
-            states_page_accelerometer_values(x_scaled, y_scaled, z_scaled);
-        }
-    } else {
-        LOG_ERR("Failed fetching sample from %s", sensor->name);
-    }
 }
 
 static const struct pwm_dt_spec pwm_led1 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led1));
@@ -643,4 +604,9 @@ static void on_aoa_enable_changed(lv_setting_value_t value, bool final)
     } else {
         bleAoaAdvertise(100, 100, 0);
     }
+}
+
+static void accel_evt(accelerometer_evt_t* evt)
+{
+    LOG_ERR("x: %d y: %d z: %d", evt->data.xyz.x, evt->data.xyz.y, evt->data.xyz.z);
 }
