@@ -17,9 +17,6 @@
 #define STACK_SIZE 1024
 
 #define PRIORITY 7
-K_THREAD_STACK_DEFINE(thread_stack, STACK_SIZE);
-struct k_thread bt_thread_data;
-static void bt_thread(void *arg1, void *arg2, void *arg3);
 
 static const struct bt_data ad[] = {
     BT_DATA_BYTES(BT_DATA_GAP_APPEARANCE,

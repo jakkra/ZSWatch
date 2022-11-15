@@ -87,11 +87,12 @@ static void open_settings(void);
 static bool load_retention_ram(void);
 static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
 static void encoder_vibration(struct _lv_indev_drv_t *drv, uint8_t e);
-static void accel_evt(accelerometer_evt_t* evt);
+static void accel_evt(accelerometer_evt_t *evt);
 
 static void on_brightness_changed(lv_setting_value_t value, bool final);
 static void on_display_always_on_changed(lv_setting_value_t value, bool final);
 static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
+static void on_reset_steps_changed(lv_setting_value_t value, bool final);
 
 static lv_settings_item_t general_page_items[] = {
     {
@@ -125,6 +126,17 @@ static lv_settings_item_t general_page_items[] = {
             .sw = {
                 .name = "Display always on",
                 .inital_val = true
+            }
+        }
+    },
+    {
+        .type = LV_SETTINGS_TYPE_SWITCH,
+        .icon = LV_SYMBOL_REFRESH,
+        .change_callback = on_reset_steps_changed,
+        .item = {
+            .sw = {
+                .name = "Reset step counter",
+                .inital_val = false
             }
         }
     },
@@ -258,7 +270,7 @@ void general_work(struct k_work *item)
             test_battery_read();
             bt_hrs_notify(count % 220);
             watchface_set_hrm(count % 220);
-            watchface_set_step(count * 10 % 10000);
+            //watchface_set_step(count * 10 % 10000);
             //heart_rate_sensor_fetch(&hr_sample);
             count++;
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &battery_work.work, K_MSEC(BATTERY_INTERVAL)),
@@ -310,7 +322,10 @@ static void enable_bluetoth(void)
     int err;
 
     err = bt_enable(NULL);
-    __ASSERT(err == 0, "Failed to enable Bluetooth, err: %d", err);
+    if (err != 0) {
+        LOG_ERR("Failed to enable Bluetooth, err: %d", err);
+        return;
+    }
 
     settings_load();
 
@@ -606,7 +621,38 @@ static void on_aoa_enable_changed(lv_setting_value_t value, bool final)
     }
 }
 
-static void accel_evt(accelerometer_evt_t* evt)
+static void on_reset_steps_changed(lv_setting_value_t value, bool final)
 {
-    LOG_ERR("x: %d y: %d z: %d", evt->data.xyz.x, evt->data.xyz.y, evt->data.xyz.z);
+    if (final && value.item.sw) {
+        watchface_set_step(0);
+        accelerometer_reset_step_count();
+    }
+}
+
+static bool display_on = true;
+static void accel_evt(accelerometer_evt_t *evt)
+{
+    switch (evt->type) {
+        case ACCELEROMETER_EVT_TYPE_DOOUBLE_TAP: {
+            display_on = !display_on;
+            if (display_on) {
+                set_display_blk(100);
+            } else {
+                set_display_blk(1);
+            }
+            break;
+        }
+        case ACCELEROMETER_EVT_TYPE_STEP: {
+            watchface_set_step(evt->data.step.count);
+            break;
+        }
+        case ACCELEROMETER_EVT_TYPE_XYZ: {
+            LOG_ERR("x: %d y: %d z: %d", evt->data.xyz.x, evt->data.xyz.y, evt->data.xyz.z);
+            break;
+        }
+        case ACCELEROMETER_EVT_TYPE_TILT: {
+            set_display_blk(100);
+            break;
+        }
+    }
 }
