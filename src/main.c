@@ -29,7 +29,7 @@
 #include <ram_retention_storage.h>
 #include <accelerometer.h>
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#define LOG_LEVEL LOG_LEVEL_WRN
 #include <logging/log.h>
 LOG_MODULE_REGISTER(app);
 
@@ -255,7 +255,7 @@ void general_work(struct k_work *item)
             break;
         }
         case UPDATE_CLOCK: {
-            LOG_PRINTK("%d, %d, %d\n", retained.current_time.hours, retained.current_time.minutes, retained.current_time.seconds);
+            LOG_DBG("%d, %d, %d\n", retained.current_time.hours, retained.current_time.minutes, retained.current_time.seconds);
             watchface_set_time(retained.current_time.hours, retained.current_time.minutes);
             // Store current time
             retained_update();
@@ -388,24 +388,24 @@ static void test_battery_read(void)
 {
     int rc = battery_measure_enable(true);
     if (rc != 0) {
-        printk("Failed initialize battery measurement: %d\n", rc);
+        LOG_ERR("Failed initialize battery measurement: %d\n", rc);
         return;
     }
     // From https://github.com/zephyrproject-rtos/zephyr/blob/main/samples/boards/nrf/battery/src/main.c
     int batt_mV = battery_sample();
 
     if (batt_mV < 0) {
-        printk("Failed to read battery voltage: %d\n", batt_mV);
+        LOG_ERR("Failed to read battery voltage: %d\n", batt_mV);
         return;
     }
 
     unsigned int batt_pptt = battery_level_pptt(batt_mV, levels);
 
-    printk("[%s]: %d mV; %u pptt\n", now_str(), batt_mV, batt_pptt);
+    LOG_DBG("[%s]: %d mV; %u pptt\n", now_str(), batt_mV, batt_pptt);
 
     rc = battery_measure_enable(false);
     if (rc != 0) {
-        printk("Failed disable battery measurement: %d\n", rc);
+        LOG_ERR("Failed disable battery measurement: %d\n", rc);
         return;
     }
 
@@ -422,7 +422,7 @@ static void set_vibrator(uint8_t percent)
     uint32_t pulse_width = step * percent;
 
     if (!device_is_ready(pwm_led1.dev)) {
-        printk("Error: PWM device %s is not ready\n",
+        LOG_ERR("Error: PWM device %s is not ready\n",
                pwm_led1.dev->name);
         return;
     }
