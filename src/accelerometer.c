@@ -157,8 +157,10 @@ static void data_ready_xyz(const struct device *dev, const struct sensor_trigger
             accel_evt_cb(&evt);
         }
     } else if (isr_srcs.func_ck_gate.tilt_int) {
+        LOG_DBG("Tilt Detected");
         if (accel_evt_cb) {
             evt.type = ACCELEROMETER_EVT_TYPE_TILT;
+            accel_evt_cb(&evt);
         }
     } else if (isr_srcs.status_dup.drdy) {
         LOG_DBG("DRDY ISR");
@@ -180,6 +182,8 @@ static void data_ready_xyz(const struct device *dev, const struct sensor_trigger
                 }
             }
         }
+    } else {
+        LOG_WRN("Unknown ISR");
     }
 }
 
