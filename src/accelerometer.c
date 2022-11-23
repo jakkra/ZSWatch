@@ -46,7 +46,7 @@ int accelerometer_init(accel_event_cb cb)
             }
             err = configure_tilt_detection();
             if (err < 0) {
-                LOG_ERR("configure_pedometer failed: %d", err);
+                LOG_ERR("configure_tilt_detection failed: %d", err);
             }
         }
     } else {
@@ -270,12 +270,6 @@ static int configure_pedometer(void)
     err = lis2ds12_pin_int2_route_set(ctx, route_int2); // Step detector interrupt driven to INT2 pin
     if (err < 0) {
         LOG_ERR("lis2ds12_pin_int2_route_set: %d", err);
-        return err;
-    }
-
-    err = lis2ds12_all_on_int1_set(ctx, 1); // For now route INT2 to INT1 as that GPIO is already setup
-    if (err < 0) {
-        LOG_ERR("lis2ds12_all_on_int1_set: %d", err);
         return err;
     }
 

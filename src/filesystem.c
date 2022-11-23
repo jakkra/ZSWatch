@@ -117,27 +117,27 @@ static int littlefs_binary_file_adj(char *fname)
 
     rc = fs_open(&file, fname, FS_O_CREATE | FS_O_RDWR);
     if (rc < 0) {
-        LOG_ERR("FAIL: open %s: %d", log_strdup(fname), rc);
+        LOG_ERR("FAIL: open %s: %d", (fname), rc);
         return rc;
     }
 
     rc = fs_stat(fname, &dirent);
     if (rc < 0) {
-        LOG_ERR("FAIL: stat %s: %d", log_strdup(fname), rc);
+        LOG_ERR("FAIL: stat %s: %d", (fname), rc);
         goto out;
     }
 
     /* Check if the file exists - if not just write the pattern */
     if (rc == 0 && dirent.type == FS_DIR_ENTRY_FILE && dirent.size == 0) {
         LOG_INF("Test file: %s not found, create one!",
-                log_strdup(fname));
+                (fname));
         memset(file_test_pattern, 0, sizeof(file_test_pattern));
     } else {
         rc = fs_read(&file, file_test_pattern,
                      sizeof(file_test_pattern));
         if (rc < 0) {
             LOG_ERR("FAIL: read %s: [rd:%d]",
-                    log_strdup(fname), rc);
+                    (fname), rc);
             goto out;
         }
         incr_pattern(file_test_pattern, sizeof(file_test_pattern));
@@ -148,19 +148,19 @@ static int littlefs_binary_file_adj(char *fname)
 
     rc = fs_seek(&file, 0, FS_SEEK_SET);
     if (rc < 0) {
-        LOG_ERR("FAIL: seek %s: %d", log_strdup(fname), rc);
+        LOG_ERR("FAIL: seek %s: %d", (fname), rc);
         goto out;
     }
 
     rc = fs_write(&file, file_test_pattern, sizeof(file_test_pattern));
     if (rc < 0) {
-        LOG_ERR("FAIL: write %s: %d", log_strdup(fname), rc);
+        LOG_ERR("FAIL: write %s: %d", (fname), rc);
     }
 
 out:
     ret = fs_close(&file);
     if (ret < 0) {
-        LOG_ERR("FAIL: close %s: %d", log_strdup(fname), ret);
+        LOG_ERR("FAIL: close %s: %d", (fname), ret);
         return ret;
     }
 
@@ -180,7 +180,7 @@ static int littlefs_flash_erase(unsigned int id, bool erase)
     }
 
     LOG_PRINTK("Area %u at 0x%x on %s for %u bytes\n",
-               id, (unsigned int)pfa->fa_off, pfa->fa_dev_name,
+               id, (unsigned int)pfa->fa_off, pfa->fa_dev->name,
                (unsigned int)pfa->fa_size);
 
     /* Optional wipe flash contents */

@@ -28,6 +28,7 @@
 #include <sys/time.h>
 #include <ram_retention_storage.h>
 #include <accelerometer.h>
+#include <ble_comm.h>
 
 #define LOG_LEVEL LOG_LEVEL_WRN
 #include <logging/log.h>
@@ -217,12 +218,12 @@ void general_work(struct k_work *item)
             load_retention_ram();
             k_msleep(500);
             heart_rate_sensor_init();
-            res = accelerometer_init(accel_evt);
-            __ASSERT(res == 0, "Failed init accelerometer");
-
             watchface_init();
             filesystem_test();
             enable_bluetoth();
+
+            res = accelerometer_init(accel_evt);
+            __ASSERT(res == 0, "Failed init accelerometer");
 
             clock_init(clock_handler, &retained.current_time);
 
@@ -299,6 +300,27 @@ void general_work(struct k_work *item)
     }
 }
 
+static void event_cb(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+
+    LOG_WRN("CLOSED NOT: %d", code);
+    general_work_item.type = ENABLE_BUTTON_INOUT;
+    __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_MSEC(250)), "FAIL schedule");
+}
+
+void show_notification(char* buf, int len)
+{
+    if (buttons_allocated) {
+        return;
+    }
+    buttons_allocated = true;
+    lv_obj_t * mbox = lv_msgbox_create(lv_scr_act(), "Notification", buf, NULL, true);
+    lv_obj_t * close = lv_msgbox_get_close_btn(mbox);
+    lv_obj_add_event_cb(close, event_cb, LV_EVENT_PRESSED , NULL);
+    lv_obj_center(mbox);
+}
+
 void main(void)
 {
     k_work_queue_init(&my_work_q);
@@ -332,6 +354,7 @@ static void enable_bluetoth(void)
     ble_hr_init();
 
     __ASSERT_NO_MSG(bleAoaInit());
+    __ASSERT_NO_MSG(ble_comm_init() == 0);
 }
 
 static uint8_t last_min = 0;
