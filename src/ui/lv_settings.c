@@ -38,7 +38,6 @@ static on_close_cb_t close_callback;
 
 static lv_obj_t *_menu = NULL;
 
-
 /**********************
  *      MACROS
  **********************/
@@ -76,10 +75,6 @@ static lv_obj_t *create_text(lv_obj_t *parent, const char *icon, const char *txt
 {
     lv_obj_t *obj = lv_menu_cont_create(parent);
     lv_obj_add_flag(obj, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
-    lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
-    lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE);
-
 
     lv_obj_t *img = NULL;
     lv_obj_t *label = NULL;
@@ -107,7 +102,6 @@ static lv_obj_t *create_text(lv_obj_t *parent, const char *icon, const char *txt
 static lv_obj_t *create_switch(lv_obj_t *parent, const char *icon, const char *txt, bool chk)
 {
     lv_obj_t *obj = create_text(parent, icon, txt, LV_MENU_ITEM_BUILDER_VARIANT_1);
-
     lv_obj_t *sw = lv_switch_create(obj);
     lv_obj_add_state(sw, chk ? LV_STATE_CHECKED : 0);
 
@@ -172,6 +166,14 @@ void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char
     lv_settings_item_t *item;
     lv_obj_t *_mainPage;
     lv_obj_t *obj;
+    static lv_style_t outline_primary;
+
+    // Border around selected menu row when focused
+    lv_style_init(&outline_primary);
+    lv_style_set_border_color(&outline_primary, lv_color_hex(0x001833));
+    lv_style_set_border_width(&outline_primary, lv_disp_dpx(lv_disp_get_next(NULL), 3));
+    lv_style_set_border_opa(&outline_primary, LV_OPA_50);
+    lv_style_set_border_side(&outline_primary, LV_BORDER_SIDE_BOTTOM);
 
     if (_menu != NULL) {
         lv_obj_clear_flag(_menu, LV_OBJ_FLAG_HIDDEN);
@@ -194,6 +196,7 @@ void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char
     for (int i = 0; i < num_pages; i++) {
         sub_page = lv_menu_page_create(_menu, "Settings");
         cont = lv_menu_cont_create(sub_page);
+
         lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN);
         for (int j = 0; j < pages[i].num_items; j++) {
             item = &pages[i].items[j];
@@ -216,12 +219,12 @@ void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char
         }
         // Create a main page item
         cont = lv_menu_cont_create(_mainPage);
+        lv_obj_add_style(cont, &outline_primary, LV_STATE_FOCUS_KEY);
         label = lv_label_create(cont);
         lv_label_set_text(label, pages[i].name);
         lv_menu_set_load_page_event(_menu, cont, sub_page);
         lv_group_add_obj(input_group, cont);
         lv_obj_clear_flag(cont, LV_OBJ_FLAG_SCROLLABLE);
-        lv_obj_add_flag(cont, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
     }
 
     lv_menu_set_page(_menu, _mainPage);
