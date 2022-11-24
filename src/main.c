@@ -29,6 +29,7 @@
 #include <ram_retention_storage.h>
 #include <accelerometer.h>
 #include <ble_comm.h>
+#include <lv_notifcation.h>
 
 #define LOG_LEVEL LOG_LEVEL_WRN
 #include <logging/log.h>
@@ -75,6 +76,8 @@ struct k_work_q my_work_q;
 
 static bool show_watchface = true;
 
+static bool vibrator_on = false;
+
 static void enable_bluetoth(void);
 
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
@@ -89,11 +92,20 @@ static bool load_retention_ram(void);
 static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
 static void encoder_vibration(struct _lv_indev_drv_t *drv, uint8_t e);
 static void accel_evt(accelerometer_evt_t *evt);
+static void play_not_vibration(void);
 
 static void on_brightness_changed(lv_setting_value_t value, bool final);
 static void on_display_always_on_changed(lv_setting_value_t value, bool final);
 static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
 static void on_reset_steps_changed(lv_setting_value_t value, bool final);
+
+static void connected(struct bt_conn *conn, uint8_t err);
+static void disconnected(struct bt_conn *conn, uint8_t reason);
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+    .connected    = connected,
+    .disconnected = disconnected,
+};
 
 static lv_settings_item_t general_page_items[] = {
     {
@@ -300,27 +312,6 @@ void general_work(struct k_work *item)
     }
 }
 
-static void event_cb(lv_event_t * e)
-{
-    lv_event_code_t code = lv_event_get_code(e);
-
-    LOG_WRN("CLOSED NOT: %d", code);
-    general_work_item.type = ENABLE_BUTTON_INOUT;
-    __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_MSEC(250)), "FAIL schedule");
-}
-
-void show_notification(char* buf, int len)
-{
-    if (buttons_allocated) {
-        return;
-    }
-    buttons_allocated = true;
-    lv_obj_t * mbox = lv_msgbox_create(lv_scr_act(), "Notification", buf, NULL, true);
-    lv_obj_t * close = lv_msgbox_get_close_btn(mbox);
-    lv_obj_add_event_cb(close, event_cb, LV_EVENT_PRESSED , NULL);
-    lv_obj_center(mbox);
-}
-
 void main(void)
 {
     k_work_queue_init(&my_work_q);
@@ -339,6 +330,27 @@ void main(void)
     __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");
 }
 
+static void on_notifcation_closed(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+
+    LOG_WRN("CLOSED NOT: %d", code);
+    general_work_item.type = ENABLE_BUTTON_INOUT;
+    __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_MSEC(500)), "FAIL schedule");
+}
+
+static void ble_data_cb(char* data)
+{
+    if (buttons_allocated) {
+        return;
+    }
+    buttons_allocated = true;
+
+    // TODO use len
+    lv_notification_show("Notification", data, on_notifcation_closed);
+    play_not_vibration();
+}
+
 static void enable_bluetoth(void)
 {
     int err;
@@ -354,7 +366,7 @@ static void enable_bluetoth(void)
     ble_hr_init();
 
     __ASSERT_NO_MSG(bleAoaInit());
-    __ASSERT_NO_MSG(ble_comm_init() == 0);
+    __ASSERT_NO_MSG(ble_comm_init(ble_data_cb) == 0);
 }
 
 static uint8_t last_min = 0;
@@ -527,11 +539,32 @@ static void open_settings(void)
 
 static void play_press_vibration(void)
 {
+    vibrator_on = true;
     gpio_debug_test(DRV_VIB_EN, 1);
     set_vibrator(80);
     k_msleep(150);
     set_vibrator(80);
     gpio_debug_test(DRV_VIB_EN, 0);
+    vibrator_on = false;
+}
+
+static void play_not_vibration(void)
+{
+    vibrator_on = true;
+    set_vibrator(100);
+    gpio_debug_test(DRV_VIB_EN, 1);
+    k_msleep(50);
+    gpio_debug_test(DRV_VIB_EN, 0);
+    k_msleep(50);
+    gpio_debug_test(DRV_VIB_EN, 1);
+    k_msleep(50);
+    gpio_debug_test(DRV_VIB_EN, 0);
+    k_msleep(50);
+    set_vibrator(0);
+    gpio_debug_test(DRV_VIB_EN, 1);
+    k_msleep(50);
+    gpio_debug_test(DRV_VIB_EN, 0);
+    vibrator_on = false;
 }
 
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
@@ -652,11 +685,31 @@ static void on_reset_steps_changed(lv_setting_value_t value, bool final)
     }
 }
 
+static void connected(struct bt_conn *conn, uint8_t err)
+{
+    if (err) {
+        LOG_ERR("Connection failed (err %u)", err);
+        return;
+    }
+
+    watchface_set_ble_connected(true);
+}
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+    watchface_set_ble_connected(false);
+}
+
+
 static bool display_on = true;
 static void accel_evt(accelerometer_evt_t *evt)
 {
     switch (evt->type) {
         case ACCELEROMETER_EVT_TYPE_DOOUBLE_TAP: {
+            if (vibrator_on) {
+                // Vibrator causes false double tap detections.
+                break;
+            }
             display_on = !display_on;
             if (display_on) {
                 set_display_blk(100);

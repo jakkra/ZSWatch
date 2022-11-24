@@ -9,14 +9,18 @@ LOG_MODULE_REGISTER(ble_comm, LOG_LEVEL_DBG);
 
 static void connected(struct bt_conn *conn, uint8_t err);
 static void disconnected(struct bt_conn *conn, uint8_t reason);
+static void param_updated(struct bt_conn *conn, uint16_t interval, uint16_t latency, uint16_t timeout);
 static void nus_send_data(char *data);
 static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint16_t len);
 BT_CONN_CB_DEFINE(conn_callbacks) = {
     .connected    = connected,
     .disconnected = disconnected,
+    .le_param_updated = param_updated,
 };
 static struct bt_conn *currentConn;
 static uint32_t nusMaxSendLen;
+
+static on_data_cb_t data_parsed_cb;
 
 static struct bt_nus_cb nus_cb = {
     .received = bt_receive_cb,
@@ -45,13 +49,15 @@ static void request_mtu_exchange(void)
 		LOG_INF("MTU exchange pending");
 	}
 }
-int ble_comm_init(void)
+
+int ble_comm_init(on_data_cb_t data_cb)
 {
     int err = bt_nus_init(&nus_cb);
     if (err) {
         LOG_ERR("Failed to initialize UART service (err: %d)", err);
         return err;
     }
+    data_parsed_cb = data_cb;
     return err;
 }
 
@@ -74,6 +80,24 @@ static void connected(struct bt_conn *conn, uint8_t err)
     bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
     LOG_INF("Connected %s", addr);
     request_mtu_exchange();
+    struct bt_conn_info info;
+    bt_conn_get_info(conn, &info);
+    LOG_INF("Interval: %d, latency: %d, timeout: %d", info.le.interval, info.le.latency, info.le.timeout);
+    /*
+    // TODO connection timeout 0x08 after this, why?
+    // TODO to this after GATT discovery is done
+    struct bt_le_conn_param param = {
+		.interval_min = 100,
+		.interval_max = 500,
+		.latency = 0,
+		.timeout = 200,
+	};
+
+    err = bt_conn_le_param_update(conn, &param);
+    if (err) {
+        LOG_ERR("bt_conn_le_param_update failed");
+    }
+    */
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -87,6 +111,11 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
     if (currentConn) {
         bt_conn_unref(currentConn);
     }
+}
+
+static void param_updated(struct bt_conn *conn, uint16_t interval, uint16_t latency, uint16_t timeout)
+{
+    LOG_INF("Updated => Interval: %d, latency: %d, timeout: %d", interval, latency, timeout);
 }
 
 static void nus_send_data(char *data)
@@ -108,7 +137,6 @@ typedef enum parse_state {
 
 parse_state_t parse_state = WAIT_GB;
 
-extern void show_notification(char* buf, int len);
 
 static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint16_t len)
 {
@@ -181,7 +209,7 @@ static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint1
     }
     if (parse_state == PARSE_STATE_DONE) {
         LOG_HEXDUMP_WRN(buf, data_index, "PARSING DONE");
-        show_notification(buf, data_index);
+        data_parsed_cb(buf);
         char* needle = "body";
         char* body = strstr(buf, needle);
         if (body) {

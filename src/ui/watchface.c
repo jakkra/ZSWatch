@@ -1,6 +1,7 @@
 #include <watchface.h>
 #include <lvgl.h>
 #include <logging/log.h>
+#include <general_ui.h>
 
 #define SMALL_WATCHFACE_CENTER_OFFSET 37
 
@@ -18,6 +19,8 @@ static lv_obj_t *hrm_arc;
 
 static lv_obj_t *step_label;
 static lv_obj_t *step_arc;
+
+static lv_obj_t *ble_symbol;
 
 static void tick_draw_event_cb(lv_event_t *e)
 {
@@ -150,9 +153,21 @@ static void add_step_indicator(lv_obj_t *parent)
     step_label = lv_label_create(parent);
     lv_label_set_text(step_label, "-");
     lv_obj_align_to(step_label, step_arc, LV_ALIGN_CENTER, 0, -9);
-
 }
 
+static void add_ble_connected_indicator(lv_obj_t *parent)
+{
+    static lv_style_t color_style;
+
+    ble_symbol = lv_label_create(parent);
+    lv_label_set_text(ble_symbol, LV_SYMBOL_BLUETOOTH);
+    lv_obj_align_to(ble_symbol, parent, LV_ALIGN_CENTER, 0, SMALL_WATCHFACE_CENTER_OFFSET + 25);
+    
+    lv_style_init(&color_style);
+    lv_style_set_text_color(&color_style, lv_color_hex(0x0082FC));
+    lv_obj_add_style(ble_symbol, &color_style, 0);
+    watchface_set_ble_connected(false);
+}
 
 void watchface_init(void)
 {
@@ -175,6 +190,7 @@ void watchface_show(void)
     add_battery_indicator(root_page);
     add_pulse_indicator(root_page);
     add_step_indicator(root_page);
+    add_ble_connected_indicator(root_page);
     add_clock(root_page);
 
     general_ui_anim_in(root_page, 100);
@@ -244,4 +260,13 @@ void watchface_set_time(int32_t hour, int32_t minute)
     //LOG_PRINTK("Offset: %d\n", hour_offset);
     lv_meter_set_indicator_end_value(clock_meter, indic_min, minute);
     lv_meter_set_indicator_end_value(clock_meter, indic_hour, hour_offset);
+}
+
+void watchface_set_ble_connected(bool connected)
+{
+    if (connected) {
+        lv_obj_clear_flag(ble_symbol, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(ble_symbol, LV_OBJ_FLAG_HIDDEN);
+    }
 }

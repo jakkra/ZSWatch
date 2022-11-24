@@ -1,6 +1,7 @@
 #ifndef __WATCH_UI_H
 #define __WATCH_UI_H
 #include <inttypes.h>
+#include <stdbool.h>
 
 void watchface_init(void);
 
@@ -15,5 +16,8 @@ void watchface_set_hrm(int32_t value);
 void watchface_set_step(int32_t value);
 
 void watchface_set_time(int32_t hour, int32_t minute);
+
+void watchface_set_ble_connected(bool connected);
+
 
 #endif
