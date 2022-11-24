@@ -571,6 +571,13 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
 {
     LOG_INF("Pressed %d, type: %d", id, type);
 
+    // Always allow force restart
+    if (type == BUTTONS_LONG_PRESS && id == BUTTON_3) {
+        retained.off_count += 1;
+        retained_update();
+        sys_reboot(SYS_REBOOT_COLD);
+    }
+
     if (buttons_allocated) {
         // Handled by LVGL
         return;
@@ -600,9 +607,9 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
                 __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");
             }
         } else if (id == BUTTON_3) {
-            sys_reboot(SYS_REBOOT_COLD);
             retained.off_count += 1;
             retained_update();
+            sys_reboot(SYS_REBOOT_COLD);
         }
     }
 }
