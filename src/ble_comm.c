@@ -6,6 +6,8 @@
 
 LOG_MODULE_REGISTER(ble_comm, LOG_LEVEL_DBG);
 
+static char* extract_value_str(char* key, char* data, int* value_len);
+static int parse_data(char* data, int len);
 
 static void connected(struct bt_conn *conn, uint8_t err);
 static void disconnected(struct bt_conn *conn, uint8_t reason);
@@ -151,6 +153,7 @@ static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint1
         case WAIT_GB:
         {
             if (gb_start) {
+                gb_start +=3;
                 parse_state = WAIT_END;
                 brackets = 0;
                 data_index = 0;
@@ -208,15 +211,84 @@ static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint1
             break;
     }
     if (parse_state == PARSE_STATE_DONE) {
-        LOG_HEXDUMP_WRN(buf, data_index, "PARSING DONE");
-        data_parsed_cb(buf);
-        char* needle = "body";
-        char* body = strstr(buf, needle);
-        if (body) {
-        }
         parse_state = WAIT_GB;
-    }
 
-    //atHostHandleCommand(data, len, nus_send_data);
+        LOG_DBG("%s", buf);
+        
+        parse_data(buf, data_index);
+    }
 }
 
+static char* extract_value_str(char* key, char* data, int* value_len)
+{
+    char* start;
+    char* str = strstr(data, key);
+    *value_len = 0;
+    if (str == NULL) {
+        return NULL;
+    }
+    str += strlen(key);
+    if (*str != '\"') {
+        return NULL; // Seems to be an INT?
+    }
+    str++;
+    if (*str == '\0') {
+        return NULL; // Got end of data
+    }
+    start = str;
+    str = strstr(str, "\"");
+    if (str == NULL) {
+        return NULL; // No end of value
+    }
+    *value_len = str - start;
+
+    return start;
+}
+
+static int parse_notify(char* data, int len)
+{
+    ble_comm_cb_data_t cb;
+    memset(&cb, 0, sizeof(cb));
+
+    cb.type = BLE_COMM_DATA_TYPE_NOTIFY;
+    
+    //cb.data.notify.src = extract_value_str("src:", buf, &cb.data.notify.src_len);
+    cb.data.notify.sender = extract_value_str("sender:", buf, &cb.data.notify.sender_len);
+    //cb.data.notify.title = extract_value_str("title:", buf, &cb.data.notify.title_len);
+    cb.data.notify.body = extract_value_str("body:", buf, &cb.data.notify.body_len);
+
+    // Little hack since we know it's JSON, we can terminate all values in the data
+    // which saves us some hassle and we can just pass all values null terminated
+    // to the callback
+    //if (cb.data.notify.src_len > 0) {
+    //    cb.data.notify.src[cb.data.notify.src_len] = '\0';
+    //}
+    if (cb.data.notify.sender_len > 0) {
+        cb.data.notify.sender[cb.data.notify.sender_len] = '\0';
+    }
+    //if (cb.data.notify.title_len > 0) {
+    //    cb.data.notify.title[cb.data.notify.title_len] = '\0';
+    //}
+    if (cb.data.notify.body_len > 0) {
+        cb.data.notify.body[cb.data.notify.body_len] = '\0';
+    }
+
+    data_parsed_cb(&cb);
+    return 0;
+}
+
+static int parse_data(char* data, int len)
+{
+    int type_len;
+    char* type;
+
+    type = extract_value_str("t:", buf, &type_len);
+    if (type == NULL) {
+        return -1;
+    }
+
+    if (strncmp(type, "notify", type_len) == 0) {
+        return parse_notify(buf, len);
+    }
+    return 0;
+}

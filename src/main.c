@@ -339,16 +339,21 @@ static void on_notifcation_closed(lv_event_t * e)
     __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_MSEC(500)), "FAIL schedule");
 }
 
-static void ble_data_cb(char* data)
+static void ble_data_cb(ble_comm_cb_data_t* cb)
 {
-    if (buttons_allocated) {
-        return;
+    switch (cb->type) {
+    case BLE_COMM_DATA_TYPE_NOTIFY:
+        if (buttons_allocated) {
+            return;
+        }
+        buttons_allocated = true;
+        lv_notification_show(cb->data.notify.sender, cb->data.notify.body, on_notifcation_closed);
+        LOG_INF("src: %s, sender: %s, body: %s", cb->data.notify.src, cb->data.notify.sender, cb->data.notify.body);
+        play_not_vibration();
+        break;    
+    default:
+        break;
     }
-    buttons_allocated = true;
-
-    // TODO use len
-    lv_notification_show("Notification", data, on_notifcation_closed);
-    play_not_vibration();
 }
 
 static void enable_bluetoth(void)
