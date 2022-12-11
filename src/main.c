@@ -49,11 +49,20 @@ typedef enum work_type {
     INIT,
     OPEN_SETTINGS,
     UPDATE_CLOCK,
-    ENABLE_BUTTON_INOUT,
+    OPEN_WATCHFACE,
     BATTERY,
     RENDER,
     ACCEL,
+    CLOSE_NOTIFICATION
 } work_type_t;
+
+typedef enum ui_state {
+    INIT_STATE,
+    SETTINGS_STATE,
+    WATCHFACE_STATE,
+    ACCELEROMETER_STATE,
+    NOTIFCATION_STATE,
+} ui_state_t;
 
 typedef struct delayed_work_item {
     struct k_work_delayable   work;
@@ -74,7 +83,7 @@ K_THREAD_STACK_DEFINE(my_stack_area, MY_STACK_SIZE);
 
 struct k_work_q my_work_q;
 
-static bool show_watchface = true;
+static ui_state_t watch_state = INIT_STATE;
 
 static bool vibrator_on = false;
 
@@ -260,9 +269,11 @@ void general_work(struct k_work *item)
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &battery_work.work, K_NO_WAIT), "FAIL battery_work");
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &render_work.work, K_NO_WAIT), "FAIL render_work");
             //__ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_NO_WAIT), "FAIL accel_work");
+            watch_state = WATCHFACE_STATE;
             break;
         }
         case OPEN_SETTINGS: {
+            watch_state = SETTINGS_STATE;
             watchface_remove();
             open_settings();
             break;
@@ -274,9 +285,10 @@ void general_work(struct k_work *item)
             retained_update();
             break;
         }
-        case ENABLE_BUTTON_INOUT: {
+        case OPEN_WATCHFACE: {
             watchface_show();
             buttons_allocated = false;
+            watch_state = WATCHFACE_STATE;
             break;
         }
         case BATTERY: {
@@ -297,7 +309,7 @@ void general_work(struct k_work *item)
             break;
         }
         case ACCEL: {
-            if (!show_watchface) {
+            if (watch_state == ACCELEROMETER_STATE) {
                 int16_t x;
                 int16_t y;
                 int16_t z;
@@ -307,6 +319,10 @@ void general_work(struct k_work *item)
                 states_page_accelerometer_values(x, y, z);
                 __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_MSEC(ACCEL_INTERVAL)), "FAIL accel_work");
             }
+            break;
+        }
+        case CLOSE_NOTIFICATION: {
+            lv_notification_remove();
             break;
         }
     }
@@ -335,7 +351,7 @@ static void on_notifcation_closed(lv_event_t * e)
     lv_event_code_t code = lv_event_get_code(e);
 
     LOG_WRN("CLOSED NOT: %d", code);
-    general_work_item.type = ENABLE_BUTTON_INOUT;
+    general_work_item.type = OPEN_WATCHFACE;
     __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_MSEC(500)), "FAIL schedule");
 }
 
@@ -347,9 +363,10 @@ static void ble_data_cb(ble_comm_cb_data_t* cb)
             return;
         }
         buttons_allocated = true;
-        lv_notification_show(cb->data.notify.sender, cb->data.notify.body, on_notifcation_closed);
-        LOG_INF("src: %s, sender: %s, body: %s", cb->data.notify.src, cb->data.notify.sender, cb->data.notify.body);
+        lv_notification_show(cb->data.notify.title, cb->data.notify.body, on_notifcation_closed);
         play_not_vibration();
+        general_work_item.type = CLOSE_NOTIFICATION;
+        __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(15)), "FAIL schedule");
         break;    
     default:
         break;
@@ -532,7 +549,7 @@ static bool load_retention_ram(void)
 
 static void on_close_settings(void)
 {
-    general_work_item.type = ENABLE_BUTTON_INOUT;
+    general_work_item.type = OPEN_WATCHFACE;
     __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_MSEC(250)), "FAIL schedule");
 }
 
@@ -587,27 +604,32 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
         // Handled by LVGL
         return;
     }
-    // TODO only change if not something that needs interaction with is shown.
-    /*
-        UP down Buttons change screens
-        Enter button shows settings?
-    */
+
     if (type == BUTTONS_SHORT_PRESS) {
-        show_watchface = !show_watchface;
+        if (watch_state == WATCHFACE_STATE) {
+            watch_state = ACCELEROMETER_STATE;
+        } else if (watch_state == ACCELEROMETER_STATE) {
+            watch_state = WATCHFACE_STATE;
+        }
         play_press_vibration();
-        if (show_watchface) {
-            states_page_remove();
-            watchface_show();
-        } else {
-            watchface_remove();
-            states_page_show();
-            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_MSEC(1000)), "FAIL accel_work");
+        switch (watch_state) {
+            case WATCHFACE_STATE:
+                states_page_remove();
+                watchface_show();
+                break;
+            case ACCELEROMETER_STATE:
+                watchface_remove();
+                states_page_show();
+                __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_MSEC(1000)), "FAIL accel_work");
+                break;
+            default:
+                break;
         }
         LOG_DBG("BUTTONS_SHORT_PRESS");
     } else {
         LOG_ERR("BUTTONS_LONG_PRESS, open settings");
         if (id == BUTTON_2) {
-            if (show_watchface) {
+            if (watch_state == WATCHFACE_STATE) {
                 general_work_item.type = OPEN_SETTINGS;
                 __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");
             }

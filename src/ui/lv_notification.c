@@ -1,10 +1,17 @@
 #include <lv_notifcation.h>
 
+static void on_notifcation_closed(lv_event_t * e);
+
+
+static lv_obj_t *mbox;
+static on_close_not_cb_t on_close_cb;
+
 void lv_notification_show(char *title, char *body, on_close_not_cb_t close_cb)
 {
-    lv_obj_t *mbox = lv_msgbox_create(lv_scr_act(), body, body, NULL, true);
+    on_close_cb = close_cb;
+    mbox = lv_msgbox_create(lv_scr_act(), title, body, NULL, true);
     lv_obj_t *close_btn = lv_msgbox_get_close_btn(mbox);
-    lv_obj_add_event_cb(close_btn, close_cb, LV_EVENT_PRESSED, NULL);
+    lv_obj_add_event_cb(close_btn, on_notifcation_closed, LV_EVENT_PRESSED, NULL);
     lv_obj_center(mbox);
     lv_group_focus_obj(close_btn);
     lv_obj_set_size(mbox, 240, 120);
@@ -24,4 +31,17 @@ void lv_notification_show(char *title, char *body, on_close_not_cb_t close_cb)
     lv_obj_add_style(close_btn, &color_style, 0);
 
     lv_obj_align_to(mbox, lv_scr_act(), LV_ALIGN_CENTER, 0, 90);
+}
+
+void lv_notification_remove(void)
+{
+    if (mbox) {
+        lv_msgbox_close(mbox);
+    }
+}
+
+static void on_notifcation_closed(lv_event_t * e)
+{
+    mbox = NULL;
+    on_close_cb(e);
 }

@@ -252,9 +252,9 @@ static int parse_notify(char* data, int len)
 
     cb.type = BLE_COMM_DATA_TYPE_NOTIFY;
     
-    //cb.data.notify.src = extract_value_str("src:", buf, &cb.data.notify.src_len);
+    cb.data.notify.src = extract_value_str("src:", buf, &cb.data.notify.src_len);
     cb.data.notify.sender = extract_value_str("sender:", buf, &cb.data.notify.sender_len);
-    //cb.data.notify.title = extract_value_str("title:", buf, &cb.data.notify.title_len);
+    cb.data.notify.title = extract_value_str("title:", buf, &cb.data.notify.title_len);
     cb.data.notify.body = extract_value_str("body:", buf, &cb.data.notify.body_len);
 
     // Little hack since we know it's JSON, we can terminate all values in the data
