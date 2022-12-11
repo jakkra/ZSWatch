@@ -8,7 +8,7 @@
  *********************/
 #include "lv_settings.h"
 #include "lvgl.h"
-#include "logging/log.h"
+#include "zephyr/logging/log.h"
 
 /*********************
  *      DEFINES

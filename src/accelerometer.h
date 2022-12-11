@@ -1,7 +1,7 @@
 #ifndef ACCELEROMETER_H_
 #define ACCELEROMETER_H_
 
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 
 typedef enum accelerometer_evt_type_t {
     ACCELEROMETER_EVT_TYPE_XYZ,

@@ -1,20 +1,20 @@
-#include <device.h>
-#include <drivers/display.h>
+#include <zephyr/device.h>
+#include <zephyr/drivers/display.h>
 #include <zephyr/sys/reboot.h>
 #include <stdio.h>
 #include <string.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <buttons.h>
 #include <battery.h>
 #include <gpio_debug.h>
 #include <hr_service.h>
-#include <drivers/sensor.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/bluetooth/services/hrs.h>
 #include <zephyr/bluetooth/services/bas.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/settings/settings.h>
-#include <drivers/led.h>
+#include <zephyr/drivers/led.h>
 #include <filesystem.h>
 #include <clock.h>
 #include <lvgl.h>
@@ -32,7 +32,7 @@
 #include <lv_notifcation.h>
 
 #define LOG_LEVEL LOG_LEVEL_WRN
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app);
 
 #define RENDER_INTERVAL_LVGL (1000 / 100) // 10 Hz

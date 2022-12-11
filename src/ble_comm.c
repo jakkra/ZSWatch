@@ -1,8 +1,8 @@
 #include <ble_comm.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
 #include <bluetooth/services/nus.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(ble_comm, LOG_LEVEL_DBG);
 
@@ -260,15 +260,15 @@ static int parse_notify(char* data, int len)
     // Little hack since we know it's JSON, we can terminate all values in the data
     // which saves us some hassle and we can just pass all values null terminated
     // to the callback
-    //if (cb.data.notify.src_len > 0) {
-    //    cb.data.notify.src[cb.data.notify.src_len] = '\0';
-    //}
+    if (cb.data.notify.src_len > 0) {
+        cb.data.notify.src[cb.data.notify.src_len] = '\0';
+    }
     if (cb.data.notify.sender_len > 0) {
         cb.data.notify.sender[cb.data.notify.sender_len] = '\0';
     }
-    //if (cb.data.notify.title_len > 0) {
-    //    cb.data.notify.title[cb.data.notify.title_len] = '\0';
-    //}
+    if (cb.data.notify.title_len > 0) {
+        cb.data.notify.title[cb.data.notify.title_len] = '\0';
+    }
     if (cb.data.notify.body_len > 0) {
         cb.data.notify.body[cb.data.notify.body_len] = '\0';
     }

@@ -1,9 +1,9 @@
-#include <zephyr.h>
-#include <device.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/__assert.h>
 #include <assert.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 #include <gpio_debug.h>
 
 LOG_MODULE_REGISTER(gpio_debug, LOG_LEVEL_WRN);

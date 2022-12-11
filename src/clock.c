@@ -1,14 +1,14 @@
 #include "clock.h"
 #include <inttypes.h>
 #include <sys/time.h>
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include <errno.h>
 #include <unistd.h>
 #include <zephyr/kernel.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -150,11 +150,12 @@ static void discover_completed_cb(struct bt_gatt_dm *dm, void *ctx)
         has_cts = true;
         do_read = true;
         if (bt_conn_get_security(cts_c.conn) < BT_SECURITY_L2) {
-            err = bt_conn_set_security(cts_c.conn, BT_SECURITY_L2);
-            if (err) {
-                LOG_PRINTK("Failed to set security (err %d)\n",
-                           err);
-            }
+            // TODO failing due to both phone and we requets security at same time
+            //err = bt_conn_set_security(cts_c.conn, BT_SECURITY_L2);
+            //if (err) {
+            //    LOG_PRINTK("Failed to set security (err %d)\n",
+            //               err);
+            //}
         } else {
             enable_notifications();
             do_read = true;

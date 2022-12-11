@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/direction.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/direction.h>
 
 #include "ble_aoa.h"
 

@@ -1,7 +1,7 @@
 #ifndef __GPIO_DEBUG_H
 #define __GPIO_DEBUG_H
 
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 
 /**
  * @brief Button id

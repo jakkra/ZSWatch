@@ -1,11 +1,11 @@
 #include <stdio.h>
 
-#include <zephyr.h>
-#include <device.h>
-#include <fs/fs.h>
-#include <fs/littlefs.h>
-#include <logging/log.h>
-#include <storage/flash_map.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/littlefs.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/storage/flash_map.h>
 
 LOG_MODULE_REGISTER(filesystem, LOG_LEVEL_DBG);
 

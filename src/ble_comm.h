@@ -1,7 +1,7 @@
 #ifndef __BLE_COMM_H
 #define __BLE_COMM_H
 
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 
 
 typedef enum ble_comm_data_type {

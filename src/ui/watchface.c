@@ -1,6 +1,6 @@
 #include <watchface.h>
 #include <lvgl.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include <general_ui.h>
 
 #define SMALL_WATCHFACE_CENTER_OFFSET 37

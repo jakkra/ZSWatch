@@ -1,5 +1,5 @@
 #include <accelerometer.h>
-#include <logging/log.h>
+#include <zephyr/logging/log.h>
 #include "lis2ds12_reg.h"
 
 LOG_MODULE_REGISTER(accel, LOG_LEVEL_DBG);

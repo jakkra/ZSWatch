@@ -1,11 +1,11 @@
 #include "buttons.h"
 
-#include <zephyr.h>
-#include <device.h>
-#include <sys/__assert.h>
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/sys/__assert.h>
 #include <assert.h>
-#include <drivers/gpio.h>
-#include <logging/log.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(buttons, LOG_LEVEL_DBG);
 
