@@ -53,7 +53,8 @@ typedef enum work_type {
     BATTERY,
     RENDER,
     ACCEL,
-    CLOSE_NOTIFICATION
+    CLOSE_NOTIFICATION,
+    DEBUG_NOTIFICATION
 } work_type_t;
 
 typedef enum ui_state {
@@ -76,7 +77,7 @@ static delayed_work_item_t render_work = { .type = RENDER };
 static delayed_work_item_t clock_work = { .type = UPDATE_CLOCK };
 static delayed_work_item_t general_work_item;
 
-#define MY_STACK_SIZE 2048
+#define MY_STACK_SIZE 2500
 #define MY_PRIORITY 5
 
 K_THREAD_STACK_DEFINE(my_stack_area, MY_STACK_SIZE);
@@ -107,6 +108,7 @@ static void on_brightness_changed(lv_setting_value_t value, bool final);
 static void on_display_always_on_changed(lv_setting_value_t value, bool final);
 static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
 static void on_reset_steps_changed(lv_setting_value_t value, bool final);
+static void on_notifcation_closed(lv_event_t * e);
 
 static void connected(struct bt_conn *conn, uint8_t err);
 static void disconnected(struct bt_conn *conn, uint8_t reason);
@@ -270,6 +272,9 @@ void general_work(struct k_work *item)
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &render_work.work, K_NO_WAIT), "FAIL render_work");
             //__ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_NO_WAIT), "FAIL accel_work");
             watch_state = WATCHFACE_STATE;
+
+            general_work_item.type = DEBUG_NOTIFICATION;
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(5)), "FAIL schedule");
             break;
         }
         case OPEN_SETTINGS: {
@@ -323,6 +328,18 @@ void general_work(struct k_work *item)
         }
         case CLOSE_NOTIFICATION: {
             lv_notification_remove();
+            buttons_allocated = false;
+            break;
+        }
+        case DEBUG_NOTIFICATION:
+        {
+            buttons_allocated = true;
+            lv_notification_show("Sofia", "This is a body with a longer message that maybe should wrap around or be cut?", NOTIFICATION_MESSENGER, on_notifcation_closed);
+            //lv_notification_show("Test title", "This is a body.", on_notifcation_closed);
+
+            play_not_vibration();
+            general_work_item.type = CLOSE_NOTIFICATION;
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(10)), "FAIL schedule");
             break;
         }
     }
@@ -357,13 +374,22 @@ static void on_notifcation_closed(lv_event_t * e)
 
 static void ble_data_cb(ble_comm_cb_data_t* cb)
 {
+    notification_icon_t icon;
+
     switch (cb->type) {
     case BLE_COMM_DATA_TYPE_NOTIFY:
         if (buttons_allocated) {
             return;
         }
         buttons_allocated = true;
-        lv_notification_show(cb->data.notify.title, cb->data.notify.body, on_notifcation_closed);
+        if (strncmp(cb->data.notify.src, "Messenger", cb->data.notify.src_len) == 0) {
+            icon = NOTIFICATION_MESSENGER;
+        } else if(strncmp(cb->data.notify.src, "Gmail", cb->data.notify.src_len) == 0) {
+            icon = NOTFICATION_GMAIL;
+        } else {
+            icon = NOTFICATION_NONE;
+        }
+        lv_notification_show(cb->data.notify.title, cb->data.notify.body, icon, on_notifcation_closed);
         play_not_vibration();
         general_work_item.type = CLOSE_NOTIFICATION;
         __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(15)), "FAIL schedule");
