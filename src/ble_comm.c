@@ -183,7 +183,6 @@ static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint1
         }
         case WAIT_END:
         {
-            
             for (int i = 0; i < len; i++) {
                 buf[data_index] = data[i];
                 data_index++;
@@ -201,7 +200,7 @@ static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint1
                 }
             }
             
-           LOG_WRN("WAIT END");
+            LOG_WRN("WAIT END");
             break;
         }
         case PARSE_STATE_DONE:
@@ -304,6 +303,17 @@ static int parse_notify(char* data, int len)
     return 0;
 }
 
+static int parse_notify_delete(char* data, int len)
+{
+    ble_comm_cb_data_t cb;
+    memset(&cb, 0, sizeof(cb));
+
+    cb.type = BLE_COMM_DATA_TYPE_NOTIFY_REMOVE;
+    cb.data.notify.id = extract_value_uint32("id", buf);
+    data_parsed_cb(&cb);
+    return 0;
+}
+
 static int parse_data(char* data, int len)
 {
     int type_len;
@@ -314,8 +324,13 @@ static int parse_data(char* data, int len)
         return -1;
     }
 
-    if (strncmp(type, "notify", type_len) == 0) {
+    if (strlen("notify") == type_len && strncmp(type, "notify", type_len) == 0) {
         return parse_notify(buf, len);
     }
+
+    if (strlen("notify-") == type_len && strncmp(type, "notify-", type_len) == 0) {
+        return parse_notify_delete(buf, len);
+    }
+
     return 0;
 }

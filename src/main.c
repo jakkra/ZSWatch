@@ -411,6 +411,10 @@ static void ble_data_cb(ble_comm_cb_data_t* cb)
         general_work_item.type = CLOSE_NOTIFICATION;
         __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(15)), "FAIL schedule");
         break;    
+    case BLE_COMM_DATA_TYPE_NOTIFY_REMOVE:
+        if (notification_manager_remove(cb->data.notify_remove.id) != 0) {
+            LOG_WRN("Notification %d not found", cb->data.notify_remove.id);
+        }
     default:
         break;
     }
@@ -782,7 +786,6 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
     watchface_set_ble_connected(false);
 }
-
 
 static bool display_on = true;
 static void accel_evt(accelerometer_evt_t *evt)
