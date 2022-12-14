@@ -42,7 +42,6 @@ void lv_notification_show(char *title, char *body, notification_src_t icon, uint
 
     lv_obj_t *text_label = lv_msgbox_get_text(mbox);
     lv_obj_set_style_text_align(text_label, LV_TEXT_ALIGN_CENTER, 0);
-    //lv_obj_set_style_text_align(mbox , LV_TEXT_ALIGN_CENTER, 0);
 
     lv_obj_align_to(mbox, lv_scr_act(), LV_ALIGN_CENTER, 0, 90);
 
@@ -75,5 +74,9 @@ void lv_notification_remove(void)
 static void on_notifcation_closed(lv_event_t *e)
 {
     mbox = NULL;
+    if (img_icon) {
+        lv_obj_del(img_icon);
+    }
+    img_icon = NULL;
     on_close_cb(e, active_not_id);
 }
