@@ -157,7 +157,7 @@ static void discover_completed_cb(struct bt_gatt_dm *dm, void *ctx)
             //               err);
             //}
         } else {
-            enable_notifications();
+            //enable_notifications();
             do_read = true;
         }
     }
@@ -230,7 +230,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
     if (!err) {
         LOG_PRINTK("Security changed: %s level %u\n", addr, level);
 
-        enable_notifications();
+        //enable_notifications();
     } else {
         LOG_PRINTK("Security failed: %s level %u err %d\n", addr, level,
                    err);

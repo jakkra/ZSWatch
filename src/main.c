@@ -30,6 +30,7 @@
 #include <accelerometer.h>
 #include <ble_comm.h>
 #include <lv_notifcation.h>
+#include <notification_manager.h>
 
 #define LOG_LEVEL LOG_LEVEL_WRN
 #include <zephyr/logging/log.h>
@@ -243,6 +244,7 @@ void general_work(struct k_work *item)
             heart_rate_sensor_init();
             watchface_init();
             filesystem_test();
+            notification_manager_init();
             enable_bluetoth();
 
             res = accelerometer_init(accel_evt);
@@ -334,7 +336,7 @@ void general_work(struct k_work *item)
         case DEBUG_NOTIFICATION:
         {
             buttons_allocated = true;
-            lv_notification_show("Sofia", "This is a body with a longer message that maybe should wrap around or be cut?", NOTIFICATION_MESSENGER, on_notifcation_closed);
+            lv_notification_show("Test Namn", "This is a body with a longer message that maybe should wrap around or be cut?", NOTIFICATION_SRC_GMAIL, on_notifcation_closed);
             //lv_notification_show("Test title", "This is a body.", on_notifcation_closed);
 
             play_not_vibration();
@@ -374,22 +376,19 @@ static void on_notifcation_closed(lv_event_t * e)
 
 static void ble_data_cb(ble_comm_cb_data_t* cb)
 {
-    notification_icon_t icon;
+    not_mngr_notification_t* parsed_not;
 
     switch (cb->type) {
     case BLE_COMM_DATA_TYPE_NOTIFY:
+        parsed_not = notification_manager_add(&cb->data.notify);
+        if (!parsed_not) {
+            return;
+        }
         if (buttons_allocated) {
             return;
         }
-        buttons_allocated = true;
-        if (strncmp(cb->data.notify.src, "Messenger", cb->data.notify.src_len) == 0) {
-            icon = NOTIFICATION_MESSENGER;
-        } else if(strncmp(cb->data.notify.src, "Gmail", cb->data.notify.src_len) == 0) {
-            icon = NOTFICATION_GMAIL;
-        } else {
-            icon = NOTFICATION_NONE;
-        }
-        lv_notification_show(cb->data.notify.title, cb->data.notify.body, icon, on_notifcation_closed);
+
+        lv_notification_show(parsed_not->title, parsed_not->body, parsed_not->src, on_notifcation_closed);
         play_not_vibration();
         general_work_item.type = CLOSE_NOTIFICATION;
         __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(15)), "FAIL schedule");

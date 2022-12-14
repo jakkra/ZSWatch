@@ -9,6 +9,7 @@ typedef enum ble_comm_data_type {
 } ble_comm_data_type_t;
 
 typedef struct ble_comm_notify {
+    uint32_t id;
     char* body;
     int body_len;
     char* sender;

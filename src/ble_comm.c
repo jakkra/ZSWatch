@@ -245,13 +245,37 @@ static char* extract_value_str(char* key, char* data, int* value_len)
     return start;
 }
 
+static uint32_t extract_value_uint32(char* key, char* data)
+{
+    char* start;
+    char* str = strstr(data, key);
+    char* end;
+    uint32_t id;
+
+    if (str == NULL) {
+        return 0;
+    }
+    str += strlen(key);
+    if (*str != ':') {
+        return NULL;
+    }
+    str++; // Skip semicolon
+    if (!isdigit(*str)) {
+        return 0; // No number found
+    }
+    start = str;
+    id = strtol(str, &end, 10);
+    // TODO error checking
+    return id;
+}
+
 static int parse_notify(char* data, int len)
 {
     ble_comm_cb_data_t cb;
     memset(&cb, 0, sizeof(cb));
 
     cb.type = BLE_COMM_DATA_TYPE_NOTIFY;
-    
+    cb.data.notify.id = extract_value_uint32("id", buf);
     cb.data.notify.src = extract_value_str("src:", buf, &cb.data.notify.src_len);
     cb.data.notify.sender = extract_value_str("sender:", buf, &cb.data.notify.sender_len);
     cb.data.notify.title = extract_value_str("title:", buf, &cb.data.notify.title_len);
