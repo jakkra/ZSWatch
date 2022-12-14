@@ -19,5 +19,7 @@ void watchface_set_time(int32_t hour, int32_t minute);
 
 void watchface_set_ble_connected(bool connected);
 
+void watchface_set_num_notifcations(int32_t value);
+
 
 #endif

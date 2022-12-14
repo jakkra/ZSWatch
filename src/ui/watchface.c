@@ -22,6 +22,9 @@ static lv_obj_t *step_arc;
 
 static lv_obj_t *ble_symbol;
 
+static lv_obj_t *notification_icon;
+static lv_obj_t *notification_text;
+
 static void tick_draw_event_cb(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -169,6 +172,25 @@ static void add_ble_connected_indicator(lv_obj_t *parent)
     watchface_set_ble_connected(false);
 }
 
+static void add_notification_indicator(lv_obj_t *parent)
+{
+    static lv_style_t color_style;
+    LV_IMG_DECLARE(notification_black);
+
+    notification_icon = lv_img_create(parent);
+    lv_img_set_src(notification_icon, &notification_black);
+    lv_obj_align_to(notification_icon, parent, LV_ALIGN_CENTER, 3, -SMALL_WATCHFACE_CENTER_OFFSET - 25);
+
+    notification_text = lv_label_create(parent);
+    lv_label_set_text(notification_text, "-");
+    lv_obj_align_to(notification_text, parent, LV_ALIGN_CENTER, 0, -SMALL_WATCHFACE_CENTER_OFFSET - 25);
+
+    lv_style_init(&color_style);
+    lv_style_set_text_color(&color_style, lv_color_black());
+    lv_obj_add_style(notification_text, &color_style, 0);
+    watchface_set_num_notifcations(0);
+}
+
 void watchface_init(void)
 {
     lv_obj_clean(lv_scr_act());
@@ -191,6 +213,7 @@ void watchface_show(void)
     add_pulse_indicator(root_page);
     add_step_indicator(root_page);
     add_ble_connected_indicator(root_page);
+    add_notification_indicator(root_page);
     add_clock(root_page);
 
     general_ui_anim_in(root_page, 100);
@@ -260,6 +283,24 @@ void watchface_set_time(int32_t hour, int32_t minute)
     //LOG_PRINTK("Offset: %d\n", hour_offset);
     lv_meter_set_indicator_end_value(clock_meter, indic_min, minute);
     lv_meter_set_indicator_end_value(clock_meter, indic_hour, hour_offset);
+}
+
+void watchface_set_num_notifcations(int32_t value)
+{
+    char not_text_buf[2]; // 0-9 and \0
+    if (value > 0) {
+        if (value < 10) {
+            snprintf(not_text_buf, 2, "%d", value);
+        } else {
+            snprintf(not_text_buf, 2, "*");
+        }
+        lv_label_set_text(notification_text, not_text_buf);
+        lv_obj_clear_flag(notification_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_clear_flag(notification_text, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(notification_icon, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(notification_text, LV_OBJ_FLAG_HIDDEN);
+    }
 }
 
 void watchface_set_ble_connected(bool connected)

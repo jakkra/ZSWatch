@@ -4,6 +4,8 @@
 #include <bluetooth/services/nus.h>
 #include <zephyr/logging/log.h>
 #include <string.h>
+#include <ctype.h>
+#include <stdlib.h>
 
 LOG_MODULE_REGISTER(ble_comm, LOG_LEVEL_DBG);
 
@@ -258,10 +260,10 @@ static uint32_t extract_value_uint32(char* key, char* data)
     }
     str += strlen(key);
     if (*str != ':') {
-        return NULL;
+        return 0;
     }
     str++; // Skip semicolon
-    if (!isdigit(*str)) {
+    if (!isdigit((int)*str)) {
         return 0; // No number found
     }
     start = str;

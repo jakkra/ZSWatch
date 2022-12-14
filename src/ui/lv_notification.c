@@ -4,15 +4,17 @@ static void on_notifcation_closed(lv_event_t *e);
 
 
 static lv_obj_t *mbox;
-static on_close_not_cb_t on_close_cb;
 static lv_obj_t *img_icon;
+static on_close_not_cb_t on_close_cb;
+static uint32_t active_not_id;
 
 LV_IMG_DECLARE(messenger);
 LV_IMG_DECLARE(gmail);
 LV_IMG_DECLARE(notification);
 
-void lv_notification_show(char *title, char *body, notification_src_t icon, on_close_not_cb_t close_cb)
+void lv_notification_show(char *title, char *body, notification_src_t icon, uint32_t id, on_close_not_cb_t close_cb)
 {
+    active_not_id = id;
     on_close_cb = close_cb;
     mbox = lv_msgbox_create(lv_scr_act(), title, body, NULL, true);
     lv_obj_t *close_btn = lv_msgbox_get_close_btn(mbox);
@@ -73,5 +75,5 @@ void lv_notification_remove(void)
 static void on_notifcation_closed(lv_event_t *e)
 {
     mbox = NULL;
-    on_close_cb(e);
+    on_close_cb(e, active_not_id);
 }

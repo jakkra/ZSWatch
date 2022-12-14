@@ -104,12 +104,13 @@ static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *da
 static void encoder_vibration(struct _lv_indev_drv_t *drv, uint8_t e);
 static void accel_evt(accelerometer_evt_t *evt);
 static void play_not_vibration(void);
+static void check_notifications(void);
 
 static void on_brightness_changed(lv_setting_value_t value, bool final);
 static void on_display_always_on_changed(lv_setting_value_t value, bool final);
 static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
 static void on_reset_steps_changed(lv_setting_value_t value, bool final);
-static void on_notifcation_closed(lv_event_t * e);
+static void on_notifcation_closed(lv_event_t * e, uint32_t id);
 
 static void connected(struct bt_conn *conn, uint8_t err);
 static void disconnected(struct bt_conn *conn, uint8_t reason);
@@ -290,6 +291,7 @@ void general_work(struct k_work *item)
             watchface_set_time(retained.current_time.hours, retained.current_time.minutes);
             // Store current time
             retained_update();
+            check_notifications();
             break;
         }
         case OPEN_WATCHFACE: {
@@ -335,13 +337,25 @@ void general_work(struct k_work *item)
         }
         case DEBUG_NOTIFICATION:
         {
-            buttons_allocated = true;
-            lv_notification_show("Test Namn", "This is a body with a longer message that maybe should wrap around or be cut?", NOTIFICATION_SRC_GMAIL, on_notifcation_closed);
-            //lv_notification_show("Test title", "This is a body.", on_notifcation_closed);
+            char* body = "This is a body with a longer message that maybe should wrap around or be cut?";
+            char* src = "Gmail";
+            char* title = "Test Name";
+            ble_comm_notify_t raw_not = {
+                .body = body,
+                .body_len = strlen(body),
+                .title = title,
+                .title_len = strlen(title),
+                .src = src,
+                .src_len = strlen(src)
+            };
+            // Just for debugging faster
+            //notification_manager_add(&raw_not);
+            //lv_notification_show("Test Namn", "This is a body with a longer message that maybe should wrap around or be cut?", NOTIFICATION_SRC_GMAIL, 1337, on_notifcation_closed);
 
-            play_not_vibration();
-            general_work_item.type = CLOSE_NOTIFICATION;
-            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(10)), "FAIL schedule");
+            //buttons_allocated = true;
+            //play_not_vibration();
+            //general_work_item.type = CLOSE_NOTIFICATION;
+            //__ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(10)), "FAIL schedule");
             break;
         }
     }
@@ -365,11 +379,14 @@ void main(void)
     __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");
 }
 
-static void on_notifcation_closed(lv_event_t * e)
+static void on_notifcation_closed(lv_event_t * e, uint32_t id)
 {
     lv_event_code_t code = lv_event_get_code(e);
+    LOG_DBG("CLOSED NOT: %d", id);
 
-    LOG_WRN("CLOSED NOT: %d", code);
+    // Notification was dismissed, hence consider it read.
+    notification_manager_remove(id);
+
     general_work_item.type = OPEN_WATCHFACE;
     __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_MSEC(500)), "FAIL schedule");
 }
@@ -388,7 +405,8 @@ static void ble_data_cb(ble_comm_cb_data_t* cb)
             return;
         }
 
-        lv_notification_show(parsed_not->title, parsed_not->body, parsed_not->src, on_notifcation_closed);
+        buttons_allocated = true;
+        lv_notification_show(parsed_not->title, parsed_not->body, parsed_not->src, parsed_not->id, on_notifcation_closed);
         play_not_vibration();
         general_work_item.type = CLOSE_NOTIFICATION;
         __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(15)), "FAIL schedule");
@@ -612,6 +630,12 @@ static void play_not_vibration(void)
     k_msleep(50);
     gpio_debug_test(DRV_VIB_EN, 0);
     vibrator_on = false;
+}
+
+static void check_notifications(void)
+{
+    uint32_t num_unread = notification_manager_get_num();
+    watchface_set_num_notifcations(num_unread);
 }
 
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id)

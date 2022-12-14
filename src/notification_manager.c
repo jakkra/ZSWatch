@@ -5,8 +5,10 @@
 #define NOTIFICATION_INVALID_ID             0xFFFFFFFF
 #define NOTIFICATION_INVALID_INDEX          0xFFFFFFFF
 
+
 static uint32_t find_free_notification_idx(void);
 static uint32_t find_notification_idx(uint32_t id);
+static uint32_t find_oldest_notification_idx(void);
 
 static not_mngr_notification_t notifications[NOTIFICATION_MANAGER_MAX_STORED];
 static uint8_t num_notifications;
@@ -26,7 +28,11 @@ not_mngr_notification_t *notification_manager_add(ble_comm_notify_t *not)
 {
     uint32_t idx = find_free_notification_idx();
     if (idx == NOTIFICATION_INVALID_INDEX) {
-        return NULL;
+        // List full then we replace the oldest
+        idx = find_oldest_notification_idx();
+        __ASSERT_NO_MSG(idx != NOTIFICATION_INVALID_INDEX);
+        notifications[idx].id = NOTIFICATION_INVALID_ID;
+        num_notifications--;
     }
     memset(&notifications[idx], 0, sizeof(not_mngr_notification_t));
     if (strncmp(not->src, "Messenger", not->src_len) == 0) {
@@ -67,7 +73,22 @@ not_mngr_notification_t *notification_manager_add(ble_comm_notify_t *not)
 
 int32_t notification_manager_remove(uint32_t id)
 {
-    return -ENOTSUP;
+    uint32_t idx = find_notification_idx(id);
+    if (idx != NOTIFICATION_INVALID_INDEX) {
+        notifications[idx].id = NOTIFICATION_INVALID_ID;
+        num_notifications--;
+        return 0;
+    } else {
+        return -ENOENT;
+    }
+}
+
+int32_t notification_manager_get_next(not_mngr_notification_t *notifcation)
+{
+    uint32_t idx = find_oldest_notification_idx();
+    if (idx != NOTIFICATION_INVALID_INDEX) {
+        notifcation = &notifications[idx];
+    }
 }
 
 int32_t notification_manager_get_num(void)
@@ -93,4 +114,19 @@ static uint32_t find_free_notification_idx(void)
         }
     }
     return NOTIFICATION_INVALID_INDEX;
+}
+
+static uint32_t find_oldest_notification_idx(void)
+{
+    uint32_t oldest_idx = NOTIFICATION_INVALID_ID;
+    uint32_t oldest_id = NOTIFICATION_INVALID_INDEX;
+
+    for (int i = 0; i < NOTIFICATION_MANAGER_MAX_STORED; i++) {
+        if (notifications[i].id != NOTIFICATION_INVALID_ID && notifications[i].id < oldest_id) {
+            oldest_idx = i;
+            oldest_id = notifications[i].id;
+        }
+    }
+    printk("Return: %u, %d\n", oldest_id, oldest_idx);
+    return oldest_idx;
 }
