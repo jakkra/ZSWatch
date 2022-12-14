@@ -3,6 +3,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <bluetooth/services/nus.h>
 #include <zephyr/logging/log.h>
+#include <string.h>
 
 LOG_MODULE_REGISTER(ble_comm, LOG_LEVEL_DBG);
 

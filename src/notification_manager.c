@@ -33,7 +33,7 @@ not_mngr_notification_t *notification_manager_add(ble_comm_notify_t *not)
         notifications[idx].src = NOTIFICATION_SRC_MESSENGER;
         notifications[idx].id = not->id;
         memcpy(notifications[idx].title, not->title, MIN(not->title_len, NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
-        memcpy(notifications[idx].body, not->src, MIN(not->src_len, NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
+        memcpy(notifications[idx].body, not->body, MIN(not->body_len, NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
         memcpy(notifications[idx].sender, not->sender, MIN(not->sender_len, NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
     } else if (strncmp(not->src, "Gmail", not->src_len) == 0) {
         // {t:"notify",id:1670967782,src:"Gmail",title:"Jakob Krantz",body:"Nytt test\nDetta YR NÖTT"
