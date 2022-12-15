@@ -6,11 +6,14 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <math.h>
 
 LOG_MODULE_REGISTER(ble_comm, LOG_LEVEL_DBG);
 
 static char* extract_value_str(char* key, char* data, int* value_len);
 static int parse_data(char* data, int len);
+static void parse_time(char* data);
 
 static void connected(struct bt_conn *conn, uint8_t err);
 static void disconnected(struct bt_conn *conn, uint8_t reason);
@@ -145,12 +148,18 @@ parse_state_t parse_state = WAIT_GB;
 
 static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint16_t len)
 {
-    //LOG_HEXDUMP_DBG(data, len, "RX");
-    LOG_WRN("State: %d\n", parse_state);
+    LOG_HEXDUMP_DBG(data, len, "RX");
     char* gb_start = strstr(data, "GB(");
     if (gb_start && parse_state != WAIT_GB) {
         LOG_ERR("Parsing error, was waiting end, but got GB");
         parse_state = WAIT_GB;
+    }
+
+    char* time_start = strstr(data, "setTime(");
+    if (time_start && parse_state == WAIT_GB) {
+        time_start += strlen("setTime(");
+        parse_time(time_start);
+        return;
     }
     switch (parse_state) {
         case WAIT_GB:
@@ -221,6 +230,25 @@ static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint1
     }
 }
 
+static void parse_time(char* start_time)
+{
+    char* end_time;
+    ble_comm_cb_data_t cb;
+    memset(&cb, 0, sizeof(cb));
+
+    end_time = strstr(start_time, ")");
+    if (end_time) {
+        errno = 0;
+        cb.data.notify.id = strtol(start_time, &end_time, 10);
+        if (start_time != end_time && errno == 0) {
+            cb.type = BLE_COMM_DATA_TYPE_SET_TIME;
+            data_parsed_cb(&cb);
+        } else {
+            LOG_WRN("Failed parsing time");
+        }
+    }
+}
+
 static char* extract_value_str(char* key, char* data, int* value_len)
 {
     char* start;
@@ -258,10 +286,6 @@ static uint32_t extract_value_uint32(char* key, char* data)
         return 0;
     }
     str += strlen(key);
-    if (*str != ':') {
-        return 0;
-    }
-    str++; // Skip semicolon
     if (!isdigit((int)*str)) {
         return 0; // No number found
     }
@@ -277,7 +301,7 @@ static int parse_notify(char* data, int len)
     memset(&cb, 0, sizeof(cb));
 
     cb.type = BLE_COMM_DATA_TYPE_NOTIFY;
-    cb.data.notify.id = extract_value_uint32("id", buf);
+    cb.data.notify.id = extract_value_uint32("id:", buf);
     cb.data.notify.src = extract_value_str("src:", buf, &cb.data.notify.src_len);
     cb.data.notify.sender = extract_value_str("sender:", buf, &cb.data.notify.sender_len);
     cb.data.notify.title = extract_value_str("title:", buf, &cb.data.notify.title_len);
@@ -285,7 +309,7 @@ static int parse_notify(char* data, int len)
 
     // Little hack since we know it's JSON, we can terminate all values in the data
     // which saves us some hassle and we can just pass all values null terminated
-    // to the callback
+    // to the callback. Make sure to do it after finish parsing!
     if (cb.data.notify.src_len > 0) {
         cb.data.notify.src[cb.data.notify.src_len] = '\0';
     }
@@ -309,7 +333,39 @@ static int parse_notify_delete(char* data, int len)
     memset(&cb, 0, sizeof(cb));
 
     cb.type = BLE_COMM_DATA_TYPE_NOTIFY_REMOVE;
-    cb.data.notify.id = extract_value_uint32("id", buf);
+    cb.data.notify.id = extract_value_uint32("id:", buf);
+    data_parsed_cb(&cb);
+    return 0;
+}
+
+static int parse_weather(char* data, int len)
+{
+    //{t:"weather",temp:268,hum:97,code:802,txt:"slightly cloudy",wind:2.0,wdir:14,loc:"MALMO"
+    uint8_t decimal_temp;
+    float temperature;
+    ble_comm_cb_data_t cb;
+    memset(&cb, 0, sizeof(cb));
+
+    cb.type = BLE_COMM_DATA_TYPE_WEATHER;
+    int32_t temperature_f = extract_value_uint32("temp:", data);;
+    cb.data.weather.humidity = extract_value_uint32("hum:", data);
+    cb.data.weather.weather_code = extract_value_uint32("code:", data);
+    cb.data.weather.wind = extract_value_uint32("wind:", data);
+    cb.data.weather.wind_direction = extract_value_uint32("wdir:", data);
+    cb.data.weather.report_text = extract_value_str("txt:", data, &cb.data.weather.report_text_len);
+
+    // Little hack since we know it's JSON, we can terminate all values in the data
+    // which saves us some hassle and we can just pass all values null terminated
+    // to the callback. Make sure to do it after finish parsing!
+    if (cb.data.weather.report_text_len > 0) {
+        cb.data.weather.report_text[cb.data.weather.report_text_len] = '\0';
+    }
+
+    // App sends temperature in F in the format 264 where the last digit is the decimal => 26.4F
+    decimal_temp = temperature_f % 10; // Get the decimal
+    temperature = (temperature_f / 10) + decimal_temp * 0.1;
+    temperature = ((temperature) - 32.0f) * (5.0f/9.0f);
+    cb.data.weather.temperature_c = (int8_t)roundf(temperature * 10.0f) / 10.0f;
     data_parsed_cb(&cb);
     return 0;
 }
@@ -330,6 +386,10 @@ static int parse_data(char* data, int len)
 
     if (strlen("notify-") == type_len && strncmp(type, "notify-", type_len) == 0) {
         return parse_notify_delete(buf, len);
+    }
+
+    if (strlen("weather") == type_len && strncmp(type, "weather", type_len) == 0) {
+        return parse_weather(buf, len);
     }
 
     return 0;

@@ -89,6 +89,7 @@ int32_t notification_manager_get_next(not_mngr_notification_t *notifcation)
     if (idx != NOTIFICATION_INVALID_INDEX) {
         notifcation = &notifications[idx];
     }
+    return 0;
 }
 
 int32_t notification_manager_get_num(void)

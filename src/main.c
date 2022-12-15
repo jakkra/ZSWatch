@@ -415,6 +415,11 @@ static void ble_data_cb(ble_comm_cb_data_t* cb)
         if (notification_manager_remove(cb->data.notify_remove.id) != 0) {
             LOG_WRN("Notification %d not found", cb->data.notify_remove.id);
         }
+    case BLE_COMM_DATA_TYPE_SET_TIME:
+        LOG_WRN("SETTIME: %u\n", cb->data.time.ms);
+    case BLE_COMM_DATA_TYPE_WEATHER:
+        LOG_WRN("Weather: %s t: %d hum: %d code: %d wind: %d dir: %d", cb->data.weather.report_text, cb->data.weather.temperature_c, cb->data.weather.humidity, cb->data.weather.weather_code, cb->data.weather.wind, cb->data.weather.wind_direction);
+    
     default:
         break;
     }
