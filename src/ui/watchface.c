@@ -5,6 +5,8 @@
 
 #define SMALL_WATCHFACE_CENTER_OFFSET 37
 
+const lv_img_dsc_t* get_icon_from_weather_code(int code);
+
 static lv_obj_t *root_page = NULL;
 
 static lv_obj_t *clock_meter;
@@ -21,6 +23,9 @@ static lv_obj_t *step_label;
 static lv_obj_t *step_arc;
 
 static lv_obj_t *ble_symbol;
+
+static lv_obj_t *weather_temperature;
+static lv_obj_t *weather_icon;
 
 static lv_obj_t *notification_icon;
 static lv_obj_t *notification_text;
@@ -164,7 +169,7 @@ static void add_ble_connected_indicator(lv_obj_t *parent)
 
     ble_symbol = lv_label_create(parent);
     lv_label_set_text(ble_symbol, LV_SYMBOL_BLUETOOTH);
-    lv_obj_align_to(ble_symbol, parent, LV_ALIGN_CENTER, 0, SMALL_WATCHFACE_CENTER_OFFSET + 25);
+    lv_obj_align_to(ble_symbol, parent, LV_ALIGN_CENTER, 0, SMALL_WATCHFACE_CENTER_OFFSET);
     
     lv_style_init(&color_style);
     lv_style_set_text_color(&color_style, lv_color_hex(0x0082FC));
@@ -191,6 +196,18 @@ static void add_notification_indicator(lv_obj_t *parent)
     watchface_set_num_notifcations(0);
 }
 
+static void add_weather_data(lv_obj_t *parent)
+{
+    weather_temperature = lv_label_create(parent);
+    lv_label_set_text(weather_temperature, "5");
+    lv_obj_align_to(weather_temperature, parent, LV_ALIGN_CENTER, -15, SMALL_WATCHFACE_CENTER_OFFSET + 30);
+
+    weather_icon = lv_img_create(weather_temperature);
+    lv_obj_align_to(weather_icon, weather_icon, LV_ALIGN_CENTER, 20, -5);
+
+    lv_obj_add_flag(weather_temperature, LV_OBJ_FLAG_HIDDEN);
+}
+
 void watchface_init(void)
 {
     lv_obj_clean(lv_scr_act());
@@ -214,6 +231,7 @@ void watchface_show(void)
     add_step_indicator(root_page);
     add_ble_connected_indicator(root_page);
     add_notification_indicator(root_page);
+    add_weather_data(root_page);
     add_clock(root_page);
 
     general_ui_anim_in(root_page, 100);
@@ -310,4 +328,65 @@ void watchface_set_ble_connected(bool connected)
     } else {
         lv_obj_add_flag(ble_symbol, LV_OBJ_FLAG_HIDDEN);
     }
+}
+
+void watchface_set_weather(int8_t temperature, int weather_code)
+{
+    char buf[10];
+    snprintf(buf, sizeof(buf), "%d°", temperature);
+    lv_label_set_text(weather_temperature, buf);
+    const lv_img_dsc_t* icon = get_icon_from_weather_code(weather_code);
+    lv_img_set_src(weather_icon, icon);
+    lv_obj_clear_flag(weather_temperature, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(weather_icon, LV_OBJ_FLAG_HIDDEN);
+}
+
+LV_IMG_DECLARE(stormy);
+LV_IMG_DECLARE(snowy);
+LV_IMG_DECLARE(rainy);
+LV_IMG_DECLARE(snowy);
+LV_IMG_DECLARE(foggy);
+LV_IMG_DECLARE(sunny);
+LV_IMG_DECLARE(partly_cloudy);
+LV_IMG_DECLARE(cloudy);
+LV_IMG_DECLARE(unknown);
+
+const lv_img_dsc_t* get_icon_from_weather_code(int code)
+{
+    int code_group = code / 100;
+
+    switch (code_group) {
+    case 2:
+      return &stormy;
+    case 3:
+      return &cloudy;
+    case 5:
+      switch (code) {
+        case 511:
+          return &snowy;
+        default:
+          return &rainy;
+      }
+      case 6:
+        return &snowy;
+      case 7:
+        return &foggy;
+      case 8:
+        switch (code) {
+          case 800:
+            // TODO if day sunny else moon
+            return &sunny;
+          case 801:
+            return &partly_cloudy;
+          case 802:
+            return &partly_cloudy;
+          default:
+            return &cloudy;
+        }
+      default:
+      {
+        printf("Unhandled weather code: %d", code);
+        return &unknown;
+      }
+  }
 }

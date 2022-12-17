@@ -33,10 +33,10 @@ typedef struct ble_comm_notify_time {
 
 typedef struct ble_comm_weather {
     int8_t temperature_c;
-    uint8_t humidity;
-    uint8_t wind;
-    uint8_t wind_direction;
-    uint8_t weather_code;
+    uint16_t humidity;
+    uint16_t wind;
+    uint16_t wind_direction;
+    uint16_t weather_code;
     char* report_text;
     int report_text_len;
 } ble_comm_weather_t;

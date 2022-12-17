@@ -20,7 +20,6 @@
 #include <lvgl.h>
 #include "watchface.h"
 #include "stats_page.h"
-#include "plot_page.h"
 #include <general_ui.h>
 #include <lv_settings.h>
 #include <heart_rate_sensor.h>
@@ -415,11 +414,14 @@ static void ble_data_cb(ble_comm_cb_data_t* cb)
         if (notification_manager_remove(cb->data.notify_remove.id) != 0) {
             LOG_WRN("Notification %d not found", cb->data.notify_remove.id);
         }
+        break;
     case BLE_COMM_DATA_TYPE_SET_TIME:
         LOG_WRN("SETTIME: %u\n", cb->data.time.ms);
+        break;
     case BLE_COMM_DATA_TYPE_WEATHER:
         LOG_WRN("Weather: %s t: %d hum: %d code: %d wind: %d dir: %d", cb->data.weather.report_text, cb->data.weather.temperature_c, cb->data.weather.humidity, cb->data.weather.weather_code, cb->data.weather.wind, cb->data.weather.wind_direction);
-    
+        watchface_set_weather(cb->data.weather.temperature_c, cb->data.weather.weather_code);
+        break;
     default:
         break;
     }

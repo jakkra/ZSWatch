@@ -21,5 +21,7 @@ void watchface_set_ble_connected(bool connected);
 
 void watchface_set_num_notifcations(int32_t value);
 
+void watchface_set_weather(int8_t temperature, int weather_code);
+
 
 #endif
