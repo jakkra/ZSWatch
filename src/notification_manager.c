@@ -1,7 +1,6 @@
 #include <notification_manager.h>
 #include <string.h>
 
-#define NOTIFICATION_MANAGER_MAX_STORED     5
 #define NOTIFICATION_INVALID_ID             0xFFFFFFFF
 #define NOTIFICATION_INVALID_INDEX          0xFFFFFFFF
 
@@ -83,12 +82,17 @@ int32_t notification_manager_remove(uint32_t id)
     }
 }
 
-int32_t notification_manager_get_next(not_mngr_notification_t *notifcation)
+int32_t notification_manager_get_all(not_mngr_notification_t* notifcations, int* num_notifications)
 {
-    uint32_t idx = find_oldest_notification_idx();
-    if (idx != NOTIFICATION_INVALID_INDEX) {
-        notifcation = &notifications[idx];
+    printk("GET ALLn");
+    int num_stored = 0;
+    for (int i = 0; i < NOTIFICATION_MANAGER_MAX_STORED; i++) {
+        if (notifications[i].id != NOTIFICATION_INVALID_ID) {
+            notifcations[num_stored] = notifications[i];
+            num_stored++;
+        }
     }
+    *num_notifications = num_stored;
     return 0;
 }
 

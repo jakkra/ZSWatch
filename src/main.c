@@ -30,6 +30,7 @@
 #include <ble_comm.h>
 #include <lv_notifcation.h>
 #include <notification_manager.h>
+#include <notifications_page.h>
 
 #define LOG_LEVEL LOG_LEVEL_WRN
 #include <zephyr/logging/log.h>
@@ -50,6 +51,7 @@ typedef enum work_type {
     OPEN_SETTINGS,
     UPDATE_CLOCK,
     OPEN_WATCHFACE,
+    OPEN_NOTIFICATIONS,
     BATTERY,
     RENDER,
     ACCEL,
@@ -63,6 +65,7 @@ typedef enum ui_state {
     WATCHFACE_STATE,
     ACCELEROMETER_STATE,
     NOTIFCATION_STATE,
+    NOTIFCATION_LIST_STATE,
 } ui_state_t;
 
 typedef struct delayed_work_item {
@@ -98,6 +101,7 @@ static void test_battery_read(void);
 static void set_vibrator(uint8_t percent);
 static void set_display_blk(uint8_t percent);
 static void open_settings(void);
+static void open_notifications_page(void);
 static bool load_retention_ram(void);
 static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
 static void encoder_vibration(struct _lv_indev_drv_t *drv, uint8_t e);
@@ -110,6 +114,8 @@ static void on_display_always_on_changed(lv_setting_value_t value, bool final);
 static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
 static void on_reset_steps_changed(lv_setting_value_t value, bool final);
 static void on_notifcation_closed(lv_event_t * e, uint32_t id);
+static void on_notification_page_close(void);
+static void on_notification_page_notification_close(not_mngr_notification_t* closed_not);
 
 static void connected(struct bt_conn *conn, uint8_t err);
 static void disconnected(struct bt_conn *conn, uint8_t reason);
@@ -243,6 +249,7 @@ void general_work(struct k_work *item)
             k_msleep(500);
             heart_rate_sensor_init();
             watchface_init();
+            notifications_page_init(on_notification_page_close, on_notification_page_notification_close);
             filesystem_test();
             notification_manager_init();
             enable_bluetoth();
@@ -299,6 +306,12 @@ void general_work(struct k_work *item)
             watch_state = WATCHFACE_STATE;
             break;
         }
+        case OPEN_NOTIFICATIONS: {
+            watch_state = NOTIFCATION_LIST_STATE;
+            watchface_remove();
+            open_notifications_page();
+            break;
+        }
         case BATTERY: {
             test_battery_read();
             bt_hrs_notify(count % 220);
@@ -353,8 +366,8 @@ void general_work(struct k_work *item)
 
             //buttons_allocated = true;
             //play_not_vibration();
-            //general_work_item.type = CLOSE_NOTIFICATION;
-            //__ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(10)), "FAIL schedule");
+            //general_work_item.type = OPEN_NOTIFICATIONS;;
+            //__ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(5)), "FAIL schedule");
             break;
         }
     }
@@ -380,14 +393,22 @@ void main(void)
 
 static void on_notifcation_closed(lv_event_t * e, uint32_t id)
 {
-    lv_event_code_t code = lv_event_get_code(e);
-    LOG_DBG("CLOSED NOT: %d", id);
-
     // Notification was dismissed, hence consider it read.
     notification_manager_remove(id);
 
     general_work_item.type = OPEN_WATCHFACE;
     __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_MSEC(500)), "FAIL schedule");
+}
+
+static void on_notification_page_close(void)
+{
+    general_work_item.type = OPEN_WATCHFACE;
+    __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_MSEC(500)), "FAIL schedule");
+}
+
+static void on_notification_page_notification_close(not_mngr_notification_t* closed_not)
+{
+    notification_manager_remove(closed_not->id);
 }
 
 static void ble_data_cb(ble_comm_cb_data_t* cb)
@@ -613,6 +634,15 @@ static void open_settings(void)
     lv_settings_create(settings_menu, ARRAY_SIZE(settings_menu), "N/A", input_group, on_close_settings);
 }
 
+static void open_notifications_page(void)
+{
+    not_mngr_notification_t notifications[NOTIFICATION_MANAGER_MAX_STORED];
+    int num_unread = 0;
+    buttons_allocated = true;
+    notification_manager_get_all(notifications, &num_unread);
+    notifications_page_create(notifications, num_unread, input_group);
+}
+
 static void play_press_vibration(void)
 {
     vibrator_on = true;
@@ -667,7 +697,11 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
 
     if (type == BUTTONS_SHORT_PRESS) {
         if (watch_state == WATCHFACE_STATE) {
-            watch_state = ACCELEROMETER_STATE;
+            if (id == BUTTON_2) {
+                watch_state = NOTIFCATION_LIST_STATE;
+            } else {
+                watch_state = ACCELEROMETER_STATE;
+            }
         } else if (watch_state == ACCELEROMETER_STATE) {
             watch_state = WATCHFACE_STATE;
         }
@@ -681,6 +715,10 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
                 watchface_remove();
                 states_page_show();
                 __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_MSEC(1000)), "FAIL accel_work");
+                break;
+            case NOTIFCATION_LIST_STATE:
+                general_work_item.type = OPEN_NOTIFICATIONS;
+                __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");
                 break;
             default:
                 break;
