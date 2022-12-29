@@ -80,7 +80,7 @@ static delayed_work_item_t render_work = { .type = RENDER };
 static delayed_work_item_t clock_work = { .type = UPDATE_CLOCK };
 static delayed_work_item_t general_work_item;
 
-#define MY_STACK_SIZE 2500
+#define MY_STACK_SIZE 3000
 #define MY_PRIORITY 5
 
 K_THREAD_STACK_DEFINE(my_stack_area, MY_STACK_SIZE);
@@ -115,7 +115,7 @@ static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
 static void on_reset_steps_changed(lv_setting_value_t value, bool final);
 static void on_notifcation_closed(lv_event_t * e, uint32_t id);
 static void on_notification_page_close(void);
-static void on_notification_page_notification_close(not_mngr_notification_t* closed_not);
+static void on_notification_page_notification_close(uint32_t not_id);
 
 static void connected(struct bt_conn *conn, uint8_t err);
 static void disconnected(struct bt_conn *conn, uint8_t reason);
@@ -361,13 +361,35 @@ void general_work(struct k_work *item)
                 .src_len = strlen(src)
             };
             // Just for debugging faster
-            //notification_manager_add(&raw_not);
+            raw_not.id = 0;
+            raw_not.title = "Not 0";
+            raw_not.title_len = strlen(raw_not.title);
+            notification_manager_add(&raw_not);
+            raw_not.id = 1;
+            raw_not.title = "Not 1";
+            raw_not.title_len = strlen(raw_not.title);
+            notification_manager_add(&raw_not);
+            raw_not.id = 2;
+            raw_not.title = "Not 2";
+            raw_not.title_len = strlen(raw_not.title);
+            notification_manager_add(&raw_not);
+            raw_not.id = 3;
+            raw_not.title = "Not 3";
+            raw_not.title_len = strlen(raw_not.title);
+            notification_manager_add(&raw_not);
+            raw_not.id = 4;
+            raw_not.title = "Not 4";
+            raw_not.title_len = strlen(raw_not.title);
+            notification_manager_add(&raw_not);
+            raw_not.id = 5;
+            raw_not.title = "Not 5";
+            raw_not.title_len = strlen(raw_not.title);
             //lv_notification_show("Test Namn", "This is a body with a longer message that maybe should wrap around or be cut?", NOTIFICATION_SRC_GMAIL, 1337, on_notifcation_closed);
 
             //buttons_allocated = true;
             //play_not_vibration();
-            //general_work_item.type = OPEN_NOTIFICATIONS;;
-            //__ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(5)), "FAIL schedule");
+            //general_work_item.type = OPEN_NOTIFICATIONS;
+            //__ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(3)), "FAIL schedule");
             break;
         }
     }
@@ -406,9 +428,9 @@ static void on_notification_page_close(void)
     __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_MSEC(500)), "FAIL schedule");
 }
 
-static void on_notification_page_notification_close(not_mngr_notification_t* closed_not)
+static void on_notification_page_notification_close(uint32_t not_id)
 {
-    notification_manager_remove(closed_not->id);
+    notification_manager_remove(not_id);
 }
 
 static void ble_data_cb(ble_comm_cb_data_t* cb)

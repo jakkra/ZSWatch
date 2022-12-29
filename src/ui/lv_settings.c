@@ -228,7 +228,8 @@ void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char
     }
 
     lv_menu_set_page(_menu, _mainPage);
-    lv_group_focus_next(input_group);
+    //lv_group_focus_next(input_group);
+    lv_group_focus_obj(sub_page);
 }
 
 /**
