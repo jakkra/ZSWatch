@@ -5,7 +5,7 @@
 
 #define SMALL_WATCHFACE_CENTER_OFFSET 37
 
-const lv_img_dsc_t* get_icon_from_weather_code(int code);
+const lv_img_dsc_t *get_icon_from_weather_code(int code);
 
 static lv_obj_t *root_page = NULL;
 
@@ -170,7 +170,7 @@ static void add_ble_connected_indicator(lv_obj_t *parent)
     ble_symbol = lv_label_create(parent);
     lv_label_set_text(ble_symbol, LV_SYMBOL_BLUETOOTH);
     lv_obj_align_to(ble_symbol, parent, LV_ALIGN_CENTER, 0, SMALL_WATCHFACE_CENTER_OFFSET);
-    
+
     lv_style_init(&color_style);
     lv_style_set_text_color(&color_style, lv_color_hex(0x0082FC));
     lv_obj_add_style(ble_symbol, &color_style, 0);
@@ -335,7 +335,7 @@ void watchface_set_weather(int8_t temperature, int weather_code)
     char buf[10];
     snprintf(buf, sizeof(buf), "%d°", temperature);
     lv_label_set_text(weather_temperature, buf);
-    const lv_img_dsc_t* icon = get_icon_from_weather_code(weather_code);
+    const lv_img_dsc_t *icon = get_icon_from_weather_code(weather_code);
     lv_img_set_src(weather_icon, icon);
     lv_obj_clear_flag(weather_temperature, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(weather_icon, LV_OBJ_FLAG_HIDDEN);
@@ -351,42 +351,41 @@ LV_IMG_DECLARE(partly_cloudy);
 LV_IMG_DECLARE(cloudy);
 LV_IMG_DECLARE(unknown);
 
-const lv_img_dsc_t* get_icon_from_weather_code(int code)
+const lv_img_dsc_t *get_icon_from_weather_code(int code)
 {
     int code_group = code / 100;
 
     switch (code_group) {
-    case 2:
-      return &stormy;
-    case 3:
-      return &cloudy;
-    case 5:
-      switch (code) {
-        case 511:
-          return &snowy;
-        default:
-          return &rainy;
-      }
-      case 6:
-        return &snowy;
-      case 7:
-        return &foggy;
-      case 8:
-        switch (code) {
-          case 800:
-            // TODO if day sunny else moon
-            return &sunny;
-          case 801:
-            return &partly_cloudy;
-          case 802:
-            return &partly_cloudy;
-          default:
+        case 2:
+            return &stormy;
+        case 3:
             return &cloudy;
+        case 5:
+            switch (code) {
+                case 511:
+                    return &snowy;
+                default:
+                    return &rainy;
+            }
+        case 6:
+            return &snowy;
+        case 7:
+            return &foggy;
+        case 8:
+            switch (code) {
+                case 800:
+                    // TODO if day sunny else moon
+                    return &sunny;
+                case 801:
+                    return &partly_cloudy;
+                case 802:
+                    return &partly_cloudy;
+                default:
+                    return &cloudy;
+            }
+        default: {
+            printf("Unhandled weather code: %d", code);
+            return &unknown;
         }
-      default:
-      {
-        printf("Unhandled weather code: %d", code);
-        return &unknown;
-      }
-  }
+    }
 }

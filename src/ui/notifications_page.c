@@ -1,10 +1,10 @@
 #include <notifications_page.h>
 #include <lvgl.h>
 
-static void close_button_pressed(lv_event_t * e);
-static void not_button_pressed(lv_event_t * e);
-static void scroll_event_cb(lv_event_t * e);
-static void build_notification_entry(lv_obj_t* parent, not_mngr_notification_t* not, lv_group_t *input_group);
+static void close_button_pressed(lv_event_t *e);
+static void not_button_pressed(lv_event_t *e);
+static void scroll_event_cb(lv_event_t *e);
+static void build_notification_entry(lv_obj_t *parent, not_mngr_notification_t *not, lv_group_t *input_group);
 
 static on_notification_page_closed_cb_t closed_callback;
 static on_notification_remove_cb_t not_removed_callback;
@@ -18,7 +18,8 @@ void notifications_page_init(on_notification_page_closed_cb_t closed_cb, on_noti
     not_removed_callback = not_removed_cb;
 }
 
-void notifications_page_create(not_mngr_notification_t* notifications, uint8_t num_notifications, lv_group_t *input_group)
+void notifications_page_create(not_mngr_notification_t *notifications, uint8_t num_notifications,
+                               lv_group_t *input_group)
 {
     group = input_group;
 
@@ -39,7 +40,7 @@ void notifications_page_create(not_mngr_notification_t* notifications, uint8_t n
         build_notification_entry(main_page, &notifications[i], input_group);
     }
 
-    lv_obj_t * float_btn = lv_btn_create(main_page);
+    lv_obj_t *float_btn = lv_btn_create(main_page);
     lv_obj_set_size(float_btn, 50, 50);
     lv_obj_add_flag(float_btn, LV_OBJ_FLAG_FLOATING);
     lv_obj_align(float_btn, LV_ALIGN_BOTTOM_RIGHT, 0, -lv_obj_get_style_pad_right(main_page, LV_PART_MAIN));
@@ -62,7 +63,7 @@ void notifications_page_close(void)
     lv_obj_del(main_page);
 }
 
-static void build_notification_entry(lv_obj_t* parent, not_mngr_notification_t* not, lv_group_t *input_group)
+static void build_notification_entry(lv_obj_t *parent, not_mngr_notification_t *not, lv_group_t *input_group)
 {
     lv_obj_t *title;
     lv_obj_t *cont;
@@ -82,14 +83,14 @@ static void build_notification_entry(lv_obj_t* parent, not_mngr_notification_t* 
     lv_style_set_border_side(&outline_focused, LV_BORDER_SIDE_FULL);
     lv_style_set_radius(&outline_focused, 8);
     lv_style_set_bg_color(&outline_default, lv_color_hex(0xC1C1C1));
-    
+
     cont = lv_obj_create(parent);
     lv_obj_set_layout(cont, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_size(cont, LV_PCT(95), LV_SIZE_CONTENT);
     lv_obj_add_style(cont, &outline_focused, LV_STATE_FOCUS_KEY);
 
-    lv_obj_add_event_cb(cont, not_button_pressed, LV_EVENT_CLICKED, (void*)not->id);
+    lv_obj_add_event_cb(cont, not_button_pressed, LV_EVENT_CLICKED, (void *)not->id);
     lv_group_add_obj(input_group, cont);
     lv_obj_add_flag(cont, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
 
@@ -98,14 +99,14 @@ static void build_notification_entry(lv_obj_t* parent, not_mngr_notification_t* 
     lv_obj_set_size(title, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_center(title);
     lv_obj_add_flag(title, LV_OBJ_FLAG_CLICK_FOCUSABLE);
-    
+
     title = lv_label_create(cont);
     lv_label_set_text(title, not->body);
     lv_obj_set_size(title, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_add_flag(title, LV_OBJ_FLAG_CLICK_FOCUSABLE);
 }
 
-static void not_button_pressed(lv_event_t * e)
+static void not_button_pressed(lv_event_t *e)
 {
     printk("not_button_pressed\n");
     lv_obj_del(main_page);
@@ -115,23 +116,23 @@ static void not_button_pressed(lv_event_t * e)
     //not_removed_callback((uint32_t)lv_event_get_user_data(e));
 }
 
-static void close_button_pressed(lv_event_t * e)
+static void close_button_pressed(lv_event_t *e)
 {
     lv_obj_del(main_page);
     closed_callback();
 }
 
-static void scroll_event_cb(lv_event_t * e)
+static void scroll_event_cb(lv_event_t *e)
 {
-    lv_obj_t * cont = lv_event_get_target(e);
+    lv_obj_t *cont = lv_event_get_target(e);
     lv_area_t cont_a;
     lv_obj_get_coords(cont, &cont_a);
     lv_coord_t cont_y_center = cont_a.y1 + lv_area_get_height(&cont_a) / 2;
     lv_coord_t r = lv_obj_get_height(cont) * 7 / 10;
     uint32_t i;
     uint32_t child_cnt = lv_obj_get_child_cnt(cont);
-    for(i = 0; i < child_cnt; i++) {
-        lv_obj_t * child = lv_obj_get_child(cont, i);
+    for (i = 0; i < child_cnt; i++) {
+        lv_obj_t *child = lv_obj_get_child(cont, i);
         lv_area_t child_a;
         lv_obj_get_coords(child, &child_a);
 
@@ -143,10 +144,9 @@ static void scroll_event_cb(lv_event_t * e)
         /* Get the x of diff_y on a circle. */
         lv_coord_t x;
         /* If diff_y is out of the circle use the last point of the circle (the radius) */
-        if(diff_y >= r) {
+        if (diff_y >= r) {
             x = r;
-        }
-        else {
+        } else {
             /* Use Pythagoras theorem to get x from radius and y */
             uint32_t x_sqr = r * r - diff_y * diff_y;
             lv_sqrt_res_t res;

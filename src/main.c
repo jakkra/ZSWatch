@@ -112,13 +112,13 @@ static void encoder_vibration(struct _lv_indev_drv_t *drv, uint8_t e);
 static void accel_evt(accelerometer_evt_t *evt);
 static void play_not_vibration(void);
 static void check_notifications(void);
-static int read_battery(int* batt_mV, int* percent);
+static int read_battery(int *batt_mV, int *percent);
 
 static void on_brightness_changed(lv_setting_value_t value, bool final);
 static void on_display_always_on_changed(lv_setting_value_t value, bool final);
 static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
 static void on_reset_steps_changed(lv_setting_value_t value, bool final);
-static void on_notifcation_closed(lv_event_t * e, uint32_t id);
+static void on_notifcation_closed(lv_event_t *e, uint32_t id);
 static void on_notification_page_close(void);
 static void on_notification_page_notification_close(uint32_t not_id);
 
@@ -355,10 +355,12 @@ void general_work(struct k_work *item)
             memset(buf, 0, sizeof(buf));
 
             if (read_battery(&batt_mv, &batt_percent) == 0) {
-                msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"status\", \"bat\": %d, \"volt\": %d, \"chg\": %d} \n", batt_percent, batt_mv, 1);
+                msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"status\", \"bat\": %d, \"volt\": %d, \"chg\": %d} \n", batt_percent,
+                                   batt_mv, 1);
                 ble_comm_send(buf, msg_len);
             }
-            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &status_work.work, K_MSEC(SEND_STATUS_INTERVAL)), "Failed schedule status work");
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &status_work.work, K_MSEC(SEND_STATUS_INTERVAL)),
+                     "Failed schedule status work");
             break;
         }
         case CLOSE_NOTIFICATION: {
@@ -366,11 +368,10 @@ void general_work(struct k_work *item)
             buttons_allocated = false;
             break;
         }
-        case DEBUG_NOTIFICATION:
-        {
-            char* body = "This is a body with a longer message that maybe should wrap around or be cut?";
-            char* src = "Gmail";
-            char* title = "Test Name";
+        case DEBUG_NOTIFICATION: {
+            char *body = "This is a body with a longer message that maybe should wrap around or be cut?";
+            char *src = "Gmail";
+            char *title = "Test Name";
             ble_comm_notify_t raw_not = {
                 .body = body,
                 .body_len = strlen(body),
@@ -433,7 +434,7 @@ void main(void)
     __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");
 }
 
-static void on_notifcation_closed(lv_event_t * e, uint32_t id)
+static void on_notifcation_closed(lv_event_t *e, uint32_t id)
 {
     // Notification was dismissed, hence consider it read.
     notification_manager_remove(id);
@@ -453,40 +454,42 @@ static void on_notification_page_notification_close(uint32_t not_id)
     notification_manager_remove(not_id);
 }
 
-static void ble_data_cb(ble_comm_cb_data_t* cb)
+static void ble_data_cb(ble_comm_cb_data_t *cb)
 {
-    not_mngr_notification_t* parsed_not;
+    not_mngr_notification_t *parsed_not;
 
     switch (cb->type) {
-    case BLE_COMM_DATA_TYPE_NOTIFY:
-        parsed_not = notification_manager_add(&cb->data.notify);
-        if (!parsed_not) {
-            return;
-        }
-        if (buttons_allocated) {
-            return;
-        }
+        case BLE_COMM_DATA_TYPE_NOTIFY:
+            parsed_not = notification_manager_add(&cb->data.notify);
+            if (!parsed_not) {
+                return;
+            }
+            if (buttons_allocated) {
+                return;
+            }
 
-        buttons_allocated = true;
-        lv_notification_show(parsed_not->title, parsed_not->body, parsed_not->src, parsed_not->id, on_notifcation_closed);
-        play_not_vibration();
-        general_work_item.type = CLOSE_NOTIFICATION;
-        __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(15)), "FAIL schedule");
-        break;    
-    case BLE_COMM_DATA_TYPE_NOTIFY_REMOVE:
-        if (notification_manager_remove(cb->data.notify_remove.id) != 0) {
-            LOG_WRN("Notification %d not found", cb->data.notify_remove.id);
-        }
-        break;
-    case BLE_COMM_DATA_TYPE_SET_TIME:
-        LOG_WRN("SETTIME: %u\n", cb->data.time.ms);
-        break;
-    case BLE_COMM_DATA_TYPE_WEATHER:
-        LOG_WRN("Weather: %s t: %d hum: %d code: %d wind: %d dir: %d", cb->data.weather.report_text, cb->data.weather.temperature_c, cb->data.weather.humidity, cb->data.weather.weather_code, cb->data.weather.wind, cb->data.weather.wind_direction);
-        watchface_set_weather(cb->data.weather.temperature_c, cb->data.weather.weather_code);
-        break;
-    default:
-        break;
+            buttons_allocated = true;
+            lv_notification_show(parsed_not->title, parsed_not->body, parsed_not->src, parsed_not->id, on_notifcation_closed);
+            play_not_vibration();
+            general_work_item.type = CLOSE_NOTIFICATION;
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(15)), "FAIL schedule");
+            break;
+        case BLE_COMM_DATA_TYPE_NOTIFY_REMOVE:
+            if (notification_manager_remove(cb->data.notify_remove.id) != 0) {
+                LOG_WRN("Notification %d not found", cb->data.notify_remove.id);
+            }
+            break;
+        case BLE_COMM_DATA_TYPE_SET_TIME:
+            LOG_WRN("SETTIME: %u\n", cb->data.time.ms);
+            break;
+        case BLE_COMM_DATA_TYPE_WEATHER:
+            LOG_WRN("Weather: %s t: %d hum: %d code: %d wind: %d dir: %d", cb->data.weather.report_text,
+                    cb->data.weather.temperature_c, cb->data.weather.humidity, cb->data.weather.weather_code, cb->data.weather.wind,
+                    cb->data.weather.wind_direction);
+            watchface_set_weather(cb->data.weather.temperature_c, cb->data.weather.weather_code);
+            break;
+        default:
+            break;
     }
 }
 
@@ -558,7 +561,8 @@ static const char *now_str(void)
     return buf;
 }
 
-static int read_battery(int* batt_mV, int* percent) {
+static int read_battery(int *batt_mV, int *percent)
+{
     int rc = battery_measure_enable(true);
     if (rc != 0) {
         LOG_ERR("Failed initialize battery measurement: %d\n", rc);
@@ -606,7 +610,7 @@ static void set_vibrator(uint8_t percent)
 
     if (!device_is_ready(pwm_led1.dev)) {
         LOG_ERR("Error: PWM device %s is not ready\n",
-               pwm_led1.dev->name);
+                pwm_led1.dev->name);
         return;
     }
 

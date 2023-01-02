@@ -82,7 +82,7 @@ static int divider_setup(void)
             LOG_ERR("%s: device not ready", gcp->port->name);
             return -ENOENT;
         }
-       rc = gpio_pin_configure_dt(gcp, GPIO_OUTPUT_INACTIVE);
+        rc = gpio_pin_configure_dt(gcp, GPIO_OUTPUT_INACTIVE);
         if (rc != 0) {
             LOG_ERR("Failed to control feed %s.%u: %d",
                     gcp->port->name, gcp->pin, rc);
