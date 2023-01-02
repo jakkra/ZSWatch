@@ -1,10 +1,10 @@
 #ifndef __CLOCK_H
 #define __CLOCK_H
 #include <inttypes.h>
-#include <bluetooth/services/cts_client.h>
+#include <time.h>
 
-typedef void(*clock_tick_callback)(struct bt_cts_exact_time_256 *start_time);
-
-void clock_init(clock_tick_callback tick_cb, struct bt_cts_exact_time_256 *start_time);
+void clock_init(uint64_t start_time_seconds);
+struct tm *clock_get_time(void);
+time_t clock_get_time_unix(void);
 
 #endif

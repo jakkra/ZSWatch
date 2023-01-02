@@ -41,10 +41,6 @@ LOG_MODULE_REGISTER(app);
 #define BATTERY_INTERVAL (1000) // 1 Hz
 #define SEND_STATUS_INTERVAL 30 * 1000
 
-#define COMPUTE_BUILD_HOUR ((__TIME__[0] - '0') * 10 + __TIME__[1] - '0')
-#define COMPUTE_BUILD_MIN  ((__TIME__[3] - '0') * 10 + __TIME__[4] - '0')
-#define COMPUTE_BUILD_SEC  ((__TIME__[6] - '0') * 10 + __TIME__[7] - '0')
-
 const struct device *ds = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 
 typedef enum work_type {
@@ -98,8 +94,6 @@ static bool vibrator_on = false;
 static void enable_bluetoth(void);
 
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
-
-static void clock_handler(struct bt_cts_exact_time_256 *time);
 
 static void test_battery_read(void);
 static void set_vibrator(uint8_t percent);
@@ -262,7 +256,7 @@ void general_work(struct k_work *item)
             res = accelerometer_init(accel_evt);
             __ASSERT(res == 0, "Failed init accelerometer");
 
-            clock_init(clock_handler, &retained.current_time);
+            clock_init(retained.current_time_seconds);
 
             buttonsInit(&onButtonPressCb);
 
@@ -284,6 +278,7 @@ void general_work(struct k_work *item)
             watchface_show();
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &battery_work.work, K_NO_WAIT), "FAIL battery_work");
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &render_work.work, K_NO_WAIT), "FAIL render_work");
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &clock_work.work, K_NO_WAIT), "FAIL clock_work");
             //__ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_NO_WAIT), "FAIL accel_work");
             watch_state = WATCHFACE_STATE;
 
@@ -298,11 +293,14 @@ void general_work(struct k_work *item)
             break;
         }
         case UPDATE_CLOCK: {
-            LOG_DBG("%d, %d, %d\n", retained.current_time.hours, retained.current_time.minutes, retained.current_time.seconds);
-            watchface_set_time(retained.current_time.hours, retained.current_time.minutes);
+            struct tm *time = clock_get_time();
+            LOG_ERR("%d, %d, %d\n", time->tm_hour, time->tm_min, time->tm_sec);
+            watchface_set_time(time->tm_hour, time->tm_min);
             // Store current time
+            retained.current_time_seconds = clock_get_time_unix();
             retained_update();
             check_notifications();
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &clock_work.work, K_SECONDS(1)), "FAIL clock_work");
             break;
         }
         case OPEN_WATCHFACE: {
@@ -479,9 +477,13 @@ static void ble_data_cb(ble_comm_cb_data_t *cb)
                 LOG_WRN("Notification %d not found", cb->data.notify_remove.id);
             }
             break;
-        case BLE_COMM_DATA_TYPE_SET_TIME:
-            LOG_WRN("SETTIME: %u\n", cb->data.time.ms);
+        case BLE_COMM_DATA_TYPE_SET_TIME: {
+            struct timespec tspec;
+            tspec.tv_sec = cb->data.time.seconds;
+            tspec.tv_nsec = 0;
+            clock_settime(CLOCK_REALTIME, &tspec);
             break;
+        }
         case BLE_COMM_DATA_TYPE_WEATHER:
             LOG_WRN("Weather: %s t: %d hum: %d code: %d wind: %d dir: %d", cb->data.weather.report_text,
                     cb->data.weather.temperature_c, cb->data.weather.humidity, cb->data.weather.weather_code, cb->data.weather.wind,
@@ -510,16 +512,6 @@ static void enable_bluetoth(void)
     __ASSERT_NO_MSG(bleAoaInit());
     __ASSERT_NO_MSG(ble_comm_init(ble_data_cb) == 0);
 }
-
-static uint8_t last_min = 0;
-static void clock_handler(struct bt_cts_exact_time_256 *time)
-{
-    if (last_min != time->minutes) {
-        memcpy(&retained.current_time, time, sizeof(struct bt_cts_exact_time_256));
-        __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &clock_work.work, K_NO_WAIT), "FAIL schedule");
-    }
-}
-
 
 /** A discharge curve specific to the power source. */
 static const struct battery_level_point levels[] = {

@@ -28,7 +28,7 @@ typedef struct ble_comm_notify_remove {
 } ble_comm_notify_remove_t;
 
 typedef struct ble_comm_notify_time {
-    uint32_t ms;
+    uint32_t seconds;
 } ble_comm_notify_time_t;
 
 typedef struct ble_comm_weather {

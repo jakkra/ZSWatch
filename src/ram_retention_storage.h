@@ -12,7 +12,7 @@
 
 /* Example of validatable retained data. */
 struct retained_data {
-    struct bt_cts_exact_time_256 current_time;
+    time_t current_time_seconds;
 
     /* The uptime from the current session the last time the
      * retained data was updated.
