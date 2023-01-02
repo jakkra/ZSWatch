@@ -13,13 +13,13 @@ typedef enum ble_comm_data_type {
 
 typedef struct ble_comm_notify {
     uint32_t id;
-    char* body;
+    char *body;
     int body_len;
-    char* sender;
+    char *sender;
     int sender_len;
-    char* title;
+    char *title;
     int title_len;
-    char* src;
+    char *src;
     int src_len;
 } ble_comm_notify_t;
 
@@ -37,7 +37,7 @@ typedef struct ble_comm_weather {
     uint16_t wind;
     uint16_t wind_direction;
     uint16_t weather_code;
-    char* report_text;
+    char *report_text;
     int report_text_len;
 } ble_comm_weather_t;
 
@@ -52,8 +52,8 @@ typedef struct ble_comm_cb_data {
     } data;
 } ble_comm_cb_data_t;
 
-typedef void(*on_data_cb_t)(ble_comm_cb_data_t* data);
+typedef void(*on_data_cb_t)(ble_comm_cb_data_t *data);
 
 int ble_comm_init(on_data_cb_t data_cb);
-int ble_comm_send(uint8_t* data, uint16_t len);
+int ble_comm_send(uint8_t *data, uint16_t len);
 #endif
