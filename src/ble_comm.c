@@ -347,7 +347,7 @@ static int parse_weather(char* data, int len)
     memset(&cb, 0, sizeof(cb));
 
     cb.type = BLE_COMM_DATA_TYPE_WEATHER;
-    int32_t temperature_f = extract_value_uint32("temp:", data);;
+    int32_t temperature_k = extract_value_uint32("temp:", data);
     cb.data.weather.humidity = extract_value_uint32("hum:", data);
     cb.data.weather.weather_code = extract_value_uint32("code:", data);
     cb.data.weather.wind = extract_value_uint32("wind:", data);
@@ -361,11 +361,9 @@ static int parse_weather(char* data, int len)
         cb.data.weather.report_text[cb.data.weather.report_text_len] = '\0';
     }
 
-    // App sends temperature in F in the format 264 where the last digit is the decimal => 26.4F
-    decimal_temp = temperature_f % 10; // Get the decimal
-    temperature = (temperature_f / 10) + decimal_temp * 0.1;
-    temperature = ((temperature) - 32.0f) * (5.0f/9.0f);
-    cb.data.weather.temperature_c = (int8_t)roundf(temperature * 10.0f) / 10.0f;
+    // App sends temperature in Kelvin
+    temperature = temperature_k - 273.15f;
+    cb.data.weather.temperature_c = (int8_t)roundf(temperature);
     data_parsed_cb(&cb);
     return 0;
 }
