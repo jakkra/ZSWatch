@@ -39,6 +39,7 @@ LOG_MODULE_REGISTER(app);
 #define RENDER_INTERVAL_LVGL (1000 / 100) // 10 Hz
 #define ACCEL_INTERVAL (1000 / 100) // 10 Hz
 #define BATTERY_INTERVAL (1000) // 1 Hz
+#define SEND_STATUS_INTERVAL 30 * 1000
 
 #define COMPUTE_BUILD_HOUR ((__TIME__[0] - '0') * 10 + __TIME__[1] - '0')
 #define COMPUTE_BUILD_MIN  ((__TIME__[3] - '0') * 10 + __TIME__[4] - '0')
@@ -56,7 +57,8 @@ typedef enum work_type {
     RENDER,
     ACCEL,
     CLOSE_NOTIFICATION,
-    DEBUG_NOTIFICATION
+    DEBUG_NOTIFICATION,
+    SEND_STATUS_UPDATE,
 } work_type_t;
 
 typedef enum ui_state {
@@ -78,6 +80,8 @@ static delayed_work_item_t battery_work = { .type = BATTERY };
 static delayed_work_item_t accel_work = { .type = ACCEL };
 static delayed_work_item_t render_work = { .type = RENDER };
 static delayed_work_item_t clock_work = { .type = UPDATE_CLOCK };
+static delayed_work_item_t status_work = { .type = SEND_STATUS_UPDATE };
+
 static delayed_work_item_t general_work_item;
 
 #define MY_STACK_SIZE 3000
@@ -108,6 +112,7 @@ static void encoder_vibration(struct _lv_indev_drv_t *drv, uint8_t e);
 static void accel_evt(accelerometer_evt_t *evt);
 static void play_not_vibration(void);
 static void check_notifications(void);
+static int read_battery(int* batt_mV, int* percent);
 
 static void on_brightness_changed(lv_setting_value_t value, bool final);
 static void on_display_always_on_changed(lv_setting_value_t value, bool final);
@@ -342,6 +347,20 @@ void general_work(struct k_work *item)
             }
             break;
         }
+        case SEND_STATUS_UPDATE: {
+            int batt_mv;
+            int batt_percent;
+            int msg_len;
+            char buf[100];
+            memset(buf, 0, sizeof(buf));
+
+            if (read_battery(&batt_mv, &batt_percent) == 0) {
+                msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"status\", \"bat\": %d, \"volt\": %d, \"chg\": %d} \n", batt_percent, batt_mv, 1);
+                ble_comm_send(buf, msg_len);
+            }
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &status_work.work, K_MSEC(SEND_STATUS_INTERVAL)), "Failed schedule status work");
+            break;
+        }
         case CLOSE_NOTIFICATION: {
             lv_notification_remove();
             buttons_allocated = false;
@@ -408,6 +427,7 @@ void main(void)
     k_work_init_delayable(&accel_work.work, general_work);
     k_work_init_delayable(&render_work.work, general_work); // TODO malloc and free as we can have multiple
     k_work_init_delayable(&clock_work.work, general_work);
+    k_work_init_delayable(&status_work.work, general_work);
 
     general_work_item.type = INIT;
     __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");
@@ -538,33 +558,42 @@ static const char *now_str(void)
     return buf;
 }
 
-static void test_battery_read(void)
-{
+static int read_battery(int* batt_mV, int* percent) {
     int rc = battery_measure_enable(true);
     if (rc != 0) {
         LOG_ERR("Failed initialize battery measurement: %d\n", rc);
-        return;
+        return -1;
     }
     // From https://github.com/zephyrproject-rtos/zephyr/blob/main/samples/boards/nrf/battery/src/main.c
-    int batt_mV = battery_sample();
+    *batt_mV = battery_sample();
 
-    if (batt_mV < 0) {
-        LOG_ERR("Failed to read battery voltage: %d\n", batt_mV);
-        return;
+    if (*batt_mV < 0) {
+        LOG_ERR("Failed to read battery voltage: %d\n", *batt_mV);
+        return -1;
     }
 
-    unsigned int batt_pptt = battery_level_pptt(batt_mV, levels);
+    unsigned int batt_pptt = battery_level_pptt(*batt_mV, levels);
 
-    LOG_DBG("[%s]: %d mV; %u pptt\n", now_str(), batt_mV, batt_pptt);
+    LOG_DBG("[%s]: %d mV; %u pptt\n", now_str(), *batt_mV, batt_pptt);
+    *percent = batt_pptt / 100;
 
     rc = battery_measure_enable(false);
     if (rc != 0) {
         LOG_ERR("Failed disable battery measurement: %d\n", rc);
-        return;
+        return -1;
     }
+    return 0;
+}
 
-    watchface_set_battery_percent(batt_pptt / 100, batt_mV);
-    bt_bas_set_battery_level(batt_pptt / 100);
+static void test_battery_read(void)
+{
+    int batt_mv;
+    int batt_percent;
+
+    if (read_battery(&batt_mv, &batt_percent) == 0) {
+        watchface_set_battery_percent(batt_percent, batt_mv);
+        bt_bas_set_battery_level(batt_percent);
+    }
 }
 
 static const struct pwm_dt_spec pwm_led1 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led1));
@@ -845,6 +874,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
         LOG_ERR("Connection failed (err %u)", err);
         return;
     }
+    __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &status_work.work, K_MSEC(1000)), "FAIL status");
 
     watchface_set_ble_connected(true);
 }

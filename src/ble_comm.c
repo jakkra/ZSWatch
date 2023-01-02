@@ -69,9 +69,9 @@ int ble_comm_init(on_data_cb_t data_cb)
     return err;
 }
 
-int ble_comm_send(void)
+int ble_comm_send(uint8_t* data, uint16_t len)
 {
-    return 0;
+    return bt_nus_send(currentConn, data, len);
 }
 
 static void connected(struct bt_conn *conn, uint8_t err)
