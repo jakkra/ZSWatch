@@ -214,7 +214,7 @@ static int littlefs_mount(struct fs_mount_t *mp)
 }
 
 
-void filesystem_test(void)
+void filesystem_init(void)
 {
     char fname2[MAX_PATH_LEN];
     struct fs_statvfs sbuf;

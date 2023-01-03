@@ -31,6 +31,8 @@
 #include <lv_notifcation.h>
 #include <notification_manager.h>
 #include <notifications_page.h>
+#include <vibration_motor.h>
+#include <display_control.h>
 
 #define LOG_LEVEL LOG_LEVEL_WRN
 #include <zephyr/logging/log.h>
@@ -40,8 +42,6 @@ LOG_MODULE_REGISTER(app);
 #define ACCEL_INTERVAL (1000 / 100) // 10 Hz
 #define BATTERY_INTERVAL (1000) // 1 Hz
 #define SEND_STATUS_INTERVAL 30 * 1000
-
-const struct device *ds = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 
 typedef enum work_type {
     INIT,
@@ -71,7 +71,6 @@ typedef struct delayed_work_item {
     work_type_t     type;
 } delayed_work_item_t;
 
-
 static delayed_work_item_t battery_work = { .type = BATTERY };
 static delayed_work_item_t accel_work = { .type = ACCEL };
 static delayed_work_item_t render_work = { .type = RENDER };
@@ -80,24 +79,12 @@ static delayed_work_item_t status_work = { .type = SEND_STATUS_UPDATE };
 
 static delayed_work_item_t general_work_item;
 
-#define MY_STACK_SIZE 3000
-#define MY_PRIORITY 5
+#define WORK_STACK_SIZE 3000
+#define WORK_PRIORITY 5
 
-K_THREAD_STACK_DEFINE(my_stack_area, MY_STACK_SIZE);
-
-struct k_work_q my_work_q;
-
-static ui_state_t watch_state = INIT_STATE;
-
-static bool vibrator_on = false;
+K_THREAD_STACK_DEFINE(my_stack_area, WORK_STACK_SIZE);
 
 static void enable_bluetoth(void);
-
-static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
-
-static void test_battery_read(void);
-static void set_vibrator(uint8_t percent);
-static void set_display_blk(uint8_t percent);
 static void open_settings(void);
 static void open_notifications_page(void);
 static bool load_retention_ram(void);
@@ -108,6 +95,7 @@ static void play_not_vibration(void);
 static void check_notifications(void);
 static int read_battery(int *batt_mV, int *percent);
 
+static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
 static void on_brightness_changed(lv_setting_value_t value, bool final);
 static void on_display_always_on_changed(lv_setting_value_t value, bool final);
 static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
@@ -228,6 +216,13 @@ static bool buttons_allocated = false;
 static uint32_t count = 0U;
 static lv_indev_drv_t enc_drv;
 static lv_indev_t *enc_indev;
+static buttonId_t last_pressed;
+
+static bool display_on = true;
+static bool vibrator_on = false;
+
+struct k_work_q my_work_q;
+static ui_state_t watch_state = INIT_STATE;
 
 void general_work(struct k_work *item)
 {
@@ -236,20 +231,11 @@ void general_work(struct k_work *item)
 
     switch (the_work->type) {
         case INIT: {
-            const struct device *display_dev;
-
-            display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
-            if (!device_is_ready(display_dev)) {
-                LOG_ERR("Device not ready, aborting test");
-                return;
-            }
-            k_msleep(500);
             load_retention_ram();
-            k_msleep(500);
+            filesystem_init();
             heart_rate_sensor_init();
             watchface_init();
             notifications_page_init(on_notification_page_close, on_notification_page_notification_close);
-            filesystem_test();
             notification_manager_init();
             enable_bluetoth();
 
@@ -257,14 +243,13 @@ void general_work(struct k_work *item)
             __ASSERT(res == 0, "Failed init accelerometer");
 
             clock_init(retained.current_time_seconds);
-
             buttonsInit(&onButtonPressCb);
 
-            gpio_debug_test(DRV_VIB_EN, 0);
-            set_display_blk(100);
+            vibration_motor_init();
+            vibration_motor_set_on(false);
+            display_control_set_brightness(100);
 
             lv_indev_drv_init(&enc_drv);
-
 
             enc_drv.type = LV_INDEV_TYPE_ENCODER;
             enc_drv.read_cb = enocoder_read;
@@ -279,7 +264,6 @@ void general_work(struct k_work *item)
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &battery_work.work, K_NO_WAIT), "FAIL battery_work");
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &render_work.work, K_NO_WAIT), "FAIL render_work");
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &clock_work.work, K_NO_WAIT), "FAIL clock_work");
-            //__ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_NO_WAIT), "FAIL accel_work");
             watch_state = WATCHFACE_STATE;
 
             general_work_item.type = DEBUG_NOTIFICATION;
@@ -296,6 +280,7 @@ void general_work(struct k_work *item)
             struct tm *time = clock_get_time();
             LOG_ERR("%d, %d, %d\n", time->tm_hour, time->tm_min, time->tm_sec);
             watchface_set_time(time->tm_hour, time->tm_min);
+
             // Store current time
             retained.current_time_seconds = clock_get_time_unix();
             retained_update();
@@ -316,10 +301,15 @@ void general_work(struct k_work *item)
             break;
         }
         case BATTERY: {
-            test_battery_read();
+            int batt_mv;
+            int batt_percent;
+
+            if (read_battery(&batt_mv, &batt_percent) == 0) {
+                watchface_set_battery_percent(batt_percent, batt_mv);
+                bt_bas_set_battery_level(batt_percent);
+            }
             bt_hrs_notify(count % 220);
             watchface_set_hrm(count % 220);
-            //watchface_set_step(count * 10 % 10000);
             //heart_rate_sensor_fetch(&hr_sample);
             count++;
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &battery_work.work, K_MSEC(BATTERY_INTERVAL)),
@@ -418,7 +408,7 @@ void main(void)
     k_work_queue_init(&my_work_q);
 
     k_work_queue_start(&my_work_q, my_stack_area,
-                       K_THREAD_STACK_SIZEOF(my_stack_area), MY_PRIORITY,
+                       K_THREAD_STACK_SIZEOF(my_stack_area), WORK_PRIORITY,
                        NULL);
 
     k_work_init_delayable(&general_work_item.work, general_work);
@@ -532,27 +522,6 @@ static const struct battery_level_point levels[] = {
     { 0, 3100 },
 };
 
-static const char *now_str(void)
-{
-    static char buf[16]; /* ...HH:MM:SS.MMM */
-    uint32_t now = k_uptime_get_32();
-    unsigned int ms = now % MSEC_PER_SEC;
-    unsigned int s;
-    unsigned int min;
-    unsigned int h;
-
-    now /= MSEC_PER_SEC;
-    s = now % 60U;
-    now /= 60U;
-    min = now % 60U;
-    now /= 60U;
-    h = now;
-
-    snprintf(buf, sizeof(buf), "%u:%02u:%02u.%03u",
-             h, min, s, ms);
-    return buf;
-}
-
 static int read_battery(int *batt_mV, int *percent)
 {
     int rc = battery_measure_enable(true);
@@ -581,76 +550,6 @@ static int read_battery(int *batt_mV, int *percent)
     return 0;
 }
 
-static void test_battery_read(void)
-{
-    int batt_mv;
-    int batt_percent;
-
-    if (read_battery(&batt_mv, &batt_percent) == 0) {
-        watchface_set_battery_percent(batt_percent, batt_mv);
-        bt_bas_set_battery_level(batt_percent);
-    }
-}
-
-static const struct pwm_dt_spec pwm_led1 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led1));
-
-static void set_vibrator(uint8_t percent)
-{
-    int ret;
-    uint32_t step = pwm_led1.period / 100;
-    uint32_t pulse_width = step * percent;
-
-    if (!device_is_ready(pwm_led1.dev)) {
-        LOG_ERR("Error: PWM device %s is not ready\n",
-                pwm_led1.dev->name);
-        return;
-    }
-
-    ret = pwm_set_pulse_dt(&pwm_led1, pulse_width);
-    __ASSERT(ret == 0, "pwm error: %d for pulse: %d", ret, pulse_width);
-}
-
-static const struct pwm_dt_spec pwm_led0 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led0));
-
-static void set_display_blk(uint8_t percent)
-{
-    int ret;
-    uint32_t step = pwm_led0.period / 100;
-    uint32_t pulse_width = step * percent;
-
-    if (!device_is_ready(pwm_led0.dev)) {
-        printk("Error: PWM device %s is not ready\n",
-               pwm_led0.dev->name);
-        return;
-    }
-
-    ret = pwm_set_pulse_dt(&pwm_led0, pulse_width);
-    __ASSERT(ret == 0, "pwm error: %d for pulse: %d", ret, pulse_width);
-}
-
-void test_max_30101(void)
-{
-    struct sensor_value green;
-    const struct device *dev = DEVICE_DT_GET_ANY(maxim_max30101);
-
-    if (dev == NULL) {
-        LOG_INF("Could not get max30101 device\n");
-        return;
-    }
-
-    if (!device_is_ready(dev)) {
-        LOG_INF("max30101 device %s is not ready\n", dev->name);
-        return;
-    }
-
-    sensor_sample_fetch(dev);
-    sensor_channel_get(dev, SENSOR_CHAN_GREEN, &green);
-
-    /* Print green LED data*/
-    LOG_INF("GREEN=%d\n", green.val1);
-
-}
-
 static bool load_retention_ram(void)
 {
     bool retained_ok = retained_validate();
@@ -666,8 +565,6 @@ static bool load_retention_ram(void)
 
     return retained_ok;
 }
-
-#define REFLOW_OVEN_TITLE_PAD 10
 
 static void on_close_settings(void)
 {
@@ -693,30 +590,30 @@ static void open_notifications_page(void)
 static void play_press_vibration(void)
 {
     vibrator_on = true;
-    gpio_debug_test(DRV_VIB_EN, 1);
-    set_vibrator(80);
+    vibration_motor_set_on(true);
+    vibration_motor_set_power(80);
     k_msleep(150);
-    set_vibrator(80);
-    gpio_debug_test(DRV_VIB_EN, 0);
+    vibration_motor_set_power(80);
+    vibration_motor_set_on(false);
     vibrator_on = false;
 }
 
 static void play_not_vibration(void)
 {
     vibrator_on = true;
-    set_vibrator(100);
-    gpio_debug_test(DRV_VIB_EN, 1);
+    vibration_motor_set_power(100);
+    vibration_motor_set_on(true);
     k_msleep(50);
-    gpio_debug_test(DRV_VIB_EN, 0);
+    vibration_motor_set_on(false);
     k_msleep(50);
-    gpio_debug_test(DRV_VIB_EN, 1);
+    vibration_motor_set_on(true);
     k_msleep(50);
-    gpio_debug_test(DRV_VIB_EN, 0);
+    vibration_motor_set_on(false);
     k_msleep(50);
-    set_vibrator(0);
-    gpio_debug_test(DRV_VIB_EN, 1);
+    vibration_motor_set_power(0);
+    vibration_motor_set_on(true);
     k_msleep(50);
-    gpio_debug_test(DRV_VIB_EN, 0);
+    vibration_motor_set_on(false);
     vibrator_on = false;
 }
 
@@ -786,8 +683,6 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
     }
 }
 
-static buttonId_t last_pressed;
-
 static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
 {
     if (!buttons_allocated) {
@@ -835,15 +730,15 @@ void encoder_vibration(struct _lv_indev_drv_t *drv, uint8_t e)
 static void on_brightness_changed(lv_setting_value_t value, bool final)
 {
     // Slider have values 0-10 hence multiply with 10 to get brightness in percent
-    set_display_blk(value.item.slider * 10);
+    display_control_set_brightness(value.item.slider * 10);
 }
 
 static void on_display_always_on_changed(lv_setting_value_t value, bool final)
 {
     if (value.item.sw) {
-        set_display_blk(100);
+        display_control_set_brightness(100);
     } else {
-        set_display_blk(10);
+        display_control_set_brightness(10);
     }
 }
 
@@ -880,7 +775,6 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
     watchface_set_ble_connected(false);
 }
 
-static bool display_on = true;
 static void accel_evt(accelerometer_evt_t *evt)
 {
     switch (evt->type) {
@@ -891,9 +785,9 @@ static void accel_evt(accelerometer_evt_t *evt)
             }
             display_on = !display_on;
             if (display_on) {
-                set_display_blk(100);
+                display_control_set_brightness(100);
             } else {
-                set_display_blk(1);
+                display_control_set_brightness(1);
             }
             break;
         }
@@ -906,7 +800,7 @@ static void accel_evt(accelerometer_evt_t *evt)
             break;
         }
         case ACCELEROMETER_EVT_TYPE_TILT: {
-            set_display_blk(100);
+            display_control_set_brightness(100);
             break;
         }
     }
