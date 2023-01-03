@@ -278,7 +278,7 @@ void general_work(struct k_work *item)
         }
         case UPDATE_CLOCK: {
             struct tm *time = clock_get_time();
-            LOG_ERR("%d, %d, %d\n", time->tm_hour, time->tm_min, time->tm_sec);
+            LOG_INF("%d, %d, %d\n", time->tm_hour, time->tm_min, time->tm_sec);
             watchface_set_time(time->tm_hour, time->tm_min);
 
             // Store current time
@@ -539,7 +539,7 @@ static int read_battery(int *batt_mV, int *percent)
 
     unsigned int batt_pptt = battery_level_pptt(*batt_mV, levels);
 
-    LOG_DBG("[%s]: %d mV; %u pptt\n", now_str(), *batt_mV, batt_pptt);
+    LOG_DBG("%d mV; %u pptt\n", *batt_mV, batt_pptt);
     *percent = batt_pptt / 100;
 
     rc = battery_measure_enable(false);

@@ -75,12 +75,4 @@ typedef struct lv_settings_page {
 void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char *title, lv_group_t *input_group,
                         on_close_cb_t close_cb);
 
-/**
- * Automatically add the item to a group to allow navigation with keypad or encoder.
- * Should be called before `lv_settings_create`
- * The group can be change at any time.
- * @param g the group to use. `NULL` to not use this feature.
- */
-void lv_settings_set_group(lv_group_t *g);
-
 #endif /*LV_SETTINGS_H*/

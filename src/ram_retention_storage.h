@@ -10,7 +10,6 @@
 #include <inttypes.h>
 #include <bluetooth/services/cts_client.h>
 
-/* Example of validatable retained data. */
 struct retained_data {
     time_t current_time_seconds;
 

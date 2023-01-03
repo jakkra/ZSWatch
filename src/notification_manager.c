@@ -131,6 +131,6 @@ static uint32_t find_oldest_notification_idx(void)
             oldest_id = notifications[i].id;
         }
     }
-    printk("Return: %u, %d\n", oldest_id, oldest_idx);
+
     return oldest_idx;
 }

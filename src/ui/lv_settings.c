@@ -1,18 +1,7 @@
-/**
- * @file lv_settings.c
- *
- */
-
-/*********************
- *      INCLUDES
- *********************/
 #include "lv_settings.h"
 #include "lvgl.h"
 #include "zephyr/logging/log.h"
 
-/*********************
- *      DEFINES
- *********************/
 #define LV_SETTINGS_ANIM_TIME   300 /*[ms]*/
 #define LV_SETTINGS_MAX_WIDTH   250
 
@@ -20,31 +9,9 @@
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
 #endif
 
-
-
-/**********************
- *      TYPEDEFS
- **********************/
-
-/**********************
- *  STATIC PROTOTYPES
- **********************/
-
-/**********************
- *  STATIC VARIABLES
- **********************/
-
 static on_close_cb_t close_callback;
 
 static lv_obj_t *_menu = NULL;
-
-/**********************
- *      MACROS
- **********************/
-
-/**********************
- *   GLOBAL FUNCTIONS
- **********************/
 
 static void close_button_pressed(lv_event_t *e)
 {
@@ -230,30 +197,4 @@ void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char
     lv_menu_set_page(_menu, _mainPage);
     //lv_group_focus_next(input_group);
     lv_group_focus_obj(sub_page);
-}
-
-/**
- * Automatically add the item to a group to allow navigation with keypad or encoder.
- * Should be called before `lv_settings_create`
- * The group can be change at any time.
- * @param g the group to use. `NULL` to not use this feature.
- */
-void lv_settings_set_group(lv_group_t *g)
-{
-    //group = g;
-    //lv_group_set_wrap(group, false);
-}
-
-/**
- * Create a new page ask `event_cb` to add the item with `LV_EVENT_REFRESH`
- * @param parent_item pointer to an item which open the the new page. Its `name` will be the title
- * @param event_cb event handler of the menu page
- */
-void lv_settings_open_page(lv_settings_item_t *parent_item, lv_event_cb_t event_cb)
-{
-    /*Create a new page in the menu*/
-    //create_page(parent_item, event_cb);
-
-    /*Add the items*/
-    //lv_event_send_func(event_cb, NULL, LV_EVENT_REFRESH, parent_item);
 }
