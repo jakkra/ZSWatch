@@ -344,7 +344,7 @@ void general_work(struct k_work *item)
 
             if (read_battery(&batt_mv, &batt_percent) == 0) {
                 msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"status\", \"bat\": %d, \"volt\": %d, \"chg\": %d} \n", batt_percent,
-                                   batt_mv, 1);
+                                   batt_mv, 0);
                 ble_comm_send(buf, msg_len);
             }
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &status_work.work, K_MSEC(SEND_STATUS_INTERVAL)),

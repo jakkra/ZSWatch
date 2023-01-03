@@ -1,0 +1,54 @@
+description: GC9A01 EPD display controller
+
+compatible: "jkra,gc9a01"
+
+include: [spi-device.yaml, display-controller.yaml]
+
+
+properties:
+    reset-gpios:
+      type: phandle-array
+      required: true
+      description: RESET pin.
+
+        The RESET pin of GC9A01 is active low.
+        If connected directly the MCU pin should be configured
+        as active low.
+
+    bl-gpios:
+      type: phandle-array
+      required: true
+      description: BL pin.
+
+        BL PIN TODO description
+
+    dc-gpios:
+      type: phandle-array
+      required: true
+      description: DC pin.
+
+        The DC pin of GC9A01 is active low (transmission command byte).
+        If connected directly the MCU pin should be configured
+        as active low.
+
+
+    pwr:
+      type: uint8-array
+      required: false
+      description: Power Setting (PWR) values
+
+    softstart:
+      type: uint8-array
+      required: false
+      description: Booster Soft Start (BTST) values
+
+    cdi:
+      type: int
+      required: false
+      description: VCOM and data interval value
+
+    tcon:
+      type: int
+      required: false
+      description: TCON setting value
+on-bus: spi

@@ -1,0 +1,9 @@
+menu "Zephyr Kernel"
+    source "Kconfig.zephyr"
+endmenu
+
+rsource "drivers/Kconfig"
+
+module = APP
+module-str = APP
+source "subsys/logging/Kconfig.template.log_config"

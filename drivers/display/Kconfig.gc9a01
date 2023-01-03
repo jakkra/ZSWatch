@@ -1,0 +1,8 @@
+# GC9A01 display controller configuration options
+
+config GC9A01
+	bool "GC9A01 compatible display controller driver"
+	default y
+	select SPI
+	help
+	  Enable driver for GC9A01 compatible controller.
