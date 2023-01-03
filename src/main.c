@@ -38,10 +38,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app);
 
-#define RENDER_INTERVAL_LVGL (1000 / 100) // 10 Hz
-#define ACCEL_INTERVAL (1000 / 100) // 10 Hz
-#define BATTERY_INTERVAL (1000) // 1 Hz
-#define SEND_STATUS_INTERVAL 30 * 1000
+#define WORK_STACK_SIZE 3000
+#define WORK_PRIORITY   5
+
+#define RENDER_INTERVAL_LVGL    K_MSEC(100)
+#define ACCEL_INTERVAL          K_MSEC(100)
+#define BATTERY_INTERVAL        K_SECONDS(10)
+#define SEND_STATUS_INTERVAL    K_SECONDS(30)
 
 typedef enum work_type {
     INIT,
@@ -67,22 +70,9 @@ typedef enum ui_state {
 } ui_state_t;
 
 typedef struct delayed_work_item {
-    struct k_work_delayable   work;
-    work_type_t     type;
+    struct k_work_delayable work;
+    work_type_t             type;
 } delayed_work_item_t;
-
-static delayed_work_item_t battery_work = { .type = BATTERY };
-static delayed_work_item_t accel_work = { .type = ACCEL };
-static delayed_work_item_t render_work = { .type = RENDER };
-static delayed_work_item_t clock_work = { .type = UPDATE_CLOCK };
-static delayed_work_item_t status_work = { .type = SEND_STATUS_UPDATE };
-
-static delayed_work_item_t general_work_item;
-
-#define WORK_STACK_SIZE 3000
-#define WORK_PRIORITY 5
-
-K_THREAD_STACK_DEFINE(my_stack_area, WORK_STACK_SIZE);
 
 static void enable_bluetoth(void);
 static void open_settings(void);
@@ -210,10 +200,19 @@ static lv_settings_page_t settings_menu[] = {
     },
 };
 
-static lv_group_t *input_group;
+static delayed_work_item_t battery_work =   { .type = BATTERY };
+static delayed_work_item_t accel_work =     { .type = ACCEL };
+static delayed_work_item_t render_work =    { .type = RENDER };
+static delayed_work_item_t clock_work =     { .type = UPDATE_CLOCK };
+static delayed_work_item_t status_work =    { .type = SEND_STATUS_UPDATE };
+
+static delayed_work_item_t general_work_item;
+
+K_THREAD_STACK_DEFINE(my_stack_area, WORK_STACK_SIZE);
+
 
 static bool buttons_allocated = false;
-static uint32_t count = 0U;
+static lv_group_t *input_group;
 static lv_indev_drv_t enc_drv;
 static lv_indev_t *enc_indev;
 static buttonId_t last_pressed;
@@ -303,6 +302,7 @@ void general_work(struct k_work *item)
         case BATTERY: {
             int batt_mv;
             int batt_percent;
+            static uint32_t count;
 
             if (read_battery(&batt_mv, &batt_percent) == 0) {
                 watchface_set_battery_percent(batt_percent, batt_mv);
@@ -312,13 +312,13 @@ void general_work(struct k_work *item)
             watchface_set_hrm(count % 220);
             //heart_rate_sensor_fetch(&hr_sample);
             count++;
-            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &battery_work.work, K_MSEC(BATTERY_INTERVAL)),
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &battery_work.work, BATTERY_INTERVAL),
                      "FAIL battery_work");
             break;
         }
         case RENDER: {
             lv_task_handler();
-            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &render_work.work, K_MSEC(RENDER_INTERVAL_LVGL)),
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &render_work.work, RENDER_INTERVAL_LVGL),
                      "FAIL render_work");
             break;
         }
@@ -331,7 +331,7 @@ void general_work(struct k_work *item)
                 __ASSERT_NO_MSG(res == 0);
                 LOG_DBG("x: %d y: %d z: %d", x, y, z);
                 states_page_accelerometer_values(x, y, z);
-                __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_MSEC(ACCEL_INTERVAL)), "FAIL accel_work");
+                __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, ACCEL_INTERVAL), "FAIL accel_work");
             }
             break;
         }
@@ -347,7 +347,7 @@ void general_work(struct k_work *item)
                                    batt_mv, 0);
                 ble_comm_send(buf, msg_len);
             }
-            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &status_work.work, K_MSEC(SEND_STATUS_INTERVAL)),
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &status_work.work, SEND_STATUS_INTERVAL),
                      "Failed schedule status work");
             break;
         }
@@ -505,21 +505,12 @@ static void enable_bluetoth(void)
 
 /** A discharge curve specific to the power source. */
 static const struct battery_level_point levels[] = {
-    /* "Curve" here eyeballed from captured data for the [Adafruit
-     * 3.7v 2000 mAh](https://www.adafruit.com/product/2011) LIPO
-     * under full load that started with a charge of 3.96 V and
-     * dropped about linearly to 3.58 V over 15 hours.  It then
-     * dropped rapidly to 3.10 V over one hour, at which point it
-     * stopped transmitting.
-     *
-     * Based on eyeball comparisons we'll say that 15/16 of life
-     * goes between 3.95 and 3.55 V, and 1/16 goes between 3.55 V
-     * and 3.1 V.
-     */
-
+    /*
+    Battery supervisor cuts power at 3500mA so treat that as 0%
+    TODO analyze more to get a better curve.
+    */
     { 10000, 4150 },
-    { 625, 3550 },
-    { 0, 3100 },
+    { 0, 3500 },
 };
 
 static int read_battery(int *batt_mV, int *percent)
@@ -625,7 +616,7 @@ static void check_notifications(void)
 
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
 {
-    LOG_INF("Pressed %d, type: %d", id, type);
+    LOG_DBG("Pressed %d, type: %d", id, type);
 
     // Always allow force restart
     if (type == BUTTONS_LONG_PRESS && id == BUTTON_3) {
@@ -667,9 +658,7 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
             default:
                 break;
         }
-        LOG_DBG("BUTTONS_SHORT_PRESS");
     } else {
-        LOG_ERR("BUTTONS_LONG_PRESS, open settings");
         if (id == BUTTON_2) {
             if (watch_state == WATCHFACE_STATE) {
                 general_work_item.type = OPEN_SETTINGS;
