@@ -19,20 +19,19 @@
 #include <clock.h>
 #include <lvgl.h>
 #include "watchface.h"
-#include "stats_page.h"
 #include <general_ui.h>
-#include <lv_settings.h>
 #include <heart_rate_sensor.h>
-#include <ble_aoa.h>
 #include <sys/time.h>
 #include <ram_retention_storage.h>
 #include <accelerometer.h>
 #include <ble_comm.h>
+#include <ble_aoa.h>
 #include <lv_notifcation.h>
 #include <notification_manager.h>
 #include <notifications_page.h>
 #include <vibration_motor.h>
 #include <display_control.h>
+#include <applications/application_manager.h>
 
 #define LOG_LEVEL LOG_LEVEL_WRN
 #include <zephyr/logging/log.h>
@@ -54,7 +53,6 @@ typedef enum work_type {
     OPEN_NOTIFICATIONS,
     BATTERY,
     RENDER,
-    ACCEL,
     CLOSE_NOTIFICATION,
     DEBUG_NOTIFICATION,
     SEND_STATUS_UPDATE,
@@ -64,7 +62,7 @@ typedef enum ui_state {
     INIT_STATE,
     SETTINGS_STATE,
     WATCHFACE_STATE,
-    ACCELEROMETER_STATE,
+    APPLICATION_MANAGER_STATE,
     NOTIFCATION_STATE,
     NOTIFCATION_LIST_STATE,
 } ui_state_t;
@@ -86,10 +84,6 @@ static void check_notifications(void);
 static int read_battery(int *batt_mV, int *percent);
 
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
-static void on_brightness_changed(lv_setting_value_t value, bool final);
-static void on_display_always_on_changed(lv_setting_value_t value, bool final);
-static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
-static void on_reset_steps_changed(lv_setting_value_t value, bool final);
 static void on_notifcation_closed(lv_event_t *e, uint32_t id);
 static void on_notification_page_close(void);
 static void on_notification_page_notification_close(uint32_t not_id);
@@ -102,106 +96,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
     .disconnected = disconnected,
 };
 
-static lv_settings_item_t general_page_items[] = {
-    {
-        .type = LV_SETTINGS_TYPE_SLIDER,
-        .icon = LV_SYMBOL_SETTINGS,
-        .change_callback = on_brightness_changed,
-        .item = {
-            .slider = {
-                .name = "Brightness",
-                .inital_val = 10,
-                .min_val = 0,
-                .max_val = 10,
-            }
-        }
-    },
-    {
-        .type = LV_SETTINGS_TYPE_SWITCH,
-        .icon = LV_SYMBOL_AUDIO,
-        .item = {
-            .sw = {
-                .name = "Vibrate on click",
-                .inital_val = true
-            }
-        }
-    },
-    {
-        .type = LV_SETTINGS_TYPE_SWITCH,
-        .icon = LV_SYMBOL_TINT,
-        .change_callback = on_display_always_on_changed,
-        .item = {
-            .sw = {
-                .name = "Display always on",
-                .inital_val = true
-            }
-        }
-    },
-    {
-        .type = LV_SETTINGS_TYPE_SWITCH,
-        .icon = LV_SYMBOL_REFRESH,
-        .change_callback = on_reset_steps_changed,
-        .item = {
-            .sw = {
-                .name = "Reset step counter",
-                .inital_val = false
-            }
-        }
-    },
-};
-
-static lv_settings_item_t bluetooth_page_items[] = {
-    {
-        .type = LV_SETTINGS_TYPE_SWITCH,
-        .icon = LV_SYMBOL_BLUETOOTH,
-        .change_callback = on_aoa_enable_changed,
-        .item = {
-            .sw = {
-                .name = "Bluetooth",
-                .inital_val = true
-            }
-        }
-    },
-    {
-        .type = LV_SETTINGS_TYPE_SWITCH,
-        .icon = "",
-        .change_callback = on_aoa_enable_changed,
-        .item = {
-            .sw = {
-                .name = "AoA",
-                .inital_val = false
-            }
-        }
-    },
-    {
-        .type = LV_SETTINGS_TYPE_SLIDER,
-        .icon = LV_SYMBOL_SHUFFLE,
-        .item = {
-            .slider = {
-                .name = "CTE Tx interval",
-                .inital_val = 100,
-                .min_val = 1,
-                .max_val = 10 // Map to array index or something, having 8-5000ms will make slider very slow
-            }
-        }
-    },
-};
-
-static lv_settings_page_t settings_menu[] = {
-    {
-        .name = "General",
-        .num_items = ARRAY_SIZE(general_page_items),
-        .items = general_page_items
-    },
-    {
-        .name = "Bluetooth",
-        .num_items = ARRAY_SIZE(bluetooth_page_items),
-        .items = bluetooth_page_items
-    },
-};
-
 static delayed_work_item_t battery_work =   { .type = BATTERY };
-static delayed_work_item_t accel_work =     { .type = ACCEL };
 static delayed_work_item_t render_work =    { .type = RENDER };
 static delayed_work_item_t clock_work =     { .type = UPDATE_CLOCK };
 static delayed_work_item_t status_work =    { .type = SEND_STATUS_UPDATE };
@@ -322,19 +217,6 @@ void general_work(struct k_work *item)
                      "FAIL render_work");
             break;
         }
-        case ACCEL: {
-            if (watch_state == ACCELEROMETER_STATE) {
-                int16_t x;
-                int16_t y;
-                int16_t z;
-                res = accelerometer_fetch_xyz(&x, &y, &z);
-                __ASSERT_NO_MSG(res == 0);
-                LOG_DBG("x: %d y: %d z: %d", x, y, z);
-                states_page_accelerometer_values(x, y, z);
-                __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, ACCEL_INTERVAL), "FAIL accel_work");
-            }
-            break;
-        }
         case SEND_STATUS_UPDATE: {
             int batt_mv;
             int batt_percent;
@@ -413,7 +295,6 @@ void main(void)
 
     k_work_init_delayable(&general_work_item.work, general_work);
     k_work_init_delayable(&battery_work.work, general_work);
-    k_work_init_delayable(&accel_work.work, general_work);
     k_work_init_delayable(&render_work.work, general_work); // TODO malloc and free as we can have multiple
     k_work_init_delayable(&clock_work.work, general_work);
     k_work_init_delayable(&status_work.work, general_work);
@@ -557,16 +438,10 @@ static bool load_retention_ram(void)
     return retained_ok;
 }
 
-static void on_close_settings(void)
-{
-    general_work_item.type = OPEN_WATCHFACE;
-    __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_MSEC(250)), "FAIL schedule");
-}
-
 static void open_settings(void)
 {
     buttons_allocated = true;
-    lv_settings_create(settings_menu, ARRAY_SIZE(settings_menu), "N/A", input_group, on_close_settings);
+    //lv_settings_create(settings_menu, ARRAY_SIZE(settings_menu), "N/A", input_group, on_close_settings);
 }
 
 static void open_notifications_page(void)
@@ -614,6 +489,14 @@ static void check_notifications(void)
     watchface_set_num_notifcations(num_unread);
 }
 
+static void on_close_application_manager(void)
+{
+    application_manager_delete();
+    watch_state = WATCHFACE_STATE;
+    watchface_show();
+    buttons_allocated = false;
+}
+
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
 {
     LOG_DBG("Pressed %d, type: %d", id, type);
@@ -623,6 +506,14 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
         retained.off_count += 1;
         retained_update();
         sys_reboot(SYS_REBOOT_COLD);
+    }
+
+    if (type == BUTTONS_LONG_PRESS && id == BUTTON_2 && watch_state == APPLICATION_MANAGER_STATE) {
+        // TODO doesn't work, as this press is read later with lvgl and causes extra press in settings.
+        // To fix each application must have exit button, maybe we can register long press on the whole view to exit
+        // apps without input device
+        //application_manager_exit_app();
+        //return;
     }
 
     if (buttons_allocated) {
@@ -635,21 +526,21 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
             if (id == BUTTON_2) {
                 watch_state = NOTIFCATION_LIST_STATE;
             } else {
-                watch_state = ACCELEROMETER_STATE;
+                watch_state = APPLICATION_MANAGER_STATE;
             }
-        } else if (watch_state == ACCELEROMETER_STATE) {
+        } else if (watch_state == APPLICATION_MANAGER_STATE) {
             watch_state = WATCHFACE_STATE;
         }
         play_press_vibration();
         switch (watch_state) {
             case WATCHFACE_STATE:
-                states_page_remove();
+                application_manager_delete();
                 watchface_show();
                 break;
-            case ACCELEROMETER_STATE:
+            case APPLICATION_MANAGER_STATE:
                 watchface_remove();
-                states_page_show();
-                __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &accel_work.work, K_MSEC(1000)), "FAIL accel_work");
+                buttons_allocated = true;
+                application_manager_show(on_close_application_manager, lv_scr_act(), input_group);
                 break;
             case NOTIFCATION_LIST_STATE:
                 general_work_item.type = OPEN_NOTIFICATIONS;
@@ -661,8 +552,11 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
     } else {
         if (id == BUTTON_2) {
             if (watch_state == WATCHFACE_STATE) {
-                general_work_item.type = OPEN_SETTINGS;
-                __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");
+                //general_work_item.type = OPEN_SETTINGS;
+                //__ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");
+            }
+             if (watch_state == APPLICATION_MANAGER_STATE) {
+                
             }
         } else if (id == BUTTON_3) {
             retained.off_count += 1;
@@ -713,38 +607,6 @@ void encoder_vibration(struct _lv_indev_drv_t *drv, uint8_t e)
 {
     if (e == LV_EVENT_PRESSED) {
         play_press_vibration();
-    }
-}
-
-static void on_brightness_changed(lv_setting_value_t value, bool final)
-{
-    // Slider have values 0-10 hence multiply with 10 to get brightness in percent
-    display_control_set_brightness(value.item.slider * 10);
-}
-
-static void on_display_always_on_changed(lv_setting_value_t value, bool final)
-{
-    if (value.item.sw) {
-        display_control_set_brightness(100);
-    } else {
-        display_control_set_brightness(10);
-    }
-}
-
-static void on_aoa_enable_changed(lv_setting_value_t value, bool final)
-{
-    if (value.item.sw) {
-        bleAoaAdvertise(100, 100, 1);
-    } else {
-        bleAoaAdvertise(100, 100, 0);
-    }
-}
-
-static void on_reset_steps_changed(lv_setting_value_t value, bool final)
-{
-    if (final && value.item.sw) {
-        watchface_set_step(0);
-        accelerometer_reset_step_count();
     }
 }
 

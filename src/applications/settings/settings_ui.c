@@ -1,6 +1,5 @@
-#include "lv_settings.h"
+#include "settings_ui.h"
 #include "lvgl.h"
-#include "zephyr/logging/log.h"
 
 #define LV_SETTINGS_ANIM_TIME   300 /*[ms]*/
 #define LV_SETTINGS_MAX_WIDTH   250
@@ -16,8 +15,8 @@ static lv_obj_t *_menu = NULL;
 static void close_button_pressed(lv_event_t *e)
 {
     if (lv_menu_back_btn_is_root(_menu, lv_event_get_target(e))) {
-        lv_obj_add_flag(_menu, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_remove_event_cb(_menu, close_button_pressed);
+        lv_obj_del(_menu);
+        _menu = NULL;
         close_callback();
     }
 }
@@ -124,15 +123,14 @@ static void switch_event_cb(lv_event_t *e)
     }
 }
 
-void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char *title, lv_group_t *input_group,
-                        on_close_cb_t close_cb)
+void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char *title, lv_group_t *input_group, on_close_cb_t close_cb)
 {
     lv_obj_t *label;
-    lv_obj_t *sub_page;
     lv_obj_t *cont;
     lv_settings_item_t *item;
     lv_obj_t *_mainPage;
     lv_obj_t *obj;
+    lv_obj_t *sub_page = NULL;
     static lv_style_t outline_primary;
 
     // Border around selected menu row when focused
@@ -142,11 +140,7 @@ void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char
     lv_style_set_border_opa(&outline_primary, LV_OPA_50);
     lv_style_set_border_side(&outline_primary, LV_BORDER_SIDE_BOTTOM);
 
-    if (_menu != NULL) {
-        lv_obj_clear_flag(_menu, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_event_cb(_menu, close_button_pressed, LV_EVENT_CLICKED, _menu);
-        return;
-    }
+    assert(_menu == NULL);
 
     close_callback = close_cb;
 
@@ -195,6 +189,15 @@ void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char
     }
 
     lv_menu_set_page(_menu, _mainPage);
-    //lv_group_focus_next(input_group);
-    lv_group_focus_obj(sub_page);
+    if (sub_page) {
+        lv_group_focus_obj(sub_page);
+    }
+}
+
+void settings_ui_remove(void)
+{
+    if (_menu != NULL) {
+        lv_obj_del(_menu);
+        _menu = NULL;
+    }
 }

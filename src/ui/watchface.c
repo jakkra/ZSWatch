@@ -233,8 +233,6 @@ void watchface_show(void)
     add_notification_indicator(root_page);
     add_weather_data(root_page);
     add_clock(root_page);
-
-    general_ui_anim_in(root_page, 100);
 }
 
 void watchface_remove(void)

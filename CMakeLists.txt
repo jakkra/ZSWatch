@@ -4,9 +4,11 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(lvgl)
 
 add_subdirectory(drivers)
+add_subdirectory(src/applications)
 
 include_directories(src/)
 include_directories(src/ui)
+include_directories(src/applications)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})

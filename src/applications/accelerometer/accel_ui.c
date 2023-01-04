@@ -1,5 +1,7 @@
-#include <stats_page.h>
+#include <accelerometer/accel_ui.h>
 #include <lvgl.h>
+
+static void close_button_pressed(lv_event_t *e);
 
 static lv_obj_t *root_page = NULL;
 
@@ -12,23 +14,23 @@ static lv_obj_t *acc_y_label;
 static lv_obj_t *acc_z_label;
 
 
-void stats_page_init(void)
-{
-    lv_obj_clean(lv_scr_act());
-}
+static on_close_cb_t close_callback;
 
-void states_page_show(void)
+
+void accel_ui_show(lv_obj_t* root, on_close_cb_t close_cb)
 {
     static lv_style_t style_indic_red;
     static lv_style_t style_indic_green;
     static lv_style_t style_indic_blue;
+    assert(root_page == NULL);
 
-    if (root_page != NULL) {
-        lv_obj_clear_flag(root_page, LV_OBJ_FLAG_HIDDEN);
-        return;
-    }
+    close_callback = close_cb;
+    //if (root_page != NULL) {
+    //    lv_obj_clear_flag(root_page, LV_OBJ_FLAG_HIDDEN);
+    //    return;
+    //}
 
-    root_page = lv_obj_create(lv_scr_act());
+    root_page = lv_obj_create(root);
     lv_obj_set_scrollbar_mode(root_page, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_bg_opa(root_page, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(root_page, 0, LV_PART_MAIN);
@@ -69,19 +71,30 @@ void states_page_show(void)
     lv_label_set_text(acc_z_label, "00000");
     lv_obj_align_to(acc_z_label, bar_acc_z, LV_ALIGN_CENTER, 0, -15);
 
-    general_ui_anim_in(root_page, 100);
+    // TODO add a close button which have focus by default so we can exit back to app manager.
+
+    lv_obj_t *float_btn = lv_btn_create(root_page);
+    lv_obj_set_size(float_btn, 50, 50);
+    lv_obj_add_flag(float_btn, LV_OBJ_FLAG_FLOATING);
+    lv_obj_align(float_btn, LV_ALIGN_BOTTOM_RIGHT, 0, -lv_obj_get_style_pad_right(root_page, LV_PART_MAIN));
+    lv_obj_add_event_cb(float_btn, close_button_pressed, LV_EVENT_PRESSED, root_page);
+    lv_obj_set_style_radius(float_btn, LV_RADIUS_CIRCLE, 0);
+    lv_obj_set_style_bg_img_src(float_btn, LV_SYMBOL_CLOSE, 0);
+    lv_obj_set_style_text_font(float_btn, lv_theme_get_font_large(float_btn), 0);
+
+    lv_group_focus_obj(float_btn);
 }
 
-void states_page_remove(void)
+void accel_ui_remove(void)
 {
-    lv_obj_add_flag(root_page, LV_OBJ_FLAG_HIDDEN);
-    //root_page = NULL;
+    //lv_obj_add_flag(root_page, LV_OBJ_FLAG_HIDDEN);
     //general_ui_anim_out_all(lv_scr_act(), 0);
     //if (!root_page) return;
-    //lv_obj_del(root_page);
+    lv_obj_del(root_page);
+    root_page = NULL;
 }
 
-void states_page_accelerometer_values(int32_t x, int32_t y, int32_t z)
+void accel_ui_set_values(int32_t x, int32_t y, int32_t z)
 {
     char buf[10];
     memset(buf, 0, sizeof(buf));
@@ -99,4 +112,9 @@ void states_page_accelerometer_values(int32_t x, int32_t y, int32_t z)
     lv_label_set_text(acc_y_label, buf);
     snprintf(buf, sizeof(buf), "Z: %d", z);
     lv_label_set_text(acc_z_label, buf);
+}
+
+static void close_button_pressed(lv_event_t *e)
+{
+    close_callback();
 }
