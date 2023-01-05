@@ -17,7 +17,7 @@ static lv_obj_t *acc_z_label;
 static on_close_cb_t close_callback;
 
 
-void accel_ui_show(lv_obj_t* root, on_close_cb_t close_cb)
+void accel_ui_show(lv_obj_t *root, on_close_cb_t close_cb)
 {
     static lv_style_t style_indic_red;
     static lv_style_t style_indic_green;

@@ -123,7 +123,8 @@ static void switch_event_cb(lv_event_t *e)
     }
 }
 
-void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char *title, lv_group_t *input_group, on_close_cb_t close_cb)
+void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char *title, lv_group_t *input_group,
+                        on_close_cb_t close_cb)
 {
     lv_obj_t *label;
     lv_obj_t *cont;

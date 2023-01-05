@@ -5,13 +5,15 @@
 #include <accelerometer.h>
 
 static void fetch_accel_data(struct k_work *item);
-static void accel_app_start(lv_obj_t* root, lv_group_t* group);
+static void accel_app_start(lv_obj_t *root, lv_group_t *group);
 static void accel_app_stop(void);
 static void on_close_accel(void);
 
+LV_IMG_DECLARE(messenger);
+
 static application_t app = {
-    .name = "Accel App",
-    .icon = NULL,
+    .name = "Accel",
+    .icon = &messenger,
     .start_func = accel_app_start,
     .stop_func = accel_app_stop
 };
@@ -19,7 +21,7 @@ static application_t app = {
 K_WORK_DELAYABLE_DEFINE(work, fetch_accel_data);
 static struct k_work_sync work_sync;
 
-static void accel_app_start(lv_obj_t* root, lv_group_t* group)
+static void accel_app_start(lv_obj_t *root, lv_group_t *group)
 {
     accel_ui_show(root, on_close_accel);
     int res = k_work_reschedule(&work, K_MSEC(100));

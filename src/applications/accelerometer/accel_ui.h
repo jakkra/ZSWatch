@@ -5,7 +5,7 @@
 
 typedef void(*on_close_cb_t)(void);
 
-void accel_ui_show(lv_obj_t* root, on_close_cb_t close_cb);
+void accel_ui_show(lv_obj_t *root, on_close_cb_t close_cb);
 
 void accel_ui_remove(void);
 

@@ -551,13 +551,7 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
         }
     } else {
         if (id == BUTTON_2) {
-            if (watch_state == WATCHFACE_STATE) {
-                //general_work_item.type = OPEN_SETTINGS;
-                //__ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");
-            }
-             if (watch_state == APPLICATION_MANAGER_STATE) {
-                
-            }
+            // Not used right now
         } else if (id == BUTTON_3) {
             retained.off_count += 1;
             retained_update();

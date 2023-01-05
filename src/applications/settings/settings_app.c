@@ -6,7 +6,7 @@
 #include <display_control.h>
 #include <accelerometer.h>
 
-static void settings_app_start(lv_obj_t* root, lv_group_t* group);
+static void settings_app_start(lv_obj_t *root, lv_group_t *group);
 static void settings_app_stop(void);
 
 static void on_close_settings(void);
@@ -15,9 +15,11 @@ static void on_display_always_on_changed(lv_setting_value_t value, bool final);
 static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
 static void on_reset_steps_changed(lv_setting_value_t value, bool final);
 
+LV_IMG_DECLARE(gmail);
+
 static application_t app = {
-    .name = "Settings App",
-    .icon = NULL,
+    .name = "Settings",
+    .icon = &gmail,
     .start_func = settings_app_start,
     .stop_func = settings_app_stop
 };
@@ -122,7 +124,7 @@ static lv_settings_page_t settings_menu[] = {
 };
 
 
-static void settings_app_start(lv_obj_t* root, lv_group_t* group)
+static void settings_app_start(lv_obj_t *root, lv_group_t *group)
 {
     printk("settings_app_start\n");
     lv_settings_create(settings_menu, ARRAY_SIZE(settings_menu), "N/A", group, on_close_settings);
