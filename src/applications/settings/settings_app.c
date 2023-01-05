@@ -15,11 +15,11 @@ static void on_display_always_on_changed(lv_setting_value_t value, bool final);
 static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
 static void on_reset_steps_changed(lv_setting_value_t value, bool final);
 
-LV_IMG_DECLARE(gmail);
+LV_IMG_DECLARE(settings);
 
 static application_t app = {
     .name = "Settings",
-    .icon = &gmail,
+    .icon = &settings,
     .start_func = settings_app_start,
     .stop_func = settings_app_stop
 };

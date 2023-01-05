@@ -39,7 +39,7 @@ static void app_clicked(lv_event_t *e)
     // which registers a button press callback then that callback
     // may get called, but we don't want that. So delay the opening
     // of the new application some time.
-    lv_timer_t *timer = lv_timer_create(async_start, 100,  NULL);
+    lv_timer_t *timer = lv_timer_create(async_start, 250,  NULL);
     lv_timer_set_repeat_count(timer, 1);
 }
 
@@ -93,6 +93,7 @@ static void draw_application_picker(void)
         lv_obj_t *label = lv_label_create(button);
         lv_label_set_text_fmt(label, "%s", apps[i]->name);
         lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, 0);
+        lv_obj_set_style_text_color(label, lv_color_black(), LV_PART_MAIN);
         lv_obj_set_scrollbar_mode(label, LV_SCROLLBAR_MODE_OFF);
 
     }

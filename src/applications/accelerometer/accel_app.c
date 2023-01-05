@@ -9,11 +9,11 @@ static void accel_app_start(lv_obj_t *root, lv_group_t *group);
 static void accel_app_stop(void);
 static void on_close_accel(void);
 
-LV_IMG_DECLARE(messenger);
+LV_IMG_DECLARE(straighten);
 
 static application_t app = {
     .name = "Accel",
-    .icon = &messenger,
+    .icon = &straighten,
     .start_func = accel_app_start,
     .stop_func = accel_app_stop
 };
