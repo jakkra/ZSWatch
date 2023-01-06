@@ -5,7 +5,7 @@
 
 LOG_MODULE_REGISTER(APP_MANAGER, LOG_LEVEL_DBG);
 
-#define MAX_APPS     3
+#define MAX_APPS     10
 
 static application_t *apps[MAX_APPS];
 static uint8_t num_apps;
