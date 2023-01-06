@@ -385,11 +385,11 @@ static int parse_musicinfo(char *data, int len)
     cb.data.music_info.track_count = extract_value_int32("c:", data);
     cb.data.music_info.track_num = extract_value_int32("n:", data);
     temp_value = extract_value_str("artist:", data, &temp_len);
-    strncpy(cb.data.music_info.artist, temp_value, MAX_MUSIC_FIELD_LENGTH);
+    strncpy(cb.data.music_info.artist, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
     temp_value = extract_value_str("album:", data, &temp_len);
-    strncpy(cb.data.music_info.album, temp_value, MAX_MUSIC_FIELD_LENGTH);
+    strncpy(cb.data.music_info.album, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
     temp_value = extract_value_str("track:", data, &temp_len);
-    strncpy(cb.data.music_info.track_name, temp_value, MAX_MUSIC_FIELD_LENGTH);
+    strncpy(cb.data.music_info.track_name, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
 
     send_ble_data_event(&cb);
 
