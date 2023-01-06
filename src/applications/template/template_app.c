@@ -9,7 +9,7 @@ static void template_app_stop(void);
 static void on_close_template(void);
 
 // Functions related to app functionality
-void timer_callback(lv_timer_t *timer);
+static void timer_callback(lv_timer_t *timer);
 
 LV_IMG_DECLARE(templates);
 
@@ -36,7 +36,7 @@ static void template_app_stop(void)
     template_ui_remove();
 }
 
-void timer_callback(lv_timer_t *timer)
+static void timer_callback(lv_timer_t *timer)
 {
     counter++;
     template_ui_set_value(counter);
