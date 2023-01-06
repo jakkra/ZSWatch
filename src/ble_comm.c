@@ -396,6 +396,31 @@ static int parse_musicinfo(char *data, int len)
     return 0;
 }
 
+static int parse_musicstate(char *data, int len)
+{
+    // {t:"musicinfo",artist:"Ava Max",album:"Heaven & Hell",track:"Sweet but Psycho",dur:187,c:-1,n:-1}
+    char *temp_value;
+    int temp_len;
+    ble_comm_cb_data_t cb;
+    memset(&cb, 0, sizeof(cb));
+
+    cb.type = BLE_COMM_DATA_TYPE_MUSTIC_STATE;
+    cb.data.music_state.position = extract_value_int32("position:", data);
+    cb.data.music_state.shuffle = extract_value_int32("shuffle:", data);
+    cb.data.music_state.repeat = extract_value_int32("repeat:", data);
+
+    temp_value = extract_value_str("state:", data, &temp_len);
+    if (strncmp(temp_value, "play", temp_len) == 0) {
+        cb.data.music_state.playing = true;
+    } else {
+        cb.data.music_state.playing = false;
+    }
+
+    send_ble_data_event(&cb);
+
+    return 0;
+}
+
 static int parse_data(char *data, int len)
 {
     int type_len;
@@ -420,6 +445,10 @@ static int parse_data(char *data, int len)
 
     if (strlen("musicinfo") == type_len && strncmp(type, "musicinfo", type_len) == 0) {
         return parse_musicinfo(data, len);
+    }
+
+    if (strlen("musicstate") == type_len && strncmp(type, "musicstate", type_len) == 0) {
+        return parse_musicstate(data, len);
     }
 
     return 0;
