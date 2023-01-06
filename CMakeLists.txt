@@ -19,4 +19,7 @@ target_sources(app PRIVATE ${img_sources})
 FILE(GLOB ui_sources src/ui/*.c)
 target_sources(app PRIVATE ${ui_sources})
 
+FILE(GLOB events_sources src/events/*.c)
+target_sources(app PRIVATE ${events_sources})
+
 add_compile_definitions(LV_LVGL_H_INCLUDE_SIMPLE)

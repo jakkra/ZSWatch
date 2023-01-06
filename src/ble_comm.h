@@ -3,12 +3,14 @@
 
 #include <zephyr/kernel.h>
 
+#define MAX_MUSIC_FIELD_LENGTH  25
 
 typedef enum ble_comm_data_type {
     BLE_COMM_DATA_TYPE_NOTIFY,
     BLE_COMM_DATA_TYPE_NOTIFY_REMOVE,
     BLE_COMM_DATA_TYPE_SET_TIME,
     BLE_COMM_DATA_TYPE_WEATHER,
+    BLE_COMM_DATA_TYPE_MUSTIC_INFO
 } ble_comm_data_type_t;
 
 typedef struct ble_comm_notify {
@@ -41,6 +43,14 @@ typedef struct ble_comm_weather {
     int report_text_len;
 } ble_comm_weather_t;
 
+typedef struct ble_comm_music_info {
+    char artist[MAX_MUSIC_FIELD_LENGTH + 1];
+    char album[MAX_MUSIC_FIELD_LENGTH + 1];
+    char track_name[MAX_MUSIC_FIELD_LENGTH + 1];
+    int duration;
+    int track_count;
+    int track_num;
+} ble_comm_music_info_t;
 
 typedef struct ble_comm_cb_data {
     ble_comm_data_type_t type;
@@ -49,6 +59,7 @@ typedef struct ble_comm_cb_data {
         ble_comm_notify_remove_t notify_remove;
         ble_comm_notify_time_t time;
         ble_comm_weather_t weather;
+        ble_comm_music_info_t music_info;
     } data;
 } ble_comm_cb_data_t;
 

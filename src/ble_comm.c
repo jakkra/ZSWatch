@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <math.h>
+#include <events/ble_data_event.h>
 
 LOG_MODULE_REGISTER(ble_comm, LOG_LEVEL_DBG);
 
@@ -20,6 +21,7 @@ typedef enum parse_state {
 static char *extract_value_str(char *key, char *data, int *value_len);
 static int parse_data(char *data, int len);
 static void parse_time(char *data);
+static void send_ble_data_event(ble_comm_cb_data_t *data);
 
 static void connected(struct bt_conn *conn, uint8_t err);
 static void disconnected(struct bt_conn *conn, uint8_t reason);
@@ -277,6 +279,26 @@ static uint32_t extract_value_uint32(char *key, char *data)
     return id;
 }
 
+static int32_t extract_value_int32(char *key, char *data)
+{
+    char *start;
+    char *str = strstr(data, key);
+    char *end;
+    int32_t id;
+
+    if (str == NULL) {
+        return 0;
+    }
+    str += strlen(key);
+    if (!isdigit((int)*str)) {
+        return 0; // No number found
+    }
+    start = str;
+    id = strtol(str, &end, 10);
+    // TODO error checking
+    return id;
+}
+
 static int parse_notify(char *data, int len)
 {
     ble_comm_cb_data_t cb;
@@ -306,6 +328,7 @@ static int parse_notify(char *data, int len)
     }
 
     data_parsed_cb(&cb);
+
     return 0;
 }
 
@@ -349,6 +372,30 @@ static int parse_weather(char *data, int len)
     return 0;
 }
 
+static int parse_musicinfo(char *data, int len)
+{
+    // {t:"musicinfo",artist:"Ava Max",album:"Heaven & Hell",track:"Sweet but Psycho",dur:187,c:-1,n:-1}
+    char *temp_value;
+    int temp_len;
+    ble_comm_cb_data_t cb;
+    memset(&cb, 0, sizeof(cb));
+
+    cb.type = BLE_COMM_DATA_TYPE_MUSTIC_INFO;
+    cb.data.music_info.duration = extract_value_int32("dur:", data);
+    cb.data.music_info.track_count = extract_value_int32("c:", data);
+    cb.data.music_info.track_num = extract_value_int32("n:", data);
+    temp_value = extract_value_str("artist:", data, &temp_len);
+    strncpy(cb.data.music_info.artist, temp_value, MAX_MUSIC_FIELD_LENGTH);
+    temp_value = extract_value_str("album:", data, &temp_len);
+    strncpy(cb.data.music_info.album, temp_value, MAX_MUSIC_FIELD_LENGTH);
+    temp_value = extract_value_str("track:", data, &temp_len);
+    strncpy(cb.data.music_info.track_name, temp_value, MAX_MUSIC_FIELD_LENGTH);
+
+    send_ble_data_event(&cb);
+
+    return 0;
+}
+
 static int parse_data(char *data, int len)
 {
     int type_len;
@@ -371,5 +418,17 @@ static int parse_data(char *data, int len)
         return parse_weather(data, len);
     }
 
+    if (strlen("musicinfo") == type_len && strncmp(type, "musicinfo", type_len) == 0) {
+        return parse_musicinfo(data, len);
+    }
+
     return 0;
+}
+
+static void send_ble_data_event(ble_comm_cb_data_t *data)
+{
+    struct ble_data_event *event = new_ble_data_event();
+
+    memcpy(&event->data, data, sizeof(ble_comm_cb_data_t));
+    APP_EVENT_SUBMIT(event);
 }
