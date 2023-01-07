@@ -28,7 +28,37 @@ static void create_progress_arc(lv_obj_t *parent)
     lv_obj_set_size(progress_arc, 240, 240);
     lv_obj_center(progress_arc);
 }
+/*
+static void play_event_click_cb(lv_event_t * e)
+{
+    lv_obj_t * obj = lv_event_get_target(e);
+    if (lv_obj_has_state(obj, LV_STATE_CHECKED)) {
+        printk("Play\n");
+        //_lv_demo_music_resume();
+    } else {
+        printk("Pause\n");
+        //_lv_demo_music_pause();
+    }
+}
 
+static void create_buttons(lv_obj_t* parent, lv_group_t* group)
+{
+    lv_obj_t* play_pause_button = lv_imgbtn_create(parent);
+    lv_imgbtn_set_src(play_pause_button, LV_IMGBTN_STATE_RELEASED, NULL, &play, NULL);
+    lv_imgbtn_set_src(play_pause_button, LV_IMGBTN_STATE_CHECKED_RELEASED, NULL, &pause, NULL);
+    lv_obj_set_width(play_pause_button, play.header.w);
+    lv_obj_add_flag(play_pause_button, LV_OBJ_FLAG_CHECKABLE);
+    //lv_obj_add_flag(play_pause_button, LV_OBJ_FLAG_CLICKABLE);
+    //lv_obj_add_flag(play_pause_button, LV_OBJ_FLAG_CLICK_FOCUSABLE);
+
+    lv_obj_set_style_bg_color(play_pause_button, lv_palette_main(LV_PALETTE_RED), LV_PART_MAIN | LV_STATE_FOCUSED);
+
+    
+    lv_obj_center(play_pause_button);
+    lv_obj_add_event_cb(play_pause_button, play_event_click_cb, LV_EVENT_CLICKED, NULL);
+    lv_group_add_obj(group, play_pause_button);
+}
+*/
 void music_control_ui_show(lv_obj_t *root, on_ui_close_cb_t close_cb)
 {
     lv_obj_t *float_btn;

@@ -87,6 +87,7 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
 static void on_notifcation_closed(lv_event_t *e, uint32_t id);
 static void on_notification_page_close(void);
 static void on_notification_page_notification_close(uint32_t not_id);
+static void on_close_application_manager(void);
 
 static void connected(struct bt_conn *conn, uint8_t err);
 static void disconnected(struct bt_conn *conn, uint8_t reason);
@@ -155,6 +156,7 @@ void general_work(struct k_work *item)
             lv_indev_set_group(enc_indev, input_group);
 
             watchface_show();
+            //application_manager_show(on_close_application_manager, lv_scr_act(), input_group);
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &battery_work.work, K_NO_WAIT), "FAIL battery_work");
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &render_work.work, K_NO_WAIT), "FAIL render_work");
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &clock_work.work, K_NO_WAIT), "FAIL clock_work");

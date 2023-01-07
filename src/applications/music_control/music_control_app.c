@@ -12,11 +12,11 @@ static void on_close_music(void);
 // Functions related to app functionality
 static void timer_callback(lv_timer_t *timer);
 
-LV_IMG_DECLARE(templates);
+LV_IMG_DECLARE(music);
 
 static application_t app = {
     .name = "Music",
-    .icon = &templates,
+    .icon = &music,
     .start_func = music_control_app_start,
     .stop_func = music_control_app_stop
 };
