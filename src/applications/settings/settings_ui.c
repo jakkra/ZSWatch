@@ -149,7 +149,9 @@ void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char
     _menu = lv_menu_create(lv_scr_act());
     lv_menu_set_mode_root_back_btn(_menu, LV_MENU_ROOT_BACK_BTN_ENABLED);
     lv_obj_add_event_cb(_menu, close_button_pressed, LV_EVENT_CLICKED, _menu);
-    lv_obj_set_size(_menu, 180, 180);
+    lv_obj_set_size(_menu, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_style_pad_top(_menu, 25, LV_PART_MAIN);
+    lv_obj_set_style_pad_left(_menu, 20, LV_PART_MAIN);
     lv_obj_center(_menu);
 
     // Main page
@@ -157,6 +159,7 @@ void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char
 
     for (int i = 0; i < num_pages; i++) {
         sub_page = lv_menu_page_create(_menu, "Settings");
+        lv_obj_set_scrollbar_mode(sub_page, LV_SCROLLBAR_MODE_OFF);
         cont = lv_menu_cont_create(sub_page);
 
         lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_COLUMN);
