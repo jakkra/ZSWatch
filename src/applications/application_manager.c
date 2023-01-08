@@ -5,7 +5,8 @@
 
 LOG_MODULE_REGISTER(APP_MANAGER, LOG_LEVEL_DBG);
 
-#define MAX_APPS     10
+#define MAX_APPS        10
+#define INVALID_APP_ID  0xFF
 
 static void draw_application_picker(void);
 static void app_clicked(lv_event_t *e);
@@ -76,6 +77,7 @@ static void async_app_close(lv_timer_t *timer)
 {
     LOG_DBG("Stop %d", current_app);
     apps[current_app]->stop_func();
+    current_app = INVALID_APP_ID;
     draw_application_picker();
 }
 
@@ -251,7 +253,7 @@ static int application_manager_init(const struct device *arg)
 {
     memset(apps, 0, sizeof(apps));
     num_apps = 0;
-    current_app = 0;
+    current_app = INVALID_APP_ID;
 
     return 0;
 }
