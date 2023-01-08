@@ -4,7 +4,7 @@
 static void close_button_pressed(lv_event_t *e);
 
 static lv_obj_t *root_page = NULL;
-static lv_obj_t *button_label;
+static lv_obj_t *counter_label;
 static on_ui_close_cb_t close_callback;
 
 void template_ui_show(lv_obj_t *root, on_ui_close_cb_t close_cb)
@@ -32,10 +32,10 @@ void template_ui_show(lv_obj_t *root, on_ui_close_cb_t close_cb)
     lv_obj_set_style_text_font(float_btn, lv_theme_get_font_large(float_btn), 0);
 
     // Add a label on the button
-    button_label = lv_label_create(float_btn);
-    lv_obj_align_to(button_label, float_btn, LV_ALIGN_BOTTOM_MID, 0, 0);
-    lv_label_set_text(button_label, "0");
-    lv_obj_set_style_text_color(button_label, lv_color_black(), LV_PART_MAIN);
+    counter_label = lv_label_create(root_page);
+    lv_obj_align(counter_label, LV_ALIGN_TOP_MID, 0, 10);
+    lv_label_set_text(counter_label, "-");
+    lv_obj_set_style_text_color(counter_label, lv_color_black(), LV_PART_MAIN);
 
     lv_group_focus_obj(float_btn);
 }
@@ -48,7 +48,7 @@ void template_ui_remove(void)
 
 void template_ui_set_value(int value)
 {
-    lv_label_set_text_fmt(button_label, "%d", value);
+    lv_label_set_text_fmt(counter_label, "%d", value);
 }
 
 static void close_button_pressed(lv_event_t *e)
