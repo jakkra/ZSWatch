@@ -30,6 +30,9 @@ static lv_obj_t *weather_icon;
 static lv_obj_t *notification_icon;
 static lv_obj_t *notification_text;
 
+static lv_obj_t *date_label;
+static lv_obj_t *day_label;
+
 static void tick_draw_event_cb(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -60,14 +63,14 @@ static void add_clock(lv_obj_t *parent)
     lv_obj_set_style_bg_opa(clock_meter, LV_OPA_TRANSP, LV_PART_MAIN);
     //lv_obj_set_style_bg_color(clock_meter, lv_palette_main(LV_PALETTE_RED), LV_PART_MAIN);
     lv_obj_set_style_pad_all(clock_meter, 0, LV_PART_MAIN);
-    lv_meter_set_scale_ticks(clock_meter, scale_min, 61, 1, 10, lv_palette_main(LV_PALETTE_DEEP_ORANGE));
+    lv_meter_set_scale_ticks(clock_meter, scale_min, 61, 1, 10, lv_palette_main(LV_PALETTE_BLUE_GREY));
     lv_meter_set_scale_range(clock_meter, scale_min, 0, 60, 360, 270);
 
     /*Create another scale for the hours. It's only visual and contains only major ticks*/
     lv_meter_scale_t *scale_hour = lv_meter_add_scale(clock_meter);
     //lv_meter_set_scale_ticks(clock_meter, scale_hour, 12, 0, 0, lv_palette_main(LV_PALETTE_GREY));               /*12 ticks*/
     //lv_meter_set_scale_range(clock_meter, scale_hour, 1, 12, 330, 300);       /*[1..12] values in an almost full circle*/
-    lv_meter_set_scale_ticks(clock_meter, scale_hour, 61, 1, 10, lv_palette_main(LV_PALETTE_DEEP_ORANGE));
+    lv_meter_set_scale_ticks(clock_meter, scale_hour, 61, 1, 10, lv_palette_main(LV_PALETTE_BLUE_GREY));
     lv_meter_set_scale_range(clock_meter, scale_hour, 0, 60, 360, 270);
     lv_meter_set_scale_major_ticks(clock_meter, scale_hour, 5, 2, 20, lv_color_black(), 10);    /*Every tick is major*/
 
@@ -208,6 +211,18 @@ static void add_weather_data(lv_obj_t *parent)
     lv_obj_add_flag(weather_temperature, LV_OBJ_FLAG_HIDDEN);
 }
 
+static void add_date(lv_obj_t *parent)
+{
+    date_label = lv_label_create(parent);
+    lv_label_set_text(date_label, "1");
+    lv_obj_align_to(date_label, parent, LV_ALIGN_CENTER, SMALL_WATCHFACE_CENTER_OFFSET + 25, 7);
+
+    day_label = lv_label_create(parent);
+    lv_obj_set_style_text_color(day_label, lv_color_make(0xFF, 0xB7, 0x22), LV_PART_MAIN);
+    lv_label_set_text(day_label, "MON");
+    lv_obj_align_to(day_label, parent, LV_ALIGN_CENTER, SMALL_WATCHFACE_CENTER_OFFSET + 25, -7);
+}
+
 void watchface_init(void)
 {
     lv_obj_clean(lv_scr_act());
@@ -232,6 +247,7 @@ void watchface_show(void)
     add_ble_connected_indicator(root_page);
     add_notification_indicator(root_page);
     add_weather_data(root_page);
+    add_date(root_page);
     add_clock(root_page);
 }
 
@@ -337,6 +353,17 @@ void watchface_set_weather(int8_t temperature, int weather_code)
     lv_img_set_src(weather_icon, icon);
     lv_obj_clear_flag(weather_temperature, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(weather_icon, LV_OBJ_FLAG_HIDDEN);
+}
+
+void watchface_set_date(int day_of_week, int date)
+{
+    char buf[10];
+    char *days[] = { "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"};
+
+    snprintf(buf, sizeof(buf), "%s", days[day_of_week]);
+    lv_label_set_text(day_label, buf);
+    snprintf(buf, sizeof(buf), "%d", date);
+    lv_label_set_text(date_label, buf);
 }
 
 LV_IMG_DECLARE(stormy);

@@ -41,6 +41,7 @@ LOG_MODULE_REGISTER(app);
 #define ACCEL_INTERVAL          K_MSEC(100)
 #define BATTERY_INTERVAL        K_SECONDS(10)
 #define SEND_STATUS_INTERVAL    K_SECONDS(30)
+#define DATE_UPDATE_INTERVAL    K_MINUTES(1)
 
 typedef enum work_type {
     INIT,
@@ -53,6 +54,7 @@ typedef enum work_type {
     CLOSE_NOTIFICATION,
     DEBUG_NOTIFICATION,
     SEND_STATUS_UPDATE,
+    UPDATE_DATE
 } work_type_t;
 
 typedef enum ui_state {
@@ -98,6 +100,8 @@ static delayed_work_item_t battery_work =   { .type = BATTERY };
 static delayed_work_item_t render_work =    { .type = RENDER };
 static delayed_work_item_t clock_work =     { .type = UPDATE_CLOCK };
 static delayed_work_item_t status_work =    { .type = SEND_STATUS_UPDATE };
+static delayed_work_item_t date_work =      { .type = UPDATE_DATE };
+
 
 static delayed_work_item_t general_work_item;
 
@@ -157,6 +161,7 @@ void general_work(struct k_work *item)
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &battery_work.work, K_NO_WAIT), "FAIL battery_work");
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &render_work.work, K_NO_WAIT), "FAIL render_work");
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &clock_work.work, K_NO_WAIT), "FAIL clock_work");
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &date_work.work, K_SECONDS(1)), "FAIL clock_work");
             watch_state = WATCHFACE_STATE;
 
             general_work_item.type = DEBUG_NOTIFICATION;
@@ -180,6 +185,11 @@ void general_work(struct k_work *item)
             check_notifications();
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &clock_work.work, K_SECONDS(1)), "FAIL clock_work");
             break;
+        }
+        case UPDATE_DATE: {
+            struct tm *time = clock_get_time();
+            watchface_set_date(time->tm_wday, time->tm_mday);
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &date_work.work, DATE_UPDATE_INTERVAL), "FAIL date_work");
         }
         case OPEN_WATCHFACE: {
             watchface_show();
@@ -295,6 +305,7 @@ void main(void)
     k_work_init_delayable(&render_work.work, general_work); // TODO malloc and free as we can have multiple
     k_work_init_delayable(&clock_work.work, general_work);
     k_work_init_delayable(&status_work.work, general_work);
+    k_work_init_delayable(&date_work.work, general_work);
 
     general_work_item.type = INIT;
     __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule");

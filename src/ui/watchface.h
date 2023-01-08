@@ -23,5 +23,6 @@ void watchface_set_num_notifcations(int32_t value);
 
 void watchface_set_weather(int8_t temperature, int weather_code);
 
+void watchface_set_date(int day_of_week, int date);
 
 #endif
