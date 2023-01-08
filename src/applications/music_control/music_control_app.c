@@ -4,11 +4,12 @@
 #include <zephyr/init.h>
 #include <events/ble_data_event.h>
 #include <clock.h>
+#include <ble_comm.h>
 
 // Functions needed for all applications
 static void music_control_app_start(lv_obj_t *root, lv_group_t *group);
 static void music_control_app_stop(void);
-static void on_close_music(void);
+static void on_music_ui_evt_music(music_control_ui_evt_type_t evt_type);
 
 // Functions related to app functionality
 static void timer_callback(lv_timer_t *timer);
@@ -31,7 +32,7 @@ static int track_duration;
 static void music_control_app_start(lv_obj_t *root, lv_group_t *group)
 {
     progress_timer = lv_timer_create(timer_callback, 1000,  NULL);
-    music_control_ui_show(root, on_close_music);
+    music_control_ui_show(root, on_music_ui_evt_music);
     running = true;
 }
 
@@ -42,9 +43,33 @@ static void music_control_app_stop(void)
     music_control_ui_remove();
 }
 
-static void on_close_music(void)
+static void on_music_ui_evt_music(music_control_ui_evt_type_t evt_type)
 {
-    application_manager_app_close_request(&app);
+    uint8_t buf[50];
+    int msg_len = 0;
+
+    switch (evt_type) {
+        case MUSIC_CONTROL_UI_CLOSE:
+            application_manager_app_close_request(&app);
+            break;
+        case MUSIC_CONTROL_UI_PLAY:
+            msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"music\", \"n\": %s} \n", "play");
+            playing = true;
+            break;
+        case MUSIC_CONTROL_UI_PAUSE:
+            msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"music\", \"n\": %s} \n", "pause");
+            playing = false;
+            break;
+        case MUSIC_CONTROL_UI_NEXT_TRACK:
+            msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"music\", \"n\": %s} \n", "next");
+            break;
+        case MUSIC_CONTROL_UI_PREV_TRACK:
+            msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"music\", \"n\": %s} \n", "previous");
+            break;
+    }
+    if (msg_len > 0) {
+        ble_comm_send(buf, msg_len);
+    }
 }
 
 static bool app_event_handler(const struct app_event_header *aeh)

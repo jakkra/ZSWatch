@@ -3,9 +3,17 @@
 #include <inttypes.h>
 #include <lvgl.h>
 
-typedef void(*on_ui_close_cb_t)(void);
+typedef enum music_control_ui_evt_type {
+    MUSIC_CONTROL_UI_CLOSE,
+    MUSIC_CONTROL_UI_PLAY,
+    MUSIC_CONTROL_UI_PAUSE,
+    MUSIC_CONTROL_UI_NEXT_TRACK,
+    MUSIC_CONTROL_UI_PREV_TRACK
+} music_control_ui_evt_type_t;
 
-void music_control_ui_show(lv_obj_t *root, on_ui_close_cb_t close_cb);
+typedef void(*on_music_control_ui_event_cb_t)(music_control_ui_evt_type_t evt_type);
+
+void music_control_ui_show(lv_obj_t *root, on_music_control_ui_event_cb_t close_cb);
 
 void music_control_ui_remove(void);
 
