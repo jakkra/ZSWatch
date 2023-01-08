@@ -18,6 +18,7 @@ typedef enum parse_state {
     PARSE_STATE_DONE,
 } parse_state_t;
 
+
 static char *extract_value_str(char *key, char *data, int *value_len);
 static int parse_data(char *data, int len);
 static void parse_time(char *data);
@@ -32,6 +33,15 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
     .connected    = connected,
     .disconnected = disconnected,
     .le_param_updated = param_updated,
+};
+
+static const struct bt_data ad[] = {
+    BT_DATA_BYTES(BT_DATA_GAP_APPEARANCE,
+                  (CONFIG_BT_DEVICE_APPEARANCE >> 0) & 0xff,
+                  (CONFIG_BT_DEVICE_APPEARANCE >> 8) & 0xff),
+    BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+    BT_DATA_BYTES(BT_DATA_UUID16_ALL,
+                  BT_UUID_16_ENCODE(BT_UUID_DIS_VAL))
 };
 
 static struct bt_conn *current_conn;
@@ -55,6 +65,14 @@ int ble_comm_init(on_data_cb_t data_cb)
         return err;
     }
     data_parsed_cb = data_cb;
+
+    err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+    if (err) {
+        printk("Advertising failed to start (err %d)\n", err);
+    } else {
+        printk("Advertising successfully started\n");
+    }
+
     return err;
 }
 

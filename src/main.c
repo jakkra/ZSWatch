@@ -7,11 +7,8 @@
 #include <buttons.h>
 #include <battery.h>
 #include <gpio_debug.h>
-#include <hr_service.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/pwm.h>
-#include <zephyr/bluetooth/services/hrs.h>
-#include <zephyr/bluetooth/services/bas.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/drivers/led.h>
@@ -203,9 +200,7 @@ void general_work(struct k_work *item)
 
             if (read_battery(&batt_mv, &batt_percent) == 0) {
                 watchface_set_battery_percent(batt_percent, batt_mv);
-                bt_bas_set_battery_level(batt_percent);
             }
-            bt_hrs_notify(count % 220);
             watchface_set_hrm(count % 220);
             //heart_rate_sensor_fetch(&hr_sample);
             count++;
@@ -377,10 +372,10 @@ static void enable_bluetoth(void)
         LOG_ERR("Failed to enable Bluetooth, err: %d", err);
         return;
     }
-
+#ifdef CONFIG_SETTINGS
     settings_load();
-
-    ble_hr_init();
+#endif
+    //ble_hr_init();
 
     __ASSERT_NO_MSG(bleAoaInit());
     __ASSERT_NO_MSG(ble_comm_init(ble_data_cb) == 0);
