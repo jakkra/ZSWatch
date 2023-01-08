@@ -3,6 +3,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <events/ble_data_event.h>
+#include <clock.h>
 
 // Functions needed for all applications
 static void music_control_app_start(lv_obj_t *root, lv_group_t *group);
@@ -49,6 +50,7 @@ static void on_close_music(void)
 static bool app_event_handler(const struct app_event_header *aeh)
 {
     char buf[5 * MAX_MUSIC_FIELD_LENGTH];
+
     if (running && is_ble_data_event(aeh)) {
         struct ble_data_event *event = cast_ble_data_event(aeh);
         if (event->data.type == BLE_COMM_DATA_TYPE_MUSTIC_INFO) {
@@ -62,7 +64,8 @@ static bool app_event_handler(const struct app_event_header *aeh)
         }
 
         if (event->data.type == BLE_COMM_DATA_TYPE_MUSTIC_STATE) {
-            music_control_ui_set_music_state(event->data.data.music_state.playing, (((float)event->data.data.music_state.position / (float)track_duration)) * 100, event->data.data.music_state.shuffle);
+            music_control_ui_set_music_state(event->data.data.music_state.playing,
+                                             (((float)event->data.data.music_state.position / (float)track_duration)) * 100, event->data.data.music_state.shuffle);
             progress_seconds = event->data.data.music_state.position;
             playing = event->data.data.music_state.playing;
         }
@@ -75,6 +78,8 @@ static bool app_event_handler(const struct app_event_header *aeh)
 
 static void timer_callback(lv_timer_t *timer)
 {
+    struct tm *time = clock_get_time();
+    music_control_ui_set_time(time->tm_hour, time->tm_min, time->tm_sec);
     if (playing) {
         progress_seconds++;
         music_control_ui_set_track_progress((((float)progress_seconds / (float)track_duration)) * 100);
