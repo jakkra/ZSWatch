@@ -12,6 +12,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/drivers/led.h>
+#include <zephyr/logging/log.h>
 #include <filesystem.h>
 #include <clock.h>
 #include <lvgl.h>
@@ -30,9 +31,9 @@
 #include <display_control.h>
 #include <applications/application_manager.h>
 
-#define LOG_LEVEL LOG_LEVEL_WRN
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(app);
+LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
+
+//#define DEBUG_NOTIFICATIONS
 
 #define WORK_STACK_SIZE 3000
 #define WORK_PRIORITY   5
@@ -102,11 +103,9 @@ static delayed_work_item_t clock_work =     { .type = UPDATE_CLOCK };
 static delayed_work_item_t status_work =    { .type = SEND_STATUS_UPDATE };
 static delayed_work_item_t date_work =      { .type = UPDATE_DATE };
 
-
 static delayed_work_item_t general_work_item;
 
 K_THREAD_STACK_DEFINE(my_stack_area, WORK_STACK_SIZE);
-
 
 static bool buttons_allocated = false;
 static lv_group_t *input_group;
@@ -163,9 +162,10 @@ void general_work(struct k_work *item)
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &clock_work.work, K_NO_WAIT), "FAIL clock_work");
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &date_work.work, K_SECONDS(1)), "FAIL clock_work");
             watch_state = WATCHFACE_STATE;
-
+#ifdef DEBUG_NOTIFICATIONS
             general_work_item.type = DEBUG_NOTIFICATION;
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(5)), "FAIL schedule");
+#endif
             break;
         }
         case OPEN_SETTINGS: {
@@ -246,6 +246,7 @@ void general_work(struct k_work *item)
             break;
         }
         case DEBUG_NOTIFICATION: {
+#ifdef DEBUG_NOTIFICATION
             char *body = "This is a body with a longer message that maybe should wrap around or be cut?";
             char *src = "Gmail";
             char *title = "Test Name";
@@ -281,12 +282,11 @@ void general_work(struct k_work *item)
             raw_not.id = 5;
             raw_not.title = "Not 5";
             raw_not.title_len = strlen(raw_not.title);
-            //lv_notification_show("Test Namn", "This is a body with a longer message that maybe should wrap around or be cut?", NOTIFICATION_SRC_GMAIL, 1337, on_notifcation_closed);
-
-            //buttons_allocated = true;
-            //play_not_vibration();
-            //general_work_item.type = OPEN_NOTIFICATIONS;
-            //__ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(3)), "FAIL schedule");
+            buttons_allocated = true;
+            play_not_vibration();
+            general_work_item.type = OPEN_NOTIFICATIONS;
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(3)), "FAIL schedule");
+#endif
             break;
         }
     }
@@ -364,7 +364,7 @@ static void ble_data_cb(ble_comm_cb_data_t *cb)
             break;
         }
         case BLE_COMM_DATA_TYPE_WEATHER:
-            LOG_WRN("Weather: %s t: %d hum: %d code: %d wind: %d dir: %d", cb->data.weather.report_text,
+            LOG_DBG("Weather: %s t: %d hum: %d code: %d wind: %d dir: %d", cb->data.weather.report_text,
                     cb->data.weather.temperature_c, cb->data.weather.humidity, cb->data.weather.weather_code, cb->data.weather.wind,
                     cb->data.weather.wind_direction);
             watchface_set_weather(cb->data.weather.temperature_c, cb->data.weather.weather_code);
@@ -386,7 +386,6 @@ static void enable_bluetoth(void)
 #ifdef CONFIG_SETTINGS
     settings_load();
 #endif
-    //ble_hr_init();
 
     __ASSERT_NO_MSG(bleAoaInit());
     __ASSERT_NO_MSG(ble_comm_init(ble_data_cb) == 0);
