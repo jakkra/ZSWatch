@@ -185,11 +185,11 @@ static void add_notification_indicator(lv_obj_t *parent)
 
     notification_icon = lv_img_create(parent);
     lv_img_set_src(notification_icon, &notification_black);
-    lv_obj_align_to(notification_icon, parent, LV_ALIGN_CENTER, 3, -SMALL_WATCHFACE_CENTER_OFFSET - 25);
+    lv_obj_align_to(notification_icon, parent, LV_ALIGN_CENTER, 10, -SMALL_WATCHFACE_CENTER_OFFSET - 25);
 
     notification_text = lv_label_create(parent);
     lv_label_set_text(notification_text, "-");
-    lv_obj_align_to(notification_text, parent, LV_ALIGN_CENTER, 0, -SMALL_WATCHFACE_CENTER_OFFSET - 25);
+    lv_obj_align_to(notification_text, parent, LV_ALIGN_CENTER, -10, -SMALL_WATCHFACE_CENTER_OFFSET - 25);
 
     lv_style_init(&color_style);
     lv_style_set_text_color(&color_style, lv_color_black());
