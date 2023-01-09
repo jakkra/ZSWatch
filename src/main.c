@@ -46,7 +46,6 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
 
 typedef enum work_type {
     INIT,
-    OPEN_SETTINGS,
     UPDATE_CLOCK,
     OPEN_WATCHFACE,
     OPEN_NOTIFICATIONS,
@@ -74,7 +73,6 @@ typedef struct delayed_work_item {
 } delayed_work_item_t;
 
 static void enable_bluetoth(void);
-static void open_settings(void);
 static void open_notifications_page(void);
 static bool load_retention_ram(void);
 static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
@@ -167,12 +165,6 @@ void general_work(struct k_work *item)
             general_work_item.type = DEBUG_NOTIFICATION;
             __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(5)), "FAIL schedule");
 #endif
-            break;
-        }
-        case OPEN_SETTINGS: {
-            watch_state = SETTINGS_STATE;
-            watchface_remove();
-            open_settings();
             break;
         }
         case UPDATE_CLOCK: {
@@ -454,12 +446,6 @@ static bool load_retention_ram(void)
     printk("Active Ticks: %" PRIu64 "\n", retained.uptime_sum);
 
     return retained_ok;
-}
-
-static void open_settings(void)
-{
-    buttons_allocated = true;
-    //lv_settings_create(settings_menu, ARRAY_SIZE(settings_menu), "N/A", input_group, on_close_settings);
 }
 
 static void open_notifications_page(void)
