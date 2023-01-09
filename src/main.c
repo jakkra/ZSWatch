@@ -642,8 +642,9 @@ static void accel_evt(accelerometer_evt_t *evt)
 {
     switch (evt->type) {
         case ACCELEROMETER_EVT_TYPE_DOOUBLE_TAP: {
-            if (vibrator_on) {
+            if (vibrator_on || (watch_state != WATCHFACE_STATE)) {
                 // Vibrator causes false double tap detections.
+                // Need more work to not detect when vibration is running, hence for now only allow on watchface page
                 break;
             }
             display_on = !display_on;
@@ -663,7 +664,8 @@ static void accel_evt(accelerometer_evt_t *evt)
             break;
         }
         case ACCELEROMETER_EVT_TYPE_TILT: {
-            display_control_set_brightness(100);
+            // Tilt detect not working as we want yet, so don't do for now.
+            //display_control_set_brightness(100);
             break;
         }
     }
