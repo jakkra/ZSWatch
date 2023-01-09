@@ -8,6 +8,7 @@
 static uint32_t find_free_notification_idx(void);
 static uint32_t find_notification_idx(uint32_t id);
 static uint32_t find_oldest_notification_idx(void);
+static uint32_t find_newest_notification_idx(void);
 
 static not_mngr_notification_t notifications[NOTIFICATION_MANAGER_MAX_STORED];
 static uint8_t num_notifications;
@@ -82,12 +83,12 @@ int32_t notification_manager_remove(uint32_t id)
     }
 }
 
-int32_t notification_manager_get_all(not_mngr_notification_t *notifcations, int *num_notifications)
+int32_t notification_manager_get_all(not_mngr_notification_t *nots, int *num_notifications)
 {
     int num_stored = 0;
     for (int i = 0; i < NOTIFICATION_MANAGER_MAX_STORED; i++) {
         if (notifications[i].id != NOTIFICATION_INVALID_ID) {
-            notifcations[num_stored] = notifications[i];
+            nots[num_stored] = notifications[i];
             num_stored++;
         }
     }
@@ -98,6 +99,16 @@ int32_t notification_manager_get_all(not_mngr_notification_t *notifcations, int 
 int32_t notification_manager_get_num(void)
 {
     return num_notifications;
+}
+
+not_mngr_notification_t* notification_manager_get_newest(void)
+{
+    int idx = find_newest_notification_idx();
+    if (idx != NOTIFICATION_INVALID_ID) {
+        return &notifications[idx];
+    } else {
+        return NULL;
+    }
 }
 
 static uint32_t find_notification_idx(uint32_t id)
@@ -133,4 +144,19 @@ static uint32_t find_oldest_notification_idx(void)
     }
 
     return oldest_idx;
+}
+
+static uint32_t find_newest_notification_idx(void)
+{
+    uint32_t newest_idx = NOTIFICATION_INVALID_ID;
+    uint32_t newest_id = 0;
+
+    for (int i = 0; i < NOTIFICATION_MANAGER_MAX_STORED; i++) {
+        if (notifications[i].id != NOTIFICATION_INVALID_ID && notifications[i].id > newest_id) {
+            newest_idx = i;
+            newest_id = notifications[i].id;
+        }
+    }
+
+    return newest_idx;
 }

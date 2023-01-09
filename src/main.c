@@ -52,6 +52,7 @@ typedef enum work_type {
     OPEN_NOTIFICATIONS,
     BATTERY,
     RENDER,
+    OPEN_NOTIFICATION,
     CLOSE_NOTIFICATION,
     DEBUG_NOTIFICATION,
     SEND_STATUS_UPDATE,
@@ -203,6 +204,18 @@ void general_work(struct k_work *item)
             open_notifications_page();
             break;
         }
+        case OPEN_NOTIFICATION: {
+            not_mngr_notification_t* not = notification_manager_get_newest();
+            if (not != NULL) {
+                lv_notification_show(not->title, not->body, not->src, not->id, on_notifcation_closed);
+                play_not_vibration();
+                general_work_item.type = CLOSE_NOTIFICATION;
+                __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(15)), "FAIL schedule");
+            } else {
+                buttons_allocated = false;
+            }
+            break;
+        }
         case BATTERY: {
             int batt_mv;
             int batt_percent;
@@ -346,10 +359,8 @@ static void ble_data_cb(ble_comm_cb_data_t *cb)
             }
 
             buttons_allocated = true;
-            lv_notification_show(parsed_not->title, parsed_not->body, parsed_not->src, parsed_not->id, on_notifcation_closed);
-            play_not_vibration();
-            general_work_item.type = CLOSE_NOTIFICATION;
-            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_SECONDS(15)), "FAIL schedule");
+            general_work_item.type = OPEN_NOTIFICATION;
+            __ASSERT(0 <= k_work_reschedule_for_queue(&my_work_q, &general_work_item.work, K_NO_WAIT), "FAIL schedule not");
             break;
         case BLE_COMM_DATA_TYPE_NOTIFY_REMOVE:
             if (notification_manager_remove(cb->data.notify_remove.id) != 0) {
