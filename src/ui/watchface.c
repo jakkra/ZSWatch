@@ -2,7 +2,7 @@
 #include <lvgl.h>
 #include <general_ui.h>
 
-#define SMALL_WATCHFACE_CENTER_OFFSET 37
+#define SMALL_WATCHFACE_CENTER_OFFSET 38
 
 const lv_img_dsc_t *get_icon_from_weather_code(int code);
 
@@ -40,7 +40,13 @@ static void tick_draw_event_cb(lv_event_t *e)
         lv_obj_draw_part_dsc_t *dsc = lv_event_get_param(e);
         if (dsc->type == LV_METER_DRAW_PART_TICK && dsc->text != NULL) {
             if (dsc->value > 0) {
-                dsc->text_length = snprintf(dsc->text, 16, "%d", dsc->value / 5);
+                if ((dsc->value / 5) % 3 == 0) {
+                    dsc->label_dsc->opa = LV_OPA_90;
+                    dsc->text_length = snprintf(dsc->text, 16, "%d", dsc->value / 5);
+                } else {
+                    dsc->label_dsc->opa = LV_OPA_60;
+                    dsc->text_length = snprintf(dsc->text, 16, "%d", dsc->value / 5);
+                }
             } else {
                 dsc->text[0] = '\0';
                 dsc->text_length = 0;
@@ -195,10 +201,11 @@ static void add_weather_data(lv_obj_t *parent)
 {
     weather_temperature = lv_label_create(parent);
     lv_label_set_text(weather_temperature, "5");
-    lv_obj_align_to(weather_temperature, parent, LV_ALIGN_CENTER, -15, SMALL_WATCHFACE_CENTER_OFFSET + 30);
+    lv_obj_align_to(weather_temperature, parent, LV_ALIGN_CENTER, -15, SMALL_WATCHFACE_CENTER_OFFSET + 33);
 
     weather_icon = lv_img_create(weather_temperature);
-    lv_obj_align_to(weather_icon, weather_icon, LV_ALIGN_CENTER, 20, -5);
+    lv_obj_set_size(weather_icon, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_align_to(weather_icon, weather_temperature, LV_ALIGN_OUT_RIGHT_MID, 10, -13);
 
     lv_obj_add_flag(weather_temperature, LV_OBJ_FLAG_HIDDEN);
 }
