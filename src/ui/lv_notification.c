@@ -17,6 +17,8 @@ void lv_notification_show(char *title, char *body, notification_src_t icon, uint
     active_not_id = id;
     on_close_cb = close_cb;
     mbox = lv_msgbox_create(lv_scr_act(), title, body, NULL, true);
+    lv_obj_set_scrollbar_mode(lv_scr_act(), LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_scrollbar_mode(mbox, LV_SCROLLBAR_MODE_OFF);
     lv_obj_t *close_btn = lv_msgbox_get_close_btn(mbox);
     lv_obj_add_event_cb(close_btn, on_notifcation_closed, LV_EVENT_PRESSED, NULL);
     lv_obj_center(mbox);
@@ -58,7 +60,7 @@ void lv_notification_show(char *title, char *body, notification_src_t icon, uint
             break;
     }
 
-    lv_obj_align_to(img_icon, mbox, LV_ALIGN_TOP_RIGHT, 0, -35);
+    lv_obj_align_to(img_icon, mbox, LV_ALIGN_TOP_RIGHT, 5, -35);
 }
 
 void lv_notification_remove(void)
