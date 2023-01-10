@@ -170,7 +170,7 @@ void general_work(struct k_work *item)
         case UPDATE_CLOCK: {
             struct tm *time = clock_get_time();
             LOG_INF("%d, %d, %d\n", time->tm_hour, time->tm_min, time->tm_sec);
-            watchface_set_time(time->tm_hour, time->tm_min);
+            watchface_set_time(time->tm_hour, time->tm_min, time->tm_sec);
 
             // Store current time
             retained.current_time_seconds = clock_get_time_unix();

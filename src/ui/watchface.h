@@ -15,7 +15,7 @@ void watchface_set_hrm(int32_t value);
 
 void watchface_set_step(int32_t value);
 
-void watchface_set_time(int32_t hour, int32_t minute);
+void watchface_set_time(int32_t hour, int32_t minute, int32_t second);
 
 void watchface_set_ble_connected(bool connected);
 
