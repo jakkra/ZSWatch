@@ -94,8 +94,8 @@ static void add_clock(lv_obj_t *parent)
     LV_IMG_DECLARE(minute_hand)
     LV_IMG_DECLARE(hour_hand)
 
-    indic_hour = lv_meter_add_needle_img(clock_meter, scale_hour, &hour_hand, 9, 9);
-    indic_min = lv_meter_add_needle_img(clock_meter, scale_min, &minute_hand, 9, 9);
+    indic_hour = lv_meter_add_needle_img(clock_meter, scale_hour, &hour_hand, 31, 9);
+    indic_min = lv_meter_add_needle_img(clock_meter, scale_min, &minute_hand, 31, 9);
 #ifdef USE_SECOND_HAND
     LV_IMG_DECLARE(second_hand)
     indic_second = lv_meter_add_needle_img(clock_meter, scale_second, &second_hand, 12, 2);
@@ -320,8 +320,8 @@ void watchface_set_time(int32_t hour, int32_t minute, int32_t second)
     if (hour_offset >= 60) {
         hour_offset = 60;
     }
-    lv_meter_set_indicator_end_value(clock_meter, indic_min, minute);
-    lv_meter_set_indicator_end_value(clock_meter, indic_hour, hour_offset);
+    lv_meter_set_indicator_end_value(clock_meter, indic_min, 10);
+    lv_meter_set_indicator_end_value(clock_meter, indic_hour, 50);
 #ifdef USE_SECOND_HAND
     lv_meter_set_indicator_end_value(clock_meter, indic_second, second);
 #endif
