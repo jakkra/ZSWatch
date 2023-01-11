@@ -1,4 +1,4 @@
-#define DT_DRV_COMPAT jkra_gc9a01
+#define DT_DRV_COMPAT buydisplay_gc9a01
 
 #include <string.h>
 #include <zephyr/device.h>
@@ -191,7 +191,6 @@ static inline int gc9a01_write_cmd(const struct device *dev, uint8_t cmd,
 
 static void gc9a01_set_frame(const struct device *dev, struct gc9a01_frame frame)
 {
-
     uint8_t data[4];
 
     data[0] = (frame.start.X >> 8) & 0xFF;
@@ -314,7 +313,6 @@ static int gc9a01_controller_init(const struct device *dev)
     k_msleep(5);
     gpio_pin_set_dt(&config->reset_gpio, 1);
     k_msleep(150);
-
 
     uint8_t cmd, x, numArgs;
     int i = 0;

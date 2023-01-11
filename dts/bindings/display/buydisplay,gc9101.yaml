@@ -1,6 +1,6 @@
-description: GC9A01 EPD display controller
+description: GC9A01 display controller
 
-compatible: "jkra,gc9a01"
+compatible: "buydisplay,gc9a01"
 
 include: [spi-device.yaml, display-controller.yaml]
 
@@ -20,7 +20,7 @@ properties:
       required: true
       description: BL pin.
 
-        BL PIN TODO description
+        Pin for backlight PWM control.
 
     dc-gpios:
       type: phandle-array
@@ -30,7 +30,6 @@ properties:
         The DC pin of GC9A01 is active low (transmission command byte).
         If connected directly the MCU pin should be configured
         as active low.
-
 
     pwr:
       type: uint8-array
