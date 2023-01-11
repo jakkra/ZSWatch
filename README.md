@@ -1,28 +1,65 @@
-# Smart Watch
+<div align="center">
+  <h1>zWatch</h1>
+<img src=".github/in_use.jpg"/>
+<sub>
+  Smartwatch built from scratch-ish.
+</sub>
+</div>
 
-A 4 layer board and measures 36mm in diameter. I will "hand solder" top side using a hot plate and the bottom probably with hot air, almost all components are on the top. Tjose are the layers:
+## Hardware Features v1.0
+- 1.28" 240x240 IPS TFT Circular Display with [GC9A01 driver](https://www.buydisplay.com/1-28-inch-tft-lcd-display-240x240-round-circle-screen-for-smart-watch).
+- Accelerometer for step counting etc. [(LIS2DS12TR)](https://www.st.com/content/ccc/resource/technical/document/datasheet/ce/32/55/ac/e1/87/46/84/DM00177048.pdf/files/DM00177048.pdf/jcr:content/translations/en.DM00177048.pdf).
+- Pulse oximetry and heartrate using [(MAX30101EFD)](https://datasheets.maximintegrated.com/en/ds/MAX30101.pdf)).
+- nRF52833 BLE chip [(u-blox ANNA-B402 module)](https://content.u-blox.com/sites/default/files/ANNA-B402_DataSheet_UBX-20032372.pdf).
+- Vibration motor with haptics driver to give better vibration control [(DRV2603RUNT)](https://www.ti.com/lit/ds/symlink/drv2603.pdf?HQS=dis-dk-null-digikeymode-dsf-pf-null-wwe&ts=1662847620221).
+- External 8MB flash [(MX25R6435FZNIL0)](https://static6.arrow.com/aropdfconversion/a35c4dff799e6b2e44732bd665796d74a8a3f62a/244684669660894mx25r6435f20wide20range2064mb20v1..pdf).
+- Battery charger and battery supervisor ([MAX1811ESA+ datasheet](https://datasheets.maximintegrated.com/en/ds/MAX1811.pdf), [TLV840MAPL3](https://www.ti.com/lit/ds/symlink/tlv840-q1.pdf?ts=1662823963602&ref_url=https%253A%252F%252Fwww.ti.com%252Fpower-management%252Fsupervisor-reset-ic%252Fproducts.html)).
+- 220 mAh Li-Po battery.
+- Sapphire Crystal Glass to protect the display.
 
-1. Signal
-2. GND
-3. Power 1V8 and 3V3 (except 3 traces I had to run on this layer as I forgot the buttons after routing everything...)
-4. Signal
+## Charger/Dock
+- Basic pogo-pin dock that connects the power and SWD pins to the bottom of the watch.
 
-Features and datasheets:
+### Upcoming Hardware features in zWatch v2.0
+- nRF5340 BLE chip (u-blox NORA-B10 module)
+- **Touch screen** with [same size and features as V1](https://www.buydisplay.com/240x240-round-ips-tft-lcd-display-1-28-inch-capactive-touch-circle-screen)
+- 8MB external flash will *probably* be removed due to larger size of NORA-B10 vs. ANNA-B40.
+- Find another way to dock the clock for charging and programming, maybe can find some connector similar to what smartwatches normally have.
 
-* nRF52833 (SIP module) microcontroller running on 1V8.
-* Power management
-   * LiPo charger [MAX1811ESA+ datasheet](https://datasheets.maximintegrated.com/en/ds/MAX1811.pdf)
-   * Battery supervisor (low voltage protection) [TLV840MAPL3... datasheet](https://www.ti.com/lit/ds/symlink/tlv840-q1.pdf?ts=1662823963602&ref_url=https%253A%252F%252Fwww.ti.com%252Fpower-management%252Fsupervisor-reset-ic%252Fproducts.html)
-   * 1V8 regulator [XC9265C181MR-G datasheet](https://www.torexsemi.com/file/xc9265/XC9265.pdf)
-   * Battery level reading circuit with moset [DMC2400UV-7 datasheet](https://www.diodes.com/assets/Datasheets/DMC2400UV.pdf)
-* Accelerometer and step counter [LIS2DS12TR datasheet](https://www.st.com/content/ccc/resource/technical/document/datasheet/ce/32/55/ac/e1/87/46/84/DM00177048.pdf/files/DM00177048.pdf/jcr:content/translations/en.DM00177048.pdf)
-* Vibration motor driver [DRV2603RUNT datasheet](https://www.ti.com/lit/ds/symlink/drv2603.pdf?HQS=dis-dk-null-digikeymode-dsf-pf-null-wwe&ts=1662847620221)
-* External 8MB Flash [MX25R6435FZNIL0 datasheet](https://static6.arrow.com/aropdfconversion/a35c4dff799e6b2e44732bd665796d74a8a3f62a/244684669660894mx25r6435f20wide20range2064mb20v1..pdf)
-* Biometric sensor (heart rate etc.)
-   * [MAX30101EFD datasheet](https://datasheets.maximintegrated.com/en/ds/MAX30101.pdf)
-   * 5V boost regulator  [TPS61023DRLT datasheet](https://www.ti.com/lit/ds/symlink/tps61023.pdf?HQS=dis-dk-null-digikeymode-dsf-pf-null-wwe&ts=1662847882782) and it's [app note](https://pdfserv.maximintegrated.com/en/an/AN6409.pdf)
-* Round display
+## Software Features
+- Bluetooth LE communications with [GadgetBridge](https://codeberg.org/Freeyourgadget) Android app.
+- Watchface that shows:
+   - Standard stuff as time, date, battery.
+   - Weather.
+   - Step count.
+   - Number unread notifications.
+   - Heart rate (not implemented yet however).
+- Pop-up notifications.
+- Setting menu system, with easy extendability.
+- Application picker and app concept.
+   - Music control app.
+   - Settings app.
+   - etc.
+- Step counting.
 
-1. 1.8V <=> logic shifter [TXB0104QRUTRQ1 datasheet](https://www.ti.com/lit/ds/symlink/txb0104-q1.pdf?HQS=dis-dk-null-digikeymode-dsf-pf-null-wwe&ts=1662908379294&ref_url=https%253A%252F%252Fwww.ti.com%252Fgeneral%252Fdocs%252Fsuppproductinfo.tsp%253FdistId%253D10%2526gotoUrl%253Dhttps%253A%252F%252Fwww.ti.com%252Flit%252Fgpn%252Ftxb0104-q1)
-2. [Display datasheet](https://www.buydisplay.com/download/ic/GC9A01A.pdf)
-3. 3V3 voltage regulator (same as 1V8 one in Power Management)
+### Mayor not yet implemented SW Features
+- Heart rate, right now only collects the raw data, but no heart rate is calculated from it.
+- Proper BLE pairing, currently removed due to flash constraints.
+
+## Android phone communication
+Fortunately there is a great Android app called [GadgetBridge](https://codeberg.org/Freeyourgadget) which handles everything needed on the phone side, such as notifications management, music control and so much more... The zWatch right now pretends to be one of the supported Smart Watches in Gadgetbridge, following the same API as it does. In future there may be a point adding native support, we'll see.
+
+## zWatch in action
+|*Music control*|*Accelerometer for step count and tap detection*|
+|---|---|
+|  <img src=".github/music.gif" />    |  <img src=".github/accel.gif" height="360" /> |
+|*Notifications from phone (Gmail here)*|*Settings*|
+|  <img src=".github/notifications.gif"  />    |  <img src=".github/settings.gif"/> |
+
+## PCB
+A 4 layer board which measures 36mm in diameter designed in KiCad.
+
+<p float="left">
+<img src=".github/pcb.jpg" height="510"/>
+<img src=".github/parts.jpg" height="510"/>
+</p>
