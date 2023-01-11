@@ -312,16 +312,21 @@ void watchface_set_step(int32_t value)
 
 void watchface_set_time(int32_t hour, int32_t minute, int32_t second)
 {
+
     if (!root_page) {
         return;
     }
-    int hour_offset = hour * 5;
+    // Hour hand is split into 60 steps, use minutes to progress the hour
+    // hand between full hours.
+    int hour_offset;
+    hour = hour % 12;
+    hour_offset = hour * 5;
     hour_offset += minute / 10;
     if (hour_offset >= 60) {
         hour_offset = 60;
     }
-    lv_meter_set_indicator_end_value(clock_meter, indic_min, 10);
-    lv_meter_set_indicator_end_value(clock_meter, indic_hour, 50);
+    lv_meter_set_indicator_end_value(clock_meter, indic_min, minute);
+    lv_meter_set_indicator_end_value(clock_meter, indic_hour, hour_offset);
 #ifdef USE_SECOND_HAND
     lv_meter_set_indicator_end_value(clock_meter, indic_second, second);
 #endif
