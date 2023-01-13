@@ -1,12 +1,19 @@
 <div align="center">
-  <h1>zWatch</h1>
+  <h1>ZSWatch</h1>
+  
 <img src=".github/in_use.jpg"/>
 <sub>
-  Smartwatch built from scratch-ish.
+  The ZSWatch v1
 </sub>
 </div>
+<br/>
 
-## Hardware Features in zWatch v1
+
+Smartwatch built from scratch, both hardware and software. Built on the [Zephyr™ Project](https://www.zephyrproject.org/) RTOS, hence the name **ZSWatch** - *Zephyr Smartwatch*.
+<br/>
+
+
+## Hardware Features in ZSWatch v1
 - nRF52833 BLE chip [(u-blox ANNA-B402 module)](https://content.u-blox.com/sites/default/files/ANNA-B402_DataSheet_UBX-20032372.pdf).
 - 1.28" 240x240 IPS TFT Circular Display with [GC9A01 driver](https://www.buydisplay.com/1-28-inch-tft-lcd-display-240x240-round-circle-screen-for-smart-watch).
 - Accelerometer for step counting etc. [(LIS2DS12TR)](https://www.st.com/content/ccc/resource/technical/document/datasheet/ce/32/55/ac/e1/87/46/84/DM00177048.pdf/files/DM00177048.pdf/jcr:content/translations/en.DM00177048.pdf).
@@ -18,7 +25,7 @@
 - 220 mAh Li-Po battery.
 - Sapphire Crystal Glass to protect the display.
 
-## Upcoming Hardware features in zWatch v2
+## Upcoming Hardware features in ZSWatch v2
 - nRF5340 BLE chip (u-blox NORA-B10 module)
 - **Touch screen** with [same size and features as v1](https://www.buydisplay.com/240x240-round-ips-tft-lcd-display-1-28-inch-capactive-touch-circle-screen)
 - 8MB external flash will *probably* be removed due to larger size of u-blox NORA-B10 vs. ANNA-B402.
@@ -31,7 +38,7 @@ Basic pogo-pin dock that connects the power and SWD pins to the bottom of the wa
 3D printed casing with 3D printed buttons. Does it's job, but for revision v2 of the watch I'll probably do something CNC'd for nicer looks.
 
 ## Software Features
-- Bluetooth LE communications with [GadgetBridge](https://codeberg.org/Freeyourgadget) Android app.
+- Bluetooth LE communications with [GadgetBridge](https://codeberg.org/Freeyourgadget/Gadgetbridge) Android app.
 - Also support Bluetooth Direction Finding so the watch can act as a tag and is trackable using any [u-blox AoA antenna board](https://www.u-blox.com/en/product/ant-b10-antenna-board)
 - Watchface that shows:
    - Standard stuff as time, date, battery
@@ -54,7 +61,7 @@ Basic pogo-pin dock that connects the power and SWD pins to the bottom of the wa
 - Refactoring of `main.c`, should have way less logic, utlize Zephyr architecture more.
 
 ## Android phone communication
-Fortunately there is a great Android app called [GadgetBridge](https://codeberg.org/Freeyourgadget) which handles everything needed on the phone side, such as notifications management, music control and so much more... The zWatch right now pretends to be one of the supported Smart Watches in Gadgetbridge, following the same API as it does. In future there may be a point adding native support, we'll see.
+Fortunately there is a great Android app called [GadgetBridge](https://codeberg.org/Freeyourgadget) which handles everything needed on the phone side, such as notifications management, music control and so much more... The ZSWatch right now pretends to be one of the supported Smart Watches in Gadgetbridge, following the same API as it does. In future there may be a point adding native support, we'll see.
 
 ## PCB
 A 4 layer board which measures 36mm in diameter designed in KiCad.
@@ -64,7 +71,7 @@ A 4 layer board which measures 36mm in diameter designed in KiCad.
 <img src=".github/parts.jpg" height="510"/>
 </p>
 
-## zWatch in action
+## ZSWatch in action
 |*Music control*|*Accelerometer for step count and tap detection*|
 |---|---|
 |  <img src=".github/music.gif" />    |  <img src=".github/accel.gif" height="360" /> |
