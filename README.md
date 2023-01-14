@@ -67,20 +67,20 @@ Fortunately there is a great Android app called [GadgetBridge](https://codeberg.
 A 4 layer board which measures 36mm in diameter designed in KiCad.
 
 <p float="left">
-<img src=".github/pcb.jpg" height="510"/>
-<img src=".github/parts.jpg" height="510"/>
+<img src=".github/pcb.jpg" width="49%" object-fit="cover"/>
+<img src=".github/parts.jpg" width="49%" object-fit="cover"/>
 </p>
 <p float="left">
-<img src=".github/inside.jpg" width="420"/>
-<img src=".github/back.jpg" width="420"/>
+<img src=".github/inside.jpg" width="49%" object-fit="cover"/>
+<img src=".github/back.jpg" width="49%" object-fit="cover"/>
 </p>
 
 ## ZSWatch in action
 |*Music control*|*Accelerometer for step count and tap detection*|
 |---|---|
-|  <img src=".github/music.gif" />    |  <img src=".github/accel.gif" height="360" /> |
+|  <img src=".github/music.gif" /> object-fit="cover"   |  <img src=".github/accel.gif" object-fit="cover" /> |
 |*Notifications from phone (Gmail here)*|*Settings*|
-|  <img src=".github/notifications.gif"  />    |  <img src=".github/settings.gif"/> |
+|  <img src=".github/notifications.gif" object-fit="cover" />    |  <img src=".github/settings.gif" object-fit="cover"/> |
 
 ## Writing apps for the Application Manager
 Check out [the sample application](app/src/applications/template/) for the general app design. The main idea is each app have an `<app_name>_app.c` file which registers the app, chooses icon and drives the logic for the app. Then there should be one or more files named for example `<app_name>_ui.c` containing pure LVGL code with no dependencies to Zephyr or the watch software. The idea is that this UI code should be runnable in a LVGL simulator to speed up development of UI, however right now that's not set up yet. The `<app_name>_app.c` will do all logic and call functions in `<app_name>_ui.c` to update the UI accordingly. 
