@@ -70,6 +70,10 @@ A 4 layer board which measures 36mm in diameter designed in KiCad.
 <img src=".github/pcb.jpg" height="510"/>
 <img src=".github/parts.jpg" height="510"/>
 </p>
+<p float="left">
+<img src=".github/inside.jpg" width="420"/>
+<img src=".github/back.jpg" width="420"/>
+</p>
 
 ## ZSWatch in action
 |*Music control*|*Accelerometer for step count and tap detection*|
