@@ -12,7 +12,6 @@
 Smartwatch built from scratch, both hardware and software. Built on the [Zephyrâ„¢ Project](https://www.zephyrproject.org/) RTOS, hence the name **ZSWatch** - *Zephyr Smartwatch*.
 <br/>
 
-
 ## Hardware Features in ZSWatch v1
 - nRF52833 BLE chip [(u-blox ANNA-B402 module)](https://content.u-blox.com/sites/default/files/ANNA-B402_DataSheet_UBX-20032372.pdf).
 - 1.28" 240x240 IPS TFT Circular Display with [GC9A01 driver](https://www.buydisplay.com/1-28-inch-tft-lcd-display-240x240-round-circle-screen-for-smart-watch).
@@ -24,6 +23,16 @@ Smartwatch built from scratch, both hardware and software. Built on the [Zephyrâ
 - 3 buttons for navigation (prev/next/enter)
 - 220 mAh Li-Po battery.
 - Sapphire Crystal Glass to protect the display.
+
+### BOM
+Found [here](ZSWatch-kicad/zswatch-bom.csv)
+
+### PCB Issues in v1
+**Do not build the v1, wait for v2.**
+
+- Logic level converter pinout shifted, requires manual PCB rework.
+- Possible current leakage on some pins.
+- Max display brightness is 60% (however definitely bright enough).
 
 ## Upcoming Hardware features in ZSWatch v2
 - nRF5340 BLE chip (u-blox NORA-B10 module)
@@ -78,7 +87,7 @@ A 4 layer board which measures 36mm in diameter designed in KiCad.
 ## ZSWatch in action
 |*Music control*|*Accelerometer for step count and tap detection*|
 |---|---|
-|  <img src=".github/music.gif" /> object-fit="cover"   |  <img src=".github/accel.gif" object-fit="cover" /> |
+|  <img src=".github/music.gif" object-fit="cover" /> |  <img src=".github/accel.gif" object-fit="cover" /> |
 |*Notifications from phone (Gmail here)*|*Settings*|
 |  <img src=".github/notifications.gif" object-fit="cover" />    |  <img src=".github/settings.gif" object-fit="cover"/> |
 
