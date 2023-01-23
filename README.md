@@ -41,7 +41,11 @@ Found [here](ZSWatch-kicad/zswatch-bom.csv)
 - Max display brightness is 60% (however definitely bright enough).
 
 ## Upcoming Hardware features in ZSWatch v2
-- nRF5340 BLE chip (u-blox NORA-B10 module)
+- nRF5340 BLE chip (u-blox NORA-B10 module).
+  - 2x CPU frequenzy.
+  - 4x RAM (Will allow double buffered of data to the screen and larger framebuffers to decrease lag/tearing).
+  - 2x Flash.
+  - 6x faster display communication (8-> 30 MHz), should improve lag/tearing.
 - **Touch screen** with [same size and features as v1](https://www.buydisplay.com/240x240-round-ips-tft-lcd-display-1-28-inch-capactive-touch-circle-screen)
 - Replace LIS2DS12TR accelerometer with a more modern and feature rich IMU [Bosch BMI270](https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmi270-ds000.pdf), with this one it's possible to do many fancy things such as navigation using gestures and the typical smartwatch wakeup by moving the arm so the display is viewable.
 - 8MB external flash will *probably* be removed due to larger size of u-blox NORA-B10 vs. ANNA-B402.
