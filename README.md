@@ -48,11 +48,26 @@ Found [here](ZSWatch-kicad/zswatch-bom.csv)
   - 6x faster display communication (8-> 30 MHz), should improve lag/tearing.
 - **Touch screen** with [same size and features as v1](https://www.buydisplay.com/240x240-round-ips-tft-lcd-display-1-28-inch-capactive-touch-circle-screen)
 - Replace LIS2DS12TR accelerometer with a more modern and feature rich IMU [Bosch BMI270](https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmi270-ds000.pdf), with this one it's possible to do many fancy things such as navigation using gestures and the typical smartwatch wakeup by moving the arm so the display is viewable.
-- 8MB external flash will *probably* be removed due to larger size of u-blox NORA-B10 vs. ANNA-B402.
-- Find another way to dock the clock for charging and programming, maybe can find some connector similar to what smartwatches normally have.
+- Bosch [BME688](https://www.bosch-sensortec.com/products/environmental-sensors/gas-sensors/bme688/) Environmental sensing with AI.
+- ST [LIS2MDLTR](https://www.st.com/resource/en/datasheet/lis2mdl.pdf) Magnetometer.
+- [Magnetic 6 pin connector](https://www.aliexpress.com/item/1005002776015559.html?) for charging and programming which connects to a new dock/adapter.
+- Option to make the watch cheaper by using the v1 display without touch.
+- Option to not mount some sensors to save BOM cost.
+- 8MB external flash will is removed due to larger size of u-blox NORA-B10 vs. ANNA-B402, however plenty of flash in new MCU.
+
+## Progress on v2
+[Schematic for v2](schematic/ZSWatch-v2-kicad.pdf) is uploaded and should be pretty much final.
+<br/>
+PCB almost finished, just some checks left.
+
+You can follow the progress here [https://github.com/users/jakkra/projects/1/views/5](https://github.com/users/jakkra/projects/1/views/5)
+<p float="left">
+<img src=".github/v2_render_wip.PNG" width="49%" object-fit="cover"/>
+<img src=".github/layer1_and_4_v2.PNG" width="49%" object-fit="cover"/>
+</p>
 
 ## Charger/Dock
-Basic pogo-pin dock that connects the power and SWD pins to the bottom of the watch.
+Basic pogo-pin dock that connects the power and SWD pins to the bottom of the watch. Will be replaced for v2 with a much better solution.
 
 ## Enclosure/Casing
 3D printed casing with 3D printed buttons. Does it's job, but for revision v2 of the watch I'll probably do something CNC'd for nicer looks.
