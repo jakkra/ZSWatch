@@ -61,9 +61,10 @@ Found [here](ZSWatch-kicad/zswatch-bom.csv)
 PCB almost finished, just some checks left.
 
 You can follow the progress here [https://github.com/users/jakkra/projects/1/views/5](https://github.com/users/jakkra/projects/1/views/5)
+<img src=".github/v2_render_wip.PNG" width="70%" object-fit="cover"/>
 <p float="left">
-<img src=".github/v2_render_wip.PNG" width="49%" object-fit="cover"/>
-<img src=".github/layer1_and_4_v2.PNG" width="49%" object-fit="cover"/>
+<img src=".github/v2_render_wip_back.png" width="49%" object-fit="cover"/>
+<img src=".github/layer1_and_4_v2.PNG" width="41%" object-fit="cover"/>
 </p>
 
 ## Charger/Dock
