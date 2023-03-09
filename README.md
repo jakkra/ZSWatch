@@ -58,10 +58,13 @@ Found [here](ZSWatch-kicad/zswatch-bom.csv)
 ## Progress on v2
 [Schematic for v2](schematic/ZSWatch-v2-kicad.pdf) is uploaded and should be pretty much final.
 <br/>
-PCB almost finished, just some checks left.
+PCB are finished, ordered and sucessfully assembled. Everyhting works except I2C communication with touch screen due to the logic lever converter chip. Will fix this and some other minor things for next revision.
 
 You can follow the progress here [https://github.com/users/jakkra/projects/1/views/5](https://github.com/users/jakkra/projects/1/views/5)
-<img src=".github/v2_render_wip.PNG" width="70%" object-fit="cover"/>
+<p float="left">
+<img src=".github/v2_finished.png" width="50%" object-fit="cover"/>
+<img src=".github/v2_render_wip.PNG" width="40%" object-fit="cover"/>
+</p>
 <p float="left">
 <img src=".github/v2_render_wip_back.png" width="49%" object-fit="cover"/>
 <img src=".github/layer1_and_4_v2.PNG" width="41%" object-fit="cover"/>
