@@ -4,3 +4,6 @@
 [submodule "app/src/ext_drivers/bmi270/BMI270-Sensor_API"]
 	path = app/src/ext_drivers/bmi270/BMI270-Sensor_API
 	url = https://github.com/boschsensortec/BMI270-Sensor-API.git
+[submodule "app/src/ext_drivers/bmp581/BMP5-Sensor-API"]
+	path = app/src/ext_drivers/bmp581/BMP5-Sensor-API
+	url = https://github.com/boschsensortec/BMP5-Sensor-API.git

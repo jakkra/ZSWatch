@@ -32,6 +32,7 @@
 #include <events/ble_data_event.h>
 #include <events/accel_event.h>
 #include <magnetometer.h>
+#include <pressure_sensor.h>
 #include <zephyr/zbus/zbus.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
@@ -101,6 +102,7 @@ void run_init_work(struct k_work *item)
     enable_bluetoth();
     accelerometer_init();
     magnetometer_init();
+    pressure_sensor_init();
     clock_init(retained.current_time_seconds);
     buttonsInit(&onButtonPressCb);
     vibration_motor_init();

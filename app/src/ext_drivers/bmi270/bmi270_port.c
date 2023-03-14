@@ -15,24 +15,24 @@
 static uint8_t dev_addr;
 
 struct config {
-	const struct device *i2c_master;
+    const struct device *i2c_master;
 };
 
 static const struct config config = {
-	.i2c_master = DEVICE_DT_GET(DT_BUS(DT_NODELABEL(bmi270))),
+    .i2c_master = DEVICE_DT_GET(DT_BUS(DT_NODELABEL(bmi270))),
 };
 
 
 BMI2_INTF_RETURN_TYPE bmi2_i2c_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr)
 {
-    uint8_t dev_addr = *(uint8_t*)intf_ptr;
+    uint8_t dev_addr = *(uint8_t *)intf_ptr;
 
     return i2c_burst_read(config.i2c_master, dev_addr, (uint16_t)reg_addr, reg_data, len);
 }
 
 BMI2_INTF_RETURN_TYPE bmi2_i2c_write(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr)
 {
-    uint8_t dev_addr = *(uint8_t*)intf_ptr;
+    uint8_t dev_addr = *(uint8_t *)intf_ptr;
 
     return i2c_burst_write(config.i2c_master, dev_addr, reg_addr, reg_data, len);
 }
@@ -46,8 +46,7 @@ int8_t bmi2_interface_init(struct bmi2_dev *bmi, uint8_t intf)
 {
     int8_t rslt = BMI2_OK;
 
-    if (bmi != NULL)
-    {
+    if (bmi != NULL) {
         printk("I2C Interface \n");
 
         /* To initialize the user I2C function */
@@ -67,9 +66,7 @@ int8_t bmi2_interface_init(struct bmi2_dev *bmi, uint8_t intf)
 
         /* Assign to NULL to load the default config file. */
         bmi->config_file_ptr = NULL;
-    }
-    else
-    {
+    } else {
         rslt = BMI2_E_NULL_PTR;
     }
 
@@ -79,8 +76,7 @@ int8_t bmi2_interface_init(struct bmi2_dev *bmi, uint8_t intf)
 
 void bmi2_error_codes_print_result(int8_t rslt)
 {
-    switch (rslt)
-    {
+    switch (rslt) {
         case BMI2_OK:
 
             /* Do nothing */
@@ -94,13 +90,15 @@ void bmi2_error_codes_print_result(int8_t rslt)
             break;
         case BMI2_E_NULL_PTR:
             printk(
-                "Error [%d] : Null pointer error. It occurs when the user tries to assign value (not address) to a pointer," " which has been initialized to NULL.\r\n",
+                "Error [%d] : Null pointer error. It occurs when the user tries to assign value (not address) to a pointer,"
+                " which has been initialized to NULL.\r\n",
                 rslt);
             break;
 
         case BMI2_E_COM_FAIL:
             printk(
-                "Error [%d] : Communication failure error. It occurs due to read/write operation failure and also due " "to power failure during communication\r\n",
+                "Error [%d] : Communication failure error. It occurs due to read/write operation failure and also due "
+                "to power failure during communication\r\n",
                 rslt);
             break;
 
@@ -111,7 +109,8 @@ void bmi2_error_codes_print_result(int8_t rslt)
 
         case BMI2_E_INVALID_SENSOR:
             printk(
-                "Error [%d] : Invalid sensor error. It occurs when there is a mismatch in the requested feature with the " "available one\r\n",
+                "Error [%d] : Invalid sensor error. It occurs when there is a mismatch in the requested feature with the "
+                "available one\r\n",
                 rslt);
             break;
 
@@ -123,43 +122,50 @@ void bmi2_error_codes_print_result(int8_t rslt)
 
         case BMI2_E_INVALID_INT_PIN:
             printk(
-                "Error [%d] : Invalid interrupt pin error. It occurs when the user tries to configure interrupt pins " "apart from INT1 and INT2\r\n",
+                "Error [%d] : Invalid interrupt pin error. It occurs when the user tries to configure interrupt pins "
+                "apart from INT1 and INT2\r\n",
                 rslt);
             break;
 
         case BMI2_E_OUT_OF_RANGE:
             printk(
-                "Error [%d] : Out of range error. It occurs when the data exceeds from filtered or unfiltered data from " "fifo and also when the range exceeds the maximum range for accel and gyro while performing FOC\r\n",
+                "Error [%d] : Out of range error. It occurs when the data exceeds from filtered or unfiltered data from "
+                "fifo and also when the range exceeds the maximum range for accel and gyro while performing FOC\r\n",
                 rslt);
             break;
 
         case BMI2_E_ACC_INVALID_CFG:
             printk(
-                "Error [%d] : Invalid Accel configuration error. It occurs when there is an error in accel configuration" " register which could be one among range, BW or filter performance in reg address 0x40\r\n",
+                "Error [%d] : Invalid Accel configuration error. It occurs when there is an error in accel configuration"
+                " register which could be one among range, BW or filter performance in reg address 0x40\r\n",
                 rslt);
             break;
 
         case BMI2_E_GYRO_INVALID_CFG:
             printk(
-                "Error [%d] : Invalid Gyro configuration error. It occurs when there is a error in gyro configuration" "register which could be one among range, BW or filter performance in reg address 0x42\r\n",
+                "Error [%d] : Invalid Gyro configuration error. It occurs when there is a error in gyro configuration"
+                "register which could be one among range, BW or filter performance in reg address 0x42\r\n",
                 rslt);
             break;
 
         case BMI2_E_ACC_GYR_INVALID_CFG:
             printk(
-                "Error [%d] : Invalid Accel-Gyro configuration error. It occurs when there is a error in accel and gyro" " configuration registers which could be one among range, BW or filter performance in reg address 0x40 " "and 0x42\r\n",
+                "Error [%d] : Invalid Accel-Gyro configuration error. It occurs when there is a error in accel and gyro"
+                " configuration registers which could be one among range, BW or filter performance in reg address 0x40 " "and 0x42\r\n",
                 rslt);
             break;
 
         case BMI2_E_CONFIG_LOAD:
             printk(
-                "Error [%d] : Configuration load error. It occurs when failure observed while loading the configuration " "into the sensor\r\n",
+                "Error [%d] : Configuration load error. It occurs when failure observed while loading the configuration "
+                "into the sensor\r\n",
                 rslt);
             break;
 
         case BMI2_E_INVALID_PAGE:
             printk(
-                "Error [%d] : Invalid page error. It occurs due to failure in writing the correct feature configuration " "from selected page\r\n",
+                "Error [%d] : Invalid page error. It occurs due to failure in writing the correct feature configuration "
+                "from selected page\r\n",
                 rslt);
             break;
 
@@ -171,19 +177,22 @@ void bmi2_error_codes_print_result(int8_t rslt)
 
         case BMI2_E_AUX_INVALID_CFG:
             printk(
-                "Error [%d] : Invalid AUX configuration error. It occurs when the auxiliary interface settings are not " "enabled properly\r\n",
+                "Error [%d] : Invalid AUX configuration error. It occurs when the auxiliary interface settings are not "
+                "enabled properly\r\n",
                 rslt);
             break;
 
         case BMI2_E_AUX_BUSY:
             printk(
-                "Error [%d] : AUX busy error. It occurs when the auxiliary interface buses are engaged while configuring" " the AUX\r\n",
+                "Error [%d] : AUX busy error. It occurs when the auxiliary interface buses are engaged while configuring"
+                " the AUX\r\n",
                 rslt);
             break;
 
         case BMI2_E_REMAP_ERROR:
             printk(
-                "Error [%d] : Remap error. It occurs due to failure in assigning the remap axes data for all the axes " "after change in axis position\r\n",
+                "Error [%d] : Remap error. It occurs due to failure in assigning the remap axes data for all the axes "
+                "after change in axis position\r\n",
                 rslt);
             break;
 
@@ -213,13 +222,15 @@ void bmi2_error_codes_print_result(int8_t rslt)
 
         case BMI2_E_ST_ALREADY_RUNNING:
             printk(
-                "Error [%d] : Self-test already running error. It occurs when the self-test is already running and " "another has been initiated\r\n",
+                "Error [%d] : Self-test already running error. It occurs when the self-test is already running and "
+                "another has been initiated\r\n",
                 rslt);
             break;
 
         case BMI2_E_CRT_READY_FOR_DL_FAIL_ABORT:
             printk(
-                "Error [%d] : CRT ready for download fail abort error. It occurs when download in CRT fails due to wrong " "address location\r\n",
+                "Error [%d] : CRT ready for download fail abort error. It occurs when download in CRT fails due to wrong "
+                "address location\r\n",
                 rslt);
             break;
 
@@ -241,7 +252,8 @@ void bmi2_error_codes_print_result(int8_t rslt)
 
         case BMI2_E_WRITE_CYCLE_ONGOING:
             printk(
-                "Error [%d] : Write cycle ongoing error. It occurs when the write cycle is already running and another " "has been initiated\r\n",
+                "Error [%d] : Write cycle ongoing error. It occurs when the write cycle is already running and another "
+                "has been initiated\r\n",
                 rslt);
             break;
 
@@ -253,7 +265,8 @@ void bmi2_error_codes_print_result(int8_t rslt)
 
         case BMI2_E_DATA_RDY_INT_FAILED:
             printk(
-                "Error [%d] : Data ready interrupt error. It occurs when the sample count exceeds the FOC sample limit " "and data ready status is not updated\r\n",
+                "Error [%d] : Data ready interrupt error. It occurs when the sample count exceeds the FOC sample limit "
+                "and data ready status is not updated\r\n",
                 rslt);
             break;
 

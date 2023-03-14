@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: BSD-3-Clause
  **/
 
-#ifndef _COMMON_H
-#define _COMMON_H
+#ifndef _BMI270_PORT_H
+#define _BMI270_PORT_H
 
 /*! CPP guard */
 #ifdef __cplusplus
@@ -108,15 +108,9 @@ int8_t bmi2_interface_init(struct bmi2_dev *bma, uint8_t intf);
  */
 void bmi2_error_codes_print_result(int8_t rslt);
 
-/*!
- *  @brief Deinitializes coines platform
- *
- *  @return void.
- */
-void bmi2_coines_deinit(void);
 
 #ifdef __cplusplus
 }
 #endif /* End of CPP guard */
 
-#endif /* _COMMON_H */
+#endif /* _BMI270_PORT_H */
