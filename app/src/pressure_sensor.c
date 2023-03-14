@@ -2,10 +2,12 @@
 #include <bmp5_port.h>
 #include <bmp5.h>
 #include <zephyr/logging/log.h>
-//#include <events/accel_event.h>
+#include <events/pressure_event.h>
 #include <zephyr/zbus/zbus.h>
 
 LOG_MODULE_REGISTER(bmp581_pressure, LOG_LEVEL_DBG);
+
+ZBUS_CHAN_DECLARE(pressure_data_chan);
 
 static int8_t set_config(struct bmp5_osr_odr_press_config *osr_odr_press_cfg, struct bmp5_dev *dev);
 static int bmp581_init_interrupt(void);
@@ -92,7 +94,6 @@ static void bmp581_gpio_callback(const struct device *dev,
 static void bmp581_work_cb(struct k_work *work)
 {
     int8_t rslt = 0;
-    uint8_t idx = 0;
     uint8_t int_status;
     struct bmp5_sensor_data sensor_data;
 
@@ -107,11 +108,13 @@ static void bmp581_work_cb(struct k_work *work)
         bmp5_error_codes_print_result("bmp5_get_sensor_data", rslt);
 
         if (rslt == BMP5_OK) {
-            printk("%d, %f, %f\n", idx, sensor_data.pressure, sensor_data.temperature);
+            struct pressure_event evt = {
+                .pressure = sensor_data.pressure,
+                .temperature = sensor_data.temperature
+            };
+            zbus_chan_pub(&pressure_data_chan, &evt, K_MSEC(250));
         }
     }
-
-    // TODO Callback
 
     setup_int1(true);
 }
