@@ -46,10 +46,10 @@ static void tick_draw_event_cb(lv_event_t *e)
         if (dsc->type == LV_METER_DRAW_PART_TICK && dsc->text != NULL) {
             if (dsc->value > 0) {
                 if ((dsc->value / 5) % 3 == 0) {
-                    dsc->label_dsc->opa = LV_OPA_90;
+                    dsc->label_dsc->color = lv_color_hex(0x7a84a0);
                     dsc->text_length = snprintf(dsc->text, 16, "%d", dsc->value / 5);
                 } else {
-                    dsc->label_dsc->opa = LV_OPA_60;
+                    dsc->label_dsc->color = lv_color_hex(0x40536d);
                     dsc->text_length = snprintf(dsc->text, 16, "%d", dsc->value / 5);
                 }
             } else {
@@ -65,6 +65,7 @@ static void add_clock(lv_obj_t *parent)
     clock_meter = lv_meter_create(parent);
     lv_obj_set_style_bg_opa(clock_meter, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_pad_all(clock_meter, 0, LV_PART_MAIN);
+    lv_obj_set_style_border_width(clock_meter, 0, LV_PART_MAIN);
     lv_obj_set_size(clock_meter, 240, 240);
     lv_obj_center(clock_meter);
 
@@ -72,7 +73,7 @@ static void add_clock(lv_obj_t *parent)
     lv_meter_scale_t *scale_hour = lv_meter_add_scale(clock_meter);
     lv_meter_set_scale_ticks(clock_meter, scale_hour, 61, 1, 10, lv_palette_main(LV_PALETTE_BLUE_GREY));
     lv_meter_set_scale_range(clock_meter, scale_hour, 0, 60, 360, 270);
-    lv_meter_set_scale_major_ticks(clock_meter, scale_hour, 5, 2, 20, lv_color_black(), 10); /*Every tick is major*/
+    lv_meter_set_scale_major_ticks(clock_meter, scale_hour, 5, 2, 20, lv_color_white(), 10); /*Every tick is major*/
 #ifdef USE_SECOND_HAND
     lv_meter_scale_t *scale_second = lv_meter_add_scale(clock_meter);
     lv_obj_set_style_pad_all(clock_meter, 0, LV_PART_MAIN);
@@ -125,6 +126,7 @@ static void add_battery_indicator(lv_obj_t *parent)
 
     battery_label = lv_label_create(parent);
     lv_label_set_text(battery_label, "-%");
+    lv_obj_set_style_text_color(battery_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
     lv_obj_align_to(battery_label, battery_arc, LV_ALIGN_CENTER, 0, -9);
 }
 
@@ -151,6 +153,7 @@ static void add_pulse_indicator(lv_obj_t *parent)
 
     hrm_label = lv_label_create(parent);
     lv_label_set_text(hrm_label, "-");
+    lv_obj_set_style_text_color(hrm_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
     lv_obj_align_to(hrm_label, hrm_arc, LV_ALIGN_CENTER, 0, -9);
 }
 
@@ -177,6 +180,7 @@ static void add_step_indicator(lv_obj_t *parent)
 
     step_label = lv_label_create(parent);
     lv_label_set_text(step_label, "-");
+    lv_obj_set_style_text_color(step_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
     lv_obj_align_to(step_label, step_arc, LV_ALIGN_CENTER, 0, -9);
 }
 
@@ -196,7 +200,6 @@ static void add_ble_connected_indicator(lv_obj_t *parent)
 
 static void add_notification_indicator(lv_obj_t *parent)
 {
-    static lv_style_t color_style;
     LV_IMG_DECLARE(notification_black);
 
     notification_icon = lv_img_create(parent);
@@ -205,11 +208,9 @@ static void add_notification_indicator(lv_obj_t *parent)
 
     notification_text = lv_label_create(parent);
     lv_label_set_text(notification_text, "-");
+    lv_obj_set_style_text_color(notification_text, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
     lv_obj_align_to(notification_text, parent, LV_ALIGN_CENTER, -10, -SMALL_WATCHFACE_CENTER_OFFSET - 25);
 
-    lv_style_init(&color_style);
-    lv_style_set_text_color(&color_style, lv_color_black());
-    lv_obj_add_style(notification_text, &color_style, 0);
     watchface_set_num_notifcations(0);
 }
 
@@ -217,6 +218,7 @@ static void add_weather_data(lv_obj_t *parent)
 {
     weather_temperature = lv_label_create(parent);
     lv_label_set_text(weather_temperature, "5");
+    lv_obj_set_style_text_color(weather_temperature, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
     lv_obj_align_to(weather_temperature, parent, LV_ALIGN_CENTER, -15, SMALL_WATCHFACE_CENTER_OFFSET + 33);
 
     weather_icon = lv_img_create(weather_temperature);
@@ -230,6 +232,7 @@ static void add_date(lv_obj_t *parent)
 {
     date_label = lv_label_create(parent);
     lv_label_set_text(date_label, "1");
+    lv_obj_set_style_text_color(date_label, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
     lv_obj_align_to(date_label, parent, LV_ALIGN_CENTER, SMALL_WATCHFACE_CENTER_OFFSET + 25, 7);
 
     day_label = lv_label_create(parent);
@@ -249,10 +252,11 @@ void watchface_show(void)
         lv_obj_clear_flag(root_page, LV_OBJ_FLAG_HIDDEN);
         return;
     }
-
+    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x161B22), LV_PART_MAIN);
     root_page = lv_obj_create(lv_scr_act());
     lv_obj_set_scrollbar_mode(root_page, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_bg_opa(root_page, LV_OPA_TRANSP, LV_PART_MAIN);
+
     lv_obj_set_style_border_width(root_page, 0, LV_PART_MAIN);
     lv_obj_set_size(root_page, 240, 240);
     lv_obj_align(root_page, LV_ALIGN_CENTER, 0, 0);
@@ -312,7 +316,6 @@ void watchface_set_step(int32_t value)
 
 void watchface_set_time(int32_t hour, int32_t minute, int32_t second)
 {
-
     if (!root_page) {
         return;
     }
