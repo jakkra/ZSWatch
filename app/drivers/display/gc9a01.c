@@ -54,9 +54,9 @@ LOG_MODULE_REGISTER(gc9a01, CONFIG_DISPLAY_LOG_LEVEL_ERR);
 #define GC9A01A_RDID2 0xDB ///< Read ID 2
 #define GC9A01A_RDID3 0xDC ///< Read ID 3
 
-#define ILI9341_GMCTRP1 0xE0 ///< Positive Gamma Correction
-#define ILI9341_GMCTRN1 0xE1 ///< Negative Gamma Correction
-#define ILI9341_FRAMERATE 0xE8 ///< Frame rate control
+#define GC9A01A1_GMCTRP1 0xE0 ///< Positive Gamma Correction
+#define GC9A01A1_GMCTRN1 0xE1 ///< Negative Gamma Correction
+#define GC9A01A_FRAMERATE 0xE8 ///< Frame rate control
 
 #define GC9A01A_INREGEN2 0xEF ///< Inter register enable 2
 #define GC9A01A_GAMMA1 0xF0 ///< Set gamma 1
@@ -89,8 +89,6 @@ LOG_MODULE_REGISTER(gc9a01, CONFIG_DISPLAY_LOG_LEVEL_ERR);
 #define SLPIN               0x10
 #define SLPOUT              0x11
 
-#define RGB565(r, g, b)         (((r & 0xF8) << 8) | ((g & 0xFC) << 3) | ((b & 0xF8) >> 3))
-
 static const uint8_t initcmd[] = {
     GC9A01A_INREGEN2, 0,
     0xEB, 1, 0x14,
@@ -110,17 +108,17 @@ static const uint8_t initcmd[] = {
     0x8E, 1, 0xFF,
     0x8F, 1, 0xFF,
     0xB6, 2, 0x00, 0x00,
-    GC9A01A_MADCTL, 1, MADCTL_MX | MADCTL_BGR,
-    GC9A01A_PIXFMT, 1, COLOR_MODE_16_BIT, //0x06,
+    GC9A01A_MADCTL, 1,  MADCTL_MV | MADCTL_MY | MADCTL_MX | MADCTL_BGR,
+    GC9A01A_PIXFMT, 1, COLOR_MODE_16_BIT,
     0x90, 4, 0x08, 0x08, 0x08, 0x08,
     0xBD, 1, 0x06,
     0xBC, 1, 0x00,
     0xFF, 3, 0x60, 0x01, 0x04,
-    GC9A01A1_VREG1A, 0x13,
-    GC9A01A1_VREG1B, 0x13,
-    GC9A01A1_VREG2A, 0x22,
+    GC9A01A1_VREG1A, 1, 0x13,
+    GC9A01A1_VREG1B, 1, 0x13,
+    GC9A01A1_VREG2A, 1, 0x22,
     0xBE, 1, 0x11,
-    ILI9341_GMCTRN1, 2, 0x10, 0x0E,
+    GC9A01A1_GMCTRN1, 2, 0x10, 0x0E,
     0xDF, 3, 0x21, 0x0c, 0x02,
     GC9A01A_GAMMA1, 6, 0x45, 0x09, 0x08, 0x08, 0x26, 0x2A,
     GC9A01A_GAMMA2, 6, 0x43, 0x70, 0x72, 0x36, 0x37, 0x6F,
@@ -130,7 +128,7 @@ static const uint8_t initcmd[] = {
     0xAE, 1, 0x77,
     0xCD, 1, 0x63,
     0x70, 9, 0x07, 0x07, 0x04, 0x0E, 0x0F, 0x09, 0x07, 0x08, 0x03,
-    ILI9341_FRAMERATE, 1, 0x34,
+    GC9A01A_FRAMERATE, 1, 0x34,
     0x62, 12, 0x18, 0x0D, 0x71, 0xED, 0x70, 0x70,
     0x18, 0x0F, 0x71, 0xEF, 0x70, 0x70,
     0x63, 12, 0x18, 0x11, 0x71, 0xF1, 0x70, 0x70,
@@ -141,7 +139,7 @@ static const uint8_t initcmd[] = {
     0x74, 7, 0x10, 0x85, 0x80, 0x00, 0x00, 0x4E, 0x00,
     0x98, 2, 0x3e, 0x07,
     GC9A01A_TEON, 1, GC9A01A_INVOFF,
-    //GC9A01A_INVON, 0,
+    GC9A01A_INVON, 0,
     GC9A01A_SLPOUT, 0x80, // Exit sleep
     GC9A01A_DISPON, 0x80, // Display on
     0x00                  // End of list
