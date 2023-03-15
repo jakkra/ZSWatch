@@ -7,27 +7,48 @@
 
 LOG_MODULE_REGISTER(accel, LOG_LEVEL_DBG);
 
-ZBUS_CHAN_DECLARE(accel_data_chan);
-
-static int8_t set_accel_gyro_config(struct bmi2_dev *bmi2_dev);
-
-static void send_accel_event(accelerometer_evt_t *data);
-
-static struct bmi2_dev bmi2_dev;
-
 /*! Earth's gravity in m/s^2 */
 #define GRAVITY_EARTH  (9.80665f)
 
-/*! Macros to select the sensors                   */
-#define ACCEL          UINT8_C(0x00)
-#define GYRO           UINT8_C(0x01)
+ZBUS_CHAN_DECLARE(accel_data_chan);
+
+typedef void(*feature_config_func)(struct bmi2_sens_config *config);
+
+typedef struct bmi270_feature_config_set_t {
+    uint8_t                 sensor_id;
+    feature_config_func    cfg_func;
+} bmi270_feature_config_set_t;
+
+static int8_t configure_enable_all_bmi270(struct bmi2_dev *bmi2_dev);
+static void configue_accel(struct bmi2_sens_config *config);
+static void configue_gyro(struct bmi2_sens_config *config);
+static void configure_step_counter(struct bmi2_sens_config *config);
+
+static int bmi270_init_interrupt(void);
+static void bmi270_int1_work_cb(struct k_work *work);
+static void bmi270_int2_work_cb(struct k_work *work);
+
+// List of the features used on the BMI270.
+static bmi270_feature_config_set_t bmi270_enabled_features[] = {
+    { .sensor_id = BMI2_ACCEL, .cfg_func = configue_accel},
+    { .sensor_id = BMI2_GYRO, .cfg_func = configue_gyro},
+    { .sensor_id = BMI2_STEP_COUNTER, .cfg_func = configure_step_counter},
+};
+
+static struct bmi2_dev bmi2_dev;
+
+// Assumes only one sensor
+static const struct gpio_dt_spec int1_gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(bmi270), int1_gpios);
+static const struct gpio_dt_spec int2_gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(bmi270), int2_gpios);
+static K_WORK_DEFINE(int1_work, bmi270_int1_work_cb);
+static K_WORK_DEFINE(int2_work, bmi270_int2_work_cb);
+static struct gpio_callback gpio_int1_cb;
+static struct gpio_callback gpio_int2_cb;
+
 
 int accelerometer_init(void)
 {
     int8_t rslt;
-    
-    /* Assign accel and gyro sensor to variable. */
-    uint8_t sensor_list[2] = { BMI2_ACCEL, BMI2_GYRO };
 
     rslt = bmi2_interface_init(&bmi2_dev, BMI2_I2C_INTF);
     bmi2_error_codes_print_result(rslt);
@@ -38,15 +59,16 @@ int accelerometer_init(void)
 
     if (rslt == BMI2_OK) {
         /* Accel and gyro configuration settings. */
-        rslt = set_accel_gyro_config(&bmi2_dev);
+        rslt = configure_enable_all_bmi270(&bmi2_dev);
         bmi2_error_codes_print_result(rslt);
+    }
 
-        if (rslt == BMI2_OK) {
-            /* NOTE:
-             * Accel and Gyro enable must be done after setting configurations
-             */
-            rslt = bmi270_sensor_enable(sensor_list, 2, &bmi2_dev);
-            bmi2_error_codes_print_result(rslt);
+    if (rslt == BMI2_OK) {
+        if (int1_gpio.port) {
+            if (bmi270_init_interrupt() < 0) {
+                LOG_DBG("Could not initialize interrupts");
+                return -EIO;
+            }
         }
     }
 
@@ -86,159 +108,238 @@ int accelerometer_reset_step_count(void)
     return -ENOENT;
 }
 
-/*
-static void data_ready_xyz(const struct device *dev, const struct sensor_trigger *trig)
+static inline void setup_int1(bool enable)
 {
-    int err;
-    int16_t x;
-    int16_t y;
-    int16_t z;
-    int16_t steps;
-    accelerometer_evt_t evt;
-    struct sensor_value acc_val[3];
-
-    __ASSERT(device_is_ready(sensor), "Accelerometer not initialized correctly");
-
-    err = lis2ds12_all_sources_get(ctx, &isr_srcs);
-    if (isr_srcs.tap_src.double_tap) {
-        LOG_DBG("Double TAP ISR");
-        evt.type = ACCELEROMETER_EVT_TYPE_DOOUBLE_TAP;
-        if (accel_evt_cb) {
-            accel_evt_cb(&evt);
-        }
-        send_accel_event(&evt);
-    } else if (isr_srcs.tap_src.single_tap) {
-        LOG_DBG("Single TAP ISR");
-    } else if (isr_srcs.func_ck_gate.step_detect) {
-        accelerometer_fetch_num_steps(&steps);
-        LOG_DBG("Step Detect: %d", steps);
-        evt.type = ACCELEROMETER_EVT_TYPE_STEP;
-        evt.data.step.count = steps;
-        if (accel_evt_cb) {
-            accel_evt_cb(&evt);
-        }
-        send_accel_event(&evt);
-    } else if (isr_srcs.func_ck_gate.tilt_int) {
-        LOG_DBG("Tilt Detected");
-        evt.type = ACCELEROMETER_EVT_TYPE_TILT;
-        if (accel_evt_cb) {
-            accel_evt_cb(&evt);
-        }
-        send_accel_event(&evt);
-    } else if (isr_srcs.status_dup.drdy) {
-        LOG_DBG("DRDY ISR");
-        err = sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
-        if (!err) {
-            err = sensor_channel_get(sensor, SENSOR_CHAN_ACCEL_XYZ, acc_val);
-            if (err < 0) {
-                LOG_DBG("\nERROR: Unable to read accel XYZ:%d\n", err);
-            } else {
-                x = (int16_t)(sensor_value_to_double(&acc_val[0]) * (32768 / 16));
-                y = (int16_t)(sensor_value_to_double(&acc_val[1]) * (32768 / 16));
-                z = (int16_t)(sensor_value_to_double(&acc_val[2]) * (32768 / 16));
-                evt.type = ACCELEROMETER_EVT_TYPE_XYZ;
-                evt.data.xyz.x = x;
-                evt.data.xyz.y = y;
-                evt.data.xyz.z = z;
-                if (accel_evt_cb) {
-                    accel_evt_cb(&evt);
-                }
-                send_accel_event(&evt);
-            }
-        }
-    } else {
-        LOG_WRN("Unknown ISR");
-    }
-
-}
-*/
-
-static void send_accel_event(accelerometer_evt_t *data)
-{
-    struct accel_event evt;
-    memcpy(&evt.data, data, sizeof(accelerometer_evt_t));
-    zbus_chan_pub(&accel_data_chan, &evt, K_MSEC(250));
+    gpio_pin_interrupt_configure_dt(&int1_gpio,
+                                    (enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE));
 }
 
-/*!
- * @brief This internal API is used to set configurations for accel and gyro.
- */
-static int8_t set_accel_gyro_config(struct bmi2_dev *bmi2_dev)
+static inline void setup_int2(bool enable)
 {
-    /* Status of api are returned to this variable. */
+    gpio_pin_interrupt_configure_dt(&int2_gpio,
+                                    (enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE));
+}
+
+static void bmi270_gpio_int1_callback(const struct device *dev,
+                                      struct gpio_callback *cb, uint32_t pins)
+{
+    ARG_UNUSED(pins);
+
+    setup_int1(false);
+    k_work_submit(&int1_work);
+}
+
+static void bmi270_gpio_int2_callback(const struct device *dev,
+                                      struct gpio_callback *cb, uint32_t pins)
+{
+    ARG_UNUSED(pins);
+
+    setup_int2(false);
+    k_work_submit(&int2_work);
+}
+
+static void bmi270_int1_work_cb(struct k_work *work)
+{
+    // TODO readout data and handle
+
+    setup_int1(true);
+}
+
+static void bmi270_int2_work_cb(struct k_work *work)
+{
     int8_t rslt;
+    uint16_t int_status;
+    struct bmi2_feat_sensor_data sensor_data = { 0 };
 
-    /* Structure to define accelerometer and gyro configuration. */
-    struct bmi2_sens_config config[2];
-
-    /* Configure the type of feature. */
-    config[ACCEL].type = BMI2_ACCEL;
-    config[GYRO].type = BMI2_GYRO;
-
-    /* Get default configurations for the type of feature selected. */
-    rslt = bmi270_get_sensor_config(config, 2, bmi2_dev);
+    rslt = bmi2_get_int_status(&int_status, &bmi2_dev);
     bmi2_error_codes_print_result(rslt);
 
-    /* Map data ready interrupt to interrupt pin. */
+    /* To check the interrupt status of the step counter. */
+    if (int_status & BMI270_STEP_CNT_STATUS_MASK) {
+        printk("Step counter interrupt occurred when watermark level (20 steps) is reached\n");
+
+        /* Get step counter output. */
+        rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
+        bmi2_error_codes_print_result(rslt);
+
+        /* Print the step counter output. */
+        printk("No of steps counted  = %lu",
+               (long unsigned int)sensor_data.sens_data.step_counter_output);
+        
+        // TODO send the data event on the bus
+    }
+    setup_int2(true);
+}
+
+static int bmi270_init_interrupt(void)
+{
+    /* setup data ready and feature gpio interrupt */
+    if (!device_is_ready(int1_gpio.port)) {
+        LOG_ERR("GPIO device not ready");
+        return -ENODEV;
+    }
+    if (!device_is_ready(int2_gpio.port)) {
+        LOG_ERR("GPIO device not ready");
+        return -ENODEV;
+    }
+
+    gpio_pin_configure_dt(&int1_gpio, GPIO_INPUT);
+    gpio_pin_configure_dt(&int2_gpio, GPIO_INPUT);
+
+    gpio_init_callback(&gpio_int1_cb,
+                       bmi270_gpio_int1_callback,
+                       BIT(int1_gpio.pin));
+    gpio_init_callback(&gpio_int2_cb,
+                       bmi270_gpio_int2_callback,
+                       BIT(int2_gpio.pin));
+
+    if (gpio_add_callback(int1_gpio.port, &gpio_int1_cb) < 0) {
+        LOG_DBG("Could not set gpio1 callback");
+        return -EIO;
+    }
+    if (gpio_add_callback(int2_gpio.port, &gpio_int2_cb) < 0) {
+        LOG_DBG("Could not set gpio2 callback");
+        return -EIO;
+    }
+
+    setup_int1(true);
+    setup_int2(true);
+
+    return 0;
+}
+
+static void configue_accel(struct bmi2_sens_config *config)
+{
+    /* NOTE: The user can change the following configuration parameters according to their requirement. */
+    /* Set Output Data Rate */
+    config->cfg.acc.odr = BMI2_ACC_ODR_200HZ;
+
+    /* Gravity range of the sensor (+/- 2G, 4G, 8G, 16G). */
+    config->cfg.acc.range = BMI2_ACC_RANGE_2G;
+
+    /* The bandwidth parameter is used to configure the number of sensor samples that are averaged
+        * if it is set to 2, then 2^(bandwidth parameter) samples
+        * are averaged, resulting in 4 averaged samples.
+        * Note1 : For more information, refer the datasheet.
+        * Note2 : A higher number of averaged samples will result in a lower noise level of the signal, but
+        * this has an adverse effect on the power consumed.
+        */
+    config->cfg.acc.bwp = BMI2_ACC_NORMAL_AVG4;
+
+    /* Enable the filter performance mode where averaging of samples
+        * will be done based on above set bandwidth and ODR.
+        * There are two modes
+        *  0 -> Ultra low power mode
+        *  1 -> High performance mode(Default)
+        * For more info refer datasheet.
+        */
+    config->cfg.acc.filter_perf = BMI2_PERF_OPT_MODE;
+}
+
+static void configue_gyro(struct bmi2_sens_config *config)
+{
+    /* The user can change the following configuration parameters according to their requirement. */
+    /* Set Output Data Rate */
+    config->cfg.gyr.odr = BMI2_GYR_ODR_200HZ;
+
+    /* Gyroscope Angular Rate Measurement Range.By default the range is 2000dps. */
+    config->cfg.gyr.range = BMI2_GYR_RANGE_2000;
+
+    /* Gyroscope bandwidth parameters. By default the gyro bandwidth is in normal mode. */
+    config->cfg.gyr.bwp = BMI2_GYR_NORMAL_MODE;
+
+    /* Enable/Disable the noise performance mode for precision yaw rate sensing
+        * There are two modes
+        *  0 -> Ultra low power mode(Default)
+        *  1 -> High performance mode
+        */
+    config->cfg.gyr.noise_perf = BMI2_POWER_OPT_MODE;
+
+    /* Enable/Disable the filter performance mode where averaging of samples
+        * will be done based on above set bandwidth and ODR.
+        * There are two modes
+        *  0 -> Ultra low power mode
+        *  1 -> High performance mode(Default)
+        */
+    config->cfg.gyr.filter_perf = BMI2_PERF_OPT_MODE;
+}
+
+static void configure_step_counter(struct bmi2_sens_config *config)
+{
+    config->cfg.step_counter.watermark_level = 1;
+}
+
+static bool is_sensor_feature(uint8_t sensor_id)
+{
+    switch (sensor_id) {
+        case BMI2_SIG_MOTION:
+        case BMI2_WRIST_GESTURE:
+        case BMI2_ANY_MOTION:
+        case BMI2_NO_MOTION:
+        case BMI2_STEP_COUNTER:
+        case BMI2_STEP_DETECTOR:
+        case BMI2_STEP_ACTIVITY:
+        case BMI2_WRIST_WEAR_WAKE_UP:
+            return true;
+        default:
+            return false;
+    }
+}
+
+static int8_t configure_enable_all_bmi270(struct bmi2_dev *bmi2_dev)
+{
+    int8_t rslt;
+
+    // Structure to define all sensors and their configs
+    struct bmi2_sens_config config[ARRAY_SIZE(bmi270_enabled_features)];
+
+    // To enable the sensors the Bosch API expects a list of all features.
+    uint8_t all_sensors[ARRAY_SIZE(bmi270_enabled_features)];
+
+    // There is a difference between a "sensor" and a "feature".
+    // Accel, Gyro are sensors, but step counter is a feature.
+    // We map sensor INT to INT1 pin and feature ISR to INT2 pin.
+    // The API needs a list of all those features to do that map.
+    struct bmi2_sens_int_config all_features[ARRAY_SIZE(bmi270_enabled_features)];
+    uint8_t num_features = 0;
+
+    for (int i = 0; i < ARRAY_SIZE(bmi270_enabled_features); i++) {
+        config[i].type = bmi270_enabled_features[i].sensor_id;
+        all_sensors[i] = bmi270_enabled_features[i].sensor_id;
+        if (is_sensor_feature(bmi270_enabled_features[i].sensor_id)) {
+            all_features[num_features].type = bmi270_enabled_features[i].sensor_id;
+            all_features[num_features].hw_int_pin = BMI2_INT2;
+            num_features++;
+        }
+    }
+
+    // Get default configurations for the type of feature selected.
+    rslt = bmi270_get_sensor_config(config, ARRAY_SIZE(bmi270_enabled_features), bmi2_dev);
+    bmi2_error_codes_print_result(rslt);
+
+    // Map data ready interrupt to interrupt pin.
     rslt = bmi2_map_data_int(BMI2_DRDY_INT, BMI2_INT1, bmi2_dev);
     bmi2_error_codes_print_result(rslt);
 
-    if (rslt == BMI2_OK)
-    {
-        /* NOTE: The user can change the following configuration parameters according to their requirement. */
-        /* Set Output Data Rate */
-        config[ACCEL].cfg.acc.odr = BMI2_ACC_ODR_200HZ;
+    for (int i = 0; i < ARRAY_SIZE(bmi270_enabled_features); i++) {
+        bmi270_enabled_features[i].cfg_func(&config[i]);
+    }
 
-        /* Gravity range of the sensor (+/- 2G, 4G, 8G, 16G). */
-        config[ACCEL].cfg.acc.range = BMI2_ACC_RANGE_2G;
+    rslt = bmi270_set_sensor_config(config, ARRAY_SIZE(bmi270_enabled_features), bmi2_dev);
+    bmi2_error_codes_print_result(rslt);
 
-        /* The bandwidth parameter is used to configure the number of sensor samples that are averaged
-         * if it is set to 2, then 2^(bandwidth parameter) samples
-         * are averaged, resulting in 4 averaged samples.
-         * Note1 : For more information, refer the datasheet.
-         * Note2 : A higher number of averaged samples will result in a lower noise level of the signal, but
-         * this has an adverse effect on the power consumed.
-         */
-        config[ACCEL].cfg.acc.bwp = BMI2_ACC_NORMAL_AVG4;
-
-        /* Enable the filter performance mode where averaging of samples
-         * will be done based on above set bandwidth and ODR.
-         * There are two modes
-         *  0 -> Ultra low power mode
-         *  1 -> High performance mode(Default)
-         * For more info refer datasheet.
-         */
-        config[ACCEL].cfg.acc.filter_perf = BMI2_PERF_OPT_MODE;
-
-        /* The user can change the following configuration parameters according to their requirement. */
-        /* Set Output Data Rate */
-        config[GYRO].cfg.gyr.odr = BMI2_GYR_ODR_200HZ;
-
-        /* Gyroscope Angular Rate Measurement Range.By default the range is 2000dps. */
-        config[GYRO].cfg.gyr.range = BMI2_GYR_RANGE_2000;
-
-        /* Gyroscope bandwidth parameters. By default the gyro bandwidth is in normal mode. */
-        config[GYRO].cfg.gyr.bwp = BMI2_GYR_NORMAL_MODE;
-
-        /* Enable/Disable the noise performance mode for precision yaw rate sensing
-         * There are two modes
-         *  0 -> Ultra low power mode(Default)
-         *  1 -> High performance mode
-         */
-        config[GYRO].cfg.gyr.noise_perf = BMI2_POWER_OPT_MODE;
-
-        /* Enable/Disable the filter performance mode where averaging of samples
-         * will be done based on above set bandwidth and ODR.
-         * There are two modes
-         *  0 -> Ultra low power mode
-         *  1 -> High performance mode(Default)
-         */
-        config[GYRO].cfg.gyr.filter_perf = BMI2_PERF_OPT_MODE;
-
-        /* Set the accel and gyro configurations. */
-        rslt = bmi270_set_sensor_config(config, 2, bmi2_dev);
+    if (rslt == BMI2_OK) {
+        /* NOTE:
+        * Accel and Gyro enable must be done after setting configurations.
+        */
+        rslt = bmi270_sensor_enable(all_sensors, ARRAY_SIZE(all_sensors), bmi2_dev);
         bmi2_error_codes_print_result(rslt);
     }
 
-    return rslt;
+    if (rslt == BMI2_OK) {
+        rslt = bmi270_map_feat_int(all_features, num_features, bmi2_dev);
+        bmi2_error_codes_print_result(rslt);
+    }
+
+    return 0;
 }

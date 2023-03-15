@@ -21,8 +21,6 @@ LOG_MODULE_REGISTER(BMP581, CONFIG_SENSOR_LOG_LEVEL);
 /*! Macro that defines read write length */
 #define READ_WRITE_LEN     UINT8_C(46)
 
-static int bmp581_init_interrupt(const struct device *dev);
-
 static const struct device *device;
 
 int bmp581_init(const struct device *dev)
@@ -40,7 +38,7 @@ int bmp581_init(const struct device *dev)
 BMP5_INTF_RET_TYPE bmp5_i2c_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr)
 {
     const struct bmp581_config *config = device->config;
-    return i2c_burst_read_dt(&config->i2c, (uint16_t)reg_addr, reg_data, len);
+    return i2c_burst_read_dt(&config->i2c, reg_addr, reg_data, len);
 }
 
 BMP5_INTF_RET_TYPE bmp5_i2c_write(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr)
@@ -57,10 +55,8 @@ void bmp5_delay_us(uint32_t period, void *intf_ptr)
 int8_t bmp5_interface_init(struct bmp5_dev *bmp5_dev, uint8_t intf)
 {
     int8_t rslt = BMP5_OK;
-    const struct bmp581_config *config = device->config;
 
     if (bmp5_dev  != NULL) {
-        printf("I2C Interface\n");
         bmp5_dev->read = bmp5_i2c_read;
         bmp5_dev->write = bmp5_i2c_write;
         bmp5_dev->intf = BMP5_I2C_INTF;

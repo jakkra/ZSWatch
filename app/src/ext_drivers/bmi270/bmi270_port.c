@@ -1,3 +1,5 @@
+#define DT_DRV_COMPAT bosch_bmi270_ext
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -6,35 +8,40 @@
 #include "bmi2_defs.h"
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log.h>
+
+LOG_MODULE_REGISTER(BMI270, CONFIG_SENSOR_LOG_LEVEL);
 
 #define BMI2XY_SHUTTLE_ID  UINT16_C(0x1B8)
 
 /*! Macro that defines read write length */
 #define READ_WRITE_LEN     UINT8_C(46)
 
-static uint8_t dev_addr;
+static const struct device *device = NULL;
 
-struct config {
-    const struct device *i2c_master;
-};
+int bmi270_port_init(const struct device *dev)
+{
+    device = dev;
+    const struct bmi270_config *config = device->config;
+    if (!device_is_ready(config->i2c.bus)) {
+        LOG_ERR("I2C bus device not ready");
+        return -ENODEV;
+    }
 
-static const struct config config = {
-    .i2c_master = DEVICE_DT_GET(DT_BUS(DT_NODELABEL(bmi270))),
-};
-
+    return 0;
+}
 
 BMI2_INTF_RETURN_TYPE bmi2_i2c_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr)
 {
-    uint8_t dev_addr = *(uint8_t *)intf_ptr;
-
-    return i2c_burst_read(config.i2c_master, dev_addr, (uint16_t)reg_addr, reg_data, len);
+    const struct bmi270_config *config = device->config;
+    return i2c_burst_read_dt(&config->i2c, reg_addr, reg_data, len);
 }
 
 BMI2_INTF_RETURN_TYPE bmi2_i2c_write(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr)
 {
-    uint8_t dev_addr = *(uint8_t *)intf_ptr;
-
-    return i2c_burst_write(config.i2c_master, dev_addr, reg_addr, reg_data, len);
+    const struct bmi270_config *config = device->config;
+    return i2c_burst_write_dt(&config->i2c, reg_addr, reg_data, len);
 }
 
 void bmi2_delay_us(uint32_t period, void *intf_ptr)
@@ -42,36 +49,23 @@ void bmi2_delay_us(uint32_t period, void *intf_ptr)
     k_usleep(period);
 }
 
-int8_t bmi2_interface_init(struct bmi2_dev *bmi, uint8_t intf)
+int8_t bmi2_interface_init(struct bmi2_dev *bmi_dev, uint8_t intf)
 {
     int8_t rslt = BMI2_OK;
 
-    if (bmi != NULL) {
-        printk("I2C Interface \n");
-
-        /* To initialize the user I2C function */
-        dev_addr = BMI2_I2C_PRIM_ADDR;
-        bmi->intf = BMI2_I2C_INTF;
-        bmi->read = bmi2_i2c_read;
-        bmi->write = bmi2_i2c_write;
-
-        /* Assign device address to interface pointer */
-        bmi->intf_ptr = &dev_addr;
-
-        /* Configure delay in microseconds */
-        bmi->delay_us = bmi2_delay_us;
-
-        /* Configure max read/write length (in bytes) ( Supported length depends on target machine) */
-        bmi->read_write_len = READ_WRITE_LEN;
-
+    if (bmi_dev != NULL) {
+        bmi_dev->intf = BMI2_I2C_INTF;
+        bmi_dev->read = bmi2_i2c_read;
+        bmi_dev->write = bmi2_i2c_write;
+        bmi_dev->delay_us = bmi2_delay_us;
+        bmi_dev->read_write_len = READ_WRITE_LEN;
         /* Assign to NULL to load the default config file. */
-        bmi->config_file_ptr = NULL;
+        bmi_dev->config_file_ptr = NULL;
     } else {
         rslt = BMI2_E_NULL_PTR;
     }
 
     return rslt;
-
 }
 
 void bmi2_error_codes_print_result(int8_t rslt)
@@ -281,3 +275,19 @@ void bmi2_error_codes_print_result(int8_t rslt)
             break;
     }
 }
+
+#define BMI270_DEFINE(inst)                                 \
+    static struct bmi270_data bmi270_data_##inst;                       \
+                                                \
+    static const struct bmi270_config bmi270_config##inst = {               \
+        .i2c = I2C_DT_SPEC_INST_GET(inst),                      \
+        IF_ENABLED(CONFIG_BMI270_TRIGGER,                       \
+               (.int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),  \
+                .int2_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))    \
+    };                                          \
+                                                \
+    SENSOR_DEVICE_DT_INST_DEFINE(inst, bmi270_port_init, NULL, &bmi270_data_##inst,      \
+                  &bmi270_config##inst, POST_KERNEL,                \
+                  CONFIG_SENSOR_INIT_PRIORITY, &bmi270_driver_api);         \
+
+DT_INST_FOREACH_STATUS_OKAY(BMI270_DEFINE)

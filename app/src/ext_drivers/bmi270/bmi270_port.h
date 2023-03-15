@@ -13,7 +13,43 @@ extern "C" {
 #endif
 
 #include <stdio.h>
+#include <zephyr/device.h>
+#include <zephyr/types.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
 #include "BMI270-Sensor_API/bmi2.h"
+#include <bmi270.h>
+
+#define CONFIG_BMI270_TRIGGER
+#define CONFIG_BMI270_TRIGGER_GLOBAL_THREAD
+
+struct bmi270_data {
+    int16_t ax, ay, az, gx, gy, gz;
+    uint8_t acc_range, acc_odr, gyr_odr;
+    uint16_t gyr_range;
+};
+
+struct bmi270_config {
+    struct i2c_dt_spec i2c;
+#ifdef CONFIG_BMI270_TRIGGER
+    struct gpio_dt_spec int1_gpio;
+    struct gpio_dt_spec int2_gpio;
+#endif
+};
+
+static const struct sensor_driver_api bmi270_driver_api = {
+    /*
+    #if CONFIG_BMP581_TRIGGER
+        .attr_set = bmi270_attr_set,
+        .trigger_set = bmi270_trigger_set,
+    #endif
+        .sample_fetch = bmi270_sample_fetch,
+        .channel_get = bmi270_channel_get,
+    */
+};
+
+typedef void(*bmi270_on_isr)(void);
 
 /*!
  *  @brief Function for reading the sensor's registers through I2C bus.
