@@ -389,8 +389,8 @@ static void ble_data_cb(ble_comm_cb_data_t *cb)
 
 static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
 {
-	const struct ble_data_event *event = zbus_chan_const_msg(chan);
-	switch (event->data.type) {
+    const struct ble_data_event *event = zbus_chan_const_msg(chan);
+    switch (event->data.type) {
         case BLE_COMM_DATA_TYPE_NOTIFY:
             // TODO, this one not supported yet through events
             // Handled in ble_comm callback for now
@@ -416,32 +416,32 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
 
 static void zbus_accel_data_callback(const struct zbus_channel *chan)
 {
-	const struct accel_event *event = zbus_chan_const_msg(chan);
+    const struct accel_event *event = zbus_chan_const_msg(chan);
     switch (event->data.type) {
-    case ACCELEROMETER_EVT_TYPE_DOOUBLE_TAP: {
-        if (vibrator_on || (watch_state != WATCHFACE_STATE)) {
-            // Vibrator causes false double tap detections.
-            // Need more work to not detect when vibration is running, hence for now only allow on watchface page
+        case ACCELEROMETER_EVT_TYPE_DOOUBLE_TAP: {
+            if (vibrator_on || (watch_state != WATCHFACE_STATE)) {
+                // Vibrator causes false double tap detections.
+                // Need more work to not detect when vibration is running, hence for now only allow on watchface page
+                break;
+            }
+            display_on = !display_on;
+            if (display_on) {
+                display_control_set_brightness(100);
+            } else {
+                display_control_set_brightness(1);
+            }
             break;
         }
-        display_on = !display_on;
-        if (display_on) {
-            display_control_set_brightness(100);
-        } else {
-            display_control_set_brightness(1);
+        case ACCELEROMETER_EVT_TYPE_XYZ: {
+            LOG_ERR("x: %d y: %d z: %d", event->data.data.xyz.x, event->data.data.xyz.y, event->data.data.xyz.z);
+            break;
         }
-        break;
-    }
-    case ACCELEROMETER_EVT_TYPE_XYZ: {
-        LOG_ERR("x: %d y: %d z: %d", event->data.data.xyz.x, event->data.data.xyz.y, event->data.data.xyz.z);
-        break;
-    }
-    case ACCELEROMETER_EVT_TYPE_TILT: {
-        // Tilt detect not working as we want yet, so don't do for now.
-        //display_control_set_brightness(100);
-        break;
-    }
-    default:
-        break;
+        case ACCELEROMETER_EVT_TYPE_TILT: {
+            // Tilt detect not working as we want yet, so don't do for now.
+            //display_control_set_brightness(100);
+            break;
+        }
+        default:
+            break;
     }
 }
