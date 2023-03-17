@@ -10,6 +10,8 @@ typedef enum accelerometer_evt_type_t {
     ACCELEROMETER_EVT_TYPE_STEP_ACTIVITY,
     ACCELEROMETER_EVT_TYPE_TILT,
     ACCELEROMETER_EVT_TYPE_GESTURE,
+    ACCELEROMETER_EVT_TYPE_SIGNIFICANT_MOTION,
+    ACCELEROMETER_EVT_TYPE_WRIST_WAKEUP
 } accelerometer_evt_type_t;
 
 typedef enum accelerometer_data_step_activity_t {

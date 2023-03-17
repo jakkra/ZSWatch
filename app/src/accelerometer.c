@@ -27,6 +27,7 @@ static void configue_gyro(struct bmi2_sens_config *config);
 static void configure_step_counter(struct bmi2_sens_config *config);
 static void configure_anymotion(struct bmi2_sens_config *config);
 static void configure_gesture_detect(struct bmi2_sens_config *config);
+static void configure_wrist_wakeup(struct bmi2_sens_config *config);
 
 static int bmi270_init_interrupt(void);
 static void bmi270_int1_work_cb(struct k_work *work);
@@ -41,6 +42,7 @@ static bmi270_feature_config_set_t bmi270_enabled_features[] = {
     { .sensor_id = BMI2_ANY_MOTION, .cfg_func = configure_anymotion},
     { .sensor_id = BMI2_STEP_ACTIVITY, .cfg_func = NULL},
     { .sensor_id = BMI2_WRIST_GESTURE, .cfg_func = configure_gesture_detect},
+    { .sensor_id = BMI2_WRIST_WEAR_WAKE_UP, .cfg_func = configure_wrist_wakeup},
 };
 
 static struct bmi2_dev bmi2_dev;
@@ -181,6 +183,8 @@ static void bmi270_int2_work_cb(struct k_work *work)
 
     if (int_status & BMI270_SIG_MOT_STATUS_MASK) {
         LOG_DBG("INT: BMI270_SIG_MOT_STATUS_MASK\n");
+        evt.type = ACCELEROMETER_EVT_TYPE_SIGNIFICANT_MOTION;
+        send_accel_event(&evt);
     } else if (int_status & BMI270_STEP_CNT_STATUS_MASK) {
         LOG_DBG("INT: BMI270_STEP_CNT_STATUS_MASK\n");
         sensor_data.type = BMI2_STEP_COUNTER;
@@ -202,6 +206,8 @@ static void bmi270_int2_work_cb(struct k_work *work)
         send_accel_event(&evt);
     } else if (int_status & BMI270_WRIST_WAKE_UP_STATUS_MASK) {
         LOG_DBG("INT: BMI270_WRIST_WAKE_UP_STATUS_MASK\n");
+        evt.type = ACCELEROMETER_EVT_TYPE_WRIST_WAKEUP;
+        send_accel_event(&evt);
     } else if (int_status & BMI270_WRIST_GEST_STATUS_MASK) {
         LOG_DBG("INT: BMI270_WRIST_GEST_STATUS_MASK\n");
         sensor_data.type = BMI2_WRIST_GESTURE;
@@ -213,9 +219,7 @@ static void bmi270_int2_work_cb(struct k_work *work)
         LOG_DBG("Gesture detected: %s", gesture_output[sensor_data.sens_data.wrist_gesture_output]);
         send_accel_event(&evt);
     } else if (int_status & BMI270_NO_MOT_STATUS_MASK) {
-
     } else if (int_status & BMI270_ANY_MOT_STATUS_MASK) {
-
     }
 
     setup_int2(true);
@@ -331,6 +335,12 @@ static void configure_anymotion(struct bmi2_sens_config *config)
 static void configure_gesture_detect(struct bmi2_sens_config *config)
 {
     config->cfg.wrist_gest.wearable_arm = BMI2_ARM_LEFT;
+}
+
+static void configure_wrist_wakeup(struct bmi2_sens_config *config)
+{
+    config->cfg.wrist_gest_w.device_position = BMI2_ARM_LEFT;
+    // TODO many things to configure here
 }
 
 static bool is_sensor_feature(uint8_t sensor_id)
