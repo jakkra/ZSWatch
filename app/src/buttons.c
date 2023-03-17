@@ -53,7 +53,9 @@ void buttonsInit(buttonHandlerCallback_t handler)
         ret = gpio_add_callback(buttons[i].btn.port, &buttons[i].callback_data);
         __ASSERT_NO_MSG(ret == 0);
         ret = gpio_pin_interrupt_configure_dt(&buttons[i].btn, GPIO_INT_EDGE_TO_ACTIVE);
-        __ASSERT_NO_MSG(ret == 0);
+        if (ret) {
+            LOG_ERR("gpio_pin_interrupt_configure_dt fail: %d", ret);
+        }
         LOG_INF("Registrated Button %d", i);
     }
 

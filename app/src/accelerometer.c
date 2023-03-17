@@ -19,10 +19,13 @@ typedef struct bmi270_feature_config_set_t {
     feature_config_func    cfg_func;
 } bmi270_feature_config_set_t;
 
+static void send_accel_event(accelerometer_evt_t *data);
+
 static int8_t configure_enable_all_bmi270(struct bmi2_dev *bmi2_dev);
 static void configue_accel(struct bmi2_sens_config *config);
 static void configue_gyro(struct bmi2_sens_config *config);
 static void configure_step_counter(struct bmi2_sens_config *config);
+static void configure_anymotion(struct bmi2_sens_config *config);
 
 static int bmi270_init_interrupt(void);
 static void bmi270_int1_work_cb(struct k_work *work);
@@ -33,6 +36,8 @@ static bmi270_feature_config_set_t bmi270_enabled_features[] = {
     { .sensor_id = BMI2_ACCEL, .cfg_func = configue_accel},
     { .sensor_id = BMI2_GYRO, .cfg_func = configue_gyro},
     { .sensor_id = BMI2_STEP_COUNTER, .cfg_func = configure_step_counter},
+    { .sensor_id = BMI2_SIG_MOTION, .cfg_func = NULL},
+    { .sensor_id = BMI2_ANY_MOTION, .cfg_func = configure_anymotion},
 };
 
 static struct bmi2_dev bmi2_dev;
@@ -44,7 +49,6 @@ static K_WORK_DEFINE(int1_work, bmi270_int1_work_cb);
 static K_WORK_DEFINE(int2_work, bmi270_int2_work_cb);
 static struct gpio_callback gpio_int1_cb;
 static struct gpio_callback gpio_int2_cb;
-
 
 int accelerometer_init(void)
 {
@@ -108,16 +112,21 @@ int accelerometer_reset_step_count(void)
     return -ENOENT;
 }
 
+static void send_accel_event(accelerometer_evt_t *data)
+{
+    zbus_chan_pub(&accel_data_chan, data, K_MSEC(250));
+}
+
 static inline void setup_int1(bool enable)
 {
     gpio_pin_interrupt_configure_dt(&int1_gpio,
-                                    (enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE));
+                                    (enable ? GPIO_INT_EDGE_RISING : GPIO_INT_DISABLE));
 }
 
 static inline void setup_int2(bool enable)
 {
     gpio_pin_interrupt_configure_dt(&int2_gpio,
-                                    (enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE));
+                                    (enable ? GPIO_INT_EDGE_RISING : GPIO_INT_DISABLE));
 }
 
 static void bmi270_gpio_int1_callback(const struct device *dev,
@@ -140,7 +149,19 @@ static void bmi270_gpio_int2_callback(const struct device *dev,
 
 static void bmi270_int1_work_cb(struct k_work *work)
 {
-    // TODO readout data and handle
+    int8_t rslt;
+    uint16_t int_status;
+    struct bmi2_sens_data sensor_data = { 0 };
+
+    rslt = bmi2_get_int_status(&int_status, &bmi2_dev);
+    bmi2_error_codes_print_result(rslt);
+
+    if (int_status & BMI2_GYR_DRDY_INT_MASK || int_status & BMI2_ACC_DRDY_INT_MASK) {
+        LOG_DBG("INT1: BMI2_GYR_DRDY_INT_MASK | BMI2_ACC_DRDY_INT_MASK\n");
+        rslt = bmi2_get_sensor_data(&sensor_data, &bmi2_dev);
+        bmi2_error_codes_print_result(rslt);
+        // TODO Do something with this
+    }
 
     setup_int1(true);
 }
@@ -149,25 +170,38 @@ static void bmi270_int2_work_cb(struct k_work *work)
 {
     int8_t rslt;
     uint16_t int_status;
+    accelerometer_evt_t evt;
     struct bmi2_feat_sensor_data sensor_data = { 0 };
 
     rslt = bmi2_get_int_status(&int_status, &bmi2_dev);
     bmi2_error_codes_print_result(rslt);
 
-    /* To check the interrupt status of the step counter. */
-    if (int_status & BMI270_STEP_CNT_STATUS_MASK) {
-        printk("Step counter interrupt occurred when watermark level (20 steps) is reached\n");
-
-        /* Get step counter output. */
+    if (int_status & BMI270_SIG_MOT_STATUS_MASK) {
+        LOG_DBG("INT: BMI270_SIG_MOT_STATUS_MASK\n");
+    } else if (int_status & BMI270_STEP_CNT_STATUS_MASK) {
+        LOG_DBG("INT: BMI270_STEP_CNT_STATUS_MASK\n");
+        sensor_data.type = BMI2_STEP_COUNTER;
         rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
         bmi2_error_codes_print_result(rslt);
+        evt.type = ACCELEROMETER_EVT_TYPE_STEP;
+        evt.data.step.count = (long unsigned int)sensor_data.sens_data.step_counter_output;
+        send_accel_event(&evt);
+        LOG_DBG("No of steps counted  = %lu", (long unsigned int)evt.data.step.count );
+    } else if (int_status & BMI270_STEP_ACT_STATUS_MASK) {
+        LOG_DBG("INT: BMI270_STEP_ACT_STATUS_MASK\n");
+        sensor_data.type = BMI2_STEP_ACTIVITY;
+        rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
+        bmi2_error_codes_print_result(rslt);
+    } else if (int_status & BMI270_WRIST_WAKE_UP_STATUS_MASK) {
+        LOG_DBG("INT: BMI270_WRIST_WAKE_UP_STATUS_MASK\n");
+    } else if (int_status & BMI270_WRIST_GEST_STATUS_MASK) {
+        LOG_DBG("INT: BMI270_WRIST_GEST_STATUS_MASK\n");
+    } else if (int_status & BMI270_NO_MOT_STATUS_MASK) {
 
-        /* Print the step counter output. */
-        printk("No of steps counted  = %lu",
-               (long unsigned int)sensor_data.sens_data.step_counter_output);
-        
-        // TODO send the data event on the bus
+    } else if (int_status & BMI270_ANY_MOT_STATUS_MASK) {
+
     }
+
     setup_int2(true);
 }
 
@@ -183,8 +217,8 @@ static int bmi270_init_interrupt(void)
         return -ENODEV;
     }
 
-    gpio_pin_configure_dt(&int1_gpio, GPIO_INPUT);
-    gpio_pin_configure_dt(&int2_gpio, GPIO_INPUT);
+    gpio_pin_configure_dt(&int1_gpio, GPIO_INPUT | GPIO_PULL_DOWN);
+    gpio_pin_configure_dt(&int2_gpio, GPIO_INPUT | GPIO_PULL_DOWN);
 
     gpio_init_callback(&gpio_int1_cb,
                        bmi270_gpio_int1_callback,
@@ -269,6 +303,15 @@ static void configure_step_counter(struct bmi2_sens_config *config)
     config->cfg.step_counter.watermark_level = 1;
 }
 
+static void configure_anymotion(struct bmi2_sens_config *config)
+{
+    /* 1LSB equals 20ms. Default is 100ms, setting to 80ms. */
+    config->cfg.any_motion.duration = 0x04;
+
+    /* 1LSB equals to 0.48mg. Default is 83mg, setting to 50mg. */
+    config->cfg.any_motion.threshold = 0x68;
+}
+
 static bool is_sensor_feature(uint8_t sensor_id)
 {
     switch (sensor_id) {
@@ -289,6 +332,9 @@ static bool is_sensor_feature(uint8_t sensor_id)
 static int8_t configure_enable_all_bmi270(struct bmi2_dev *bmi2_dev)
 {
     int8_t rslt;
+
+    // INT setup
+    struct bmi2_int_pin_config int_cfg;
 
     // Structure to define all sensors and their configs
     struct bmi2_sens_config config[ARRAY_SIZE(bmi270_enabled_features)];
@@ -318,21 +364,40 @@ static int8_t configure_enable_all_bmi270(struct bmi2_dev *bmi2_dev)
     bmi2_error_codes_print_result(rslt);
 
     // Map data ready interrupt to interrupt pin.
-    rslt = bmi2_map_data_int(BMI2_DRDY_INT, BMI2_INT1, bmi2_dev);
-    bmi2_error_codes_print_result(rslt);
+    // Uncomment to generate DRDY INT on INT1
+    // rslt = bmi2_map_data_int(BMI2_DRDY_INT, BMI2_INT1, bmi2_dev);
+    // bmi2_error_codes_print_result(rslt);
 
     for (int i = 0; i < ARRAY_SIZE(bmi270_enabled_features); i++) {
-        bmi270_enabled_features[i].cfg_func(&config[i]);
+        if (bmi270_enabled_features[i].cfg_func) {
+            bmi270_enabled_features[i].cfg_func(&config[i]);
+        }
     }
-
-    rslt = bmi270_set_sensor_config(config, ARRAY_SIZE(bmi270_enabled_features), bmi2_dev);
-    bmi2_error_codes_print_result(rslt);
 
     if (rslt == BMI2_OK) {
         /* NOTE:
         * Accel and Gyro enable must be done after setting configurations.
         */
         rslt = bmi270_sensor_enable(all_sensors, ARRAY_SIZE(all_sensors), bmi2_dev);
+        bmi2_error_codes_print_result(rslt);
+    }
+
+    // Setup int
+    bmi2_get_int_pin_config(&int_cfg, bmi2_dev);
+
+    int_cfg.pin_type = BMI2_INT_BOTH;
+    int_cfg.pin_cfg[0].lvl = BMI2_INT_ACTIVE_HIGH;
+    int_cfg.pin_cfg[0].od = BMI2_INT_PUSH_PULL;
+    int_cfg.pin_cfg[0].output_en = BMI2_INT_OUTPUT_ENABLE;
+    int_cfg.pin_cfg[1].lvl = BMI2_INT_ACTIVE_HIGH;
+    int_cfg.pin_cfg[1].od = BMI2_INT_PUSH_PULL;
+    int_cfg.pin_cfg[1].output_en = BMI2_INT_OUTPUT_ENABLE;
+
+    rslt = bmi2_set_int_pin_config(&int_cfg, bmi2_dev);
+    bmi2_error_codes_print_result(rslt);
+
+    if (rslt == BMI2_OK) {
+        rslt = bmi270_set_sensor_config(config, ARRAY_SIZE(bmi270_enabled_features), bmi2_dev);
         bmi2_error_codes_print_result(rslt);
     }
 
