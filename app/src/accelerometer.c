@@ -38,6 +38,7 @@ static bmi270_feature_config_set_t bmi270_enabled_features[] = {
     { .sensor_id = BMI2_STEP_COUNTER, .cfg_func = configure_step_counter},
     { .sensor_id = BMI2_SIG_MOTION, .cfg_func = NULL},
     { .sensor_id = BMI2_ANY_MOTION, .cfg_func = configure_anymotion},
+    { .sensor_id = BMI2_STEP_ACTIVITY, .cfg_func = NULL},
 };
 
 static struct bmi2_dev bmi2_dev;
@@ -192,6 +193,11 @@ static void bmi270_int2_work_cb(struct k_work *work)
         sensor_data.type = BMI2_STEP_ACTIVITY;
         rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
         bmi2_error_codes_print_result(rslt);
+        evt.type = ACCELEROMETER_EVT_TYPE_STEP_ACTIVITY;
+        evt.data.step_activity = (accelerometer_data_step_activity_t)sensor_data.sens_data.activity_output;
+        const char *activity_output[4] = { "BMI2_STILL", "BMI2_WALK", "BMI2_RUN", "BMI2_UNKNOWN" };
+        LOG_DBG("Step activity: %s", activity_output[sensor_data.sens_data.activity_output]);
+        send_accel_event(&evt);
     } else if (int_status & BMI270_WRIST_WAKE_UP_STATUS_MASK) {
         LOG_DBG("INT: BMI270_WRIST_WAKE_UP_STATUS_MASK\n");
     } else if (int_status & BMI270_WRIST_GEST_STATUS_MASK) {

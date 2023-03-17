@@ -7,8 +7,16 @@ typedef enum accelerometer_evt_type_t {
     ACCELEROMETER_EVT_TYPE_XYZ,
     ACCELEROMETER_EVT_TYPE_DOOUBLE_TAP,
     ACCELEROMETER_EVT_TYPE_STEP,
+    ACCELEROMETER_EVT_TYPE_STEP_ACTIVITY,
     ACCELEROMETER_EVT_TYPE_TILT,
 } accelerometer_evt_type_t;
+
+typedef enum accelerometer_data_step_activity_t {
+    ACCELEROMETER_EVT_STEP_ACTIVITY_STILL,
+    ACCELEROMETER_EVT_STEP_ACTIVITY_WALK,
+    ACCELEROMETER_EVT_STEP_ACTIVITY_RUN,
+    ACCELEROMETER_EVT_STEP_ACTIVITY_UNKNOWN,
+} accelerometer_data_step_activity_t;
 
 typedef struct accelerometer_data_xyz_t {
     int16_t x;
@@ -23,8 +31,9 @@ typedef struct accelerometer_data_step_t {
 typedef struct accelerometer_evt_t {
     accelerometer_evt_type_t type;
     union {
-        accelerometer_data_xyz_t    xyz;
-        accelerometer_data_step_t   step;
+        accelerometer_data_xyz_t            xyz;
+        accelerometer_data_step_t           step;
+        accelerometer_data_step_activity_t  step_activity;
     } data;
 } accelerometer_evt_t;
 
