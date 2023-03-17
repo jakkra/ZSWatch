@@ -26,6 +26,7 @@ static void configue_accel(struct bmi2_sens_config *config);
 static void configue_gyro(struct bmi2_sens_config *config);
 static void configure_step_counter(struct bmi2_sens_config *config);
 static void configure_anymotion(struct bmi2_sens_config *config);
+static void configure_gesture_detect(struct bmi2_sens_config *config);
 
 static int bmi270_init_interrupt(void);
 static void bmi270_int1_work_cb(struct k_work *work);
@@ -39,6 +40,7 @@ static bmi270_feature_config_set_t bmi270_enabled_features[] = {
     { .sensor_id = BMI2_SIG_MOTION, .cfg_func = NULL},
     { .sensor_id = BMI2_ANY_MOTION, .cfg_func = configure_anymotion},
     { .sensor_id = BMI2_STEP_ACTIVITY, .cfg_func = NULL},
+    { .sensor_id = BMI2_WRIST_GESTURE, .cfg_func = configure_gesture_detect},
 };
 
 static struct bmi2_dev bmi2_dev;
@@ -202,6 +204,14 @@ static void bmi270_int2_work_cb(struct k_work *work)
         LOG_DBG("INT: BMI270_WRIST_WAKE_UP_STATUS_MASK\n");
     } else if (int_status & BMI270_WRIST_GEST_STATUS_MASK) {
         LOG_DBG("INT: BMI270_WRIST_GEST_STATUS_MASK\n");
+        sensor_data.type = BMI2_WRIST_GESTURE;
+        rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
+        bmi2_error_codes_print_result(rslt);
+        evt.type = ACCELEROMETER_EVT_TYPE_GESTURE;
+        evt.data.gesture = (accelerometer_data_step_gesture_t)sensor_data.sens_data.wrist_gesture_output;
+        const char *gesture_output[6] = { "unknown_gesture", "push_arm_down", "pivot_up", "wrist_shake_jiggle", "flick_in", "flick_out" };
+        LOG_DBG("Gesture detected: %s", gesture_output[sensor_data.sens_data.wrist_gesture_output]);
+        send_accel_event(&evt);
     } else if (int_status & BMI270_NO_MOT_STATUS_MASK) {
 
     } else if (int_status & BMI270_ANY_MOT_STATUS_MASK) {
@@ -316,6 +326,11 @@ static void configure_anymotion(struct bmi2_sens_config *config)
 
     /* 1LSB equals to 0.48mg. Default is 83mg, setting to 50mg. */
     config->cfg.any_motion.threshold = 0x68;
+}
+
+static void configure_gesture_detect(struct bmi2_sens_config *config)
+{
+    config->cfg.wrist_gest.wearable_arm = BMI2_ARM_LEFT;
 }
 
 static bool is_sensor_feature(uint8_t sensor_id)

@@ -9,6 +9,7 @@ typedef enum accelerometer_evt_type_t {
     ACCELEROMETER_EVT_TYPE_STEP,
     ACCELEROMETER_EVT_TYPE_STEP_ACTIVITY,
     ACCELEROMETER_EVT_TYPE_TILT,
+    ACCELEROMETER_EVT_TYPE_GESTURE,
 } accelerometer_evt_type_t;
 
 typedef enum accelerometer_data_step_activity_t {
@@ -17,6 +18,15 @@ typedef enum accelerometer_data_step_activity_t {
     ACCELEROMETER_EVT_STEP_ACTIVITY_RUN,
     ACCELEROMETER_EVT_STEP_ACTIVITY_UNKNOWN,
 } accelerometer_data_step_activity_t;
+
+typedef enum accelerometer_data_step_gesture_t {
+    ACCELEROMETER_EVT_GESTURE_UNKNOWN,
+    ACCELEROMETER_EVT_GESTURE_PUSH_ARM_DOWN,
+    ACCELEROMETER_EVT_GESTURE_PIVOT_UP,
+    ACCELEROMETER_EVT_GESTURE_WRIST_SHAKE,
+    ACCELEROMETER_EVT_GESTURE_FLICK_IN,
+    ACCELEROMETER_EVT_GESTURE_FLICK_OUT
+} accelerometer_data_step_gesture_t;
 
 typedef struct accelerometer_data_xyz_t {
     int16_t x;
@@ -34,6 +44,7 @@ typedef struct accelerometer_evt_t {
         accelerometer_data_xyz_t            xyz;
         accelerometer_data_step_t           step;
         accelerometer_data_step_activity_t  step_activity;
+        accelerometer_data_step_gesture_t   gesture;
     } data;
 } accelerometer_evt_t;
 
