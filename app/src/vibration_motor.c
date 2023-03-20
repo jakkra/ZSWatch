@@ -12,7 +12,8 @@ static const struct gpio_dt_spec enable_gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(vib
 
 void vibration_motor_init(void)
 {
-    if (!gpio_pin_configure_dt(&enable_gpio, GPIO_OUTPUT_LOW)) {
+    int rc = gpio_pin_configure_dt(&enable_gpio, GPIO_OUTPUT_LOW);
+    if (rc != 0) {
         printk("Failed init vibration motor enable pin\n");
     }
 }
