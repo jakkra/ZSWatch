@@ -36,7 +36,8 @@ static void bmi270_int2_work_cb(struct k_work *work);
 // List of the features used on the BMI270.
 static bmi270_feature_config_set_t bmi270_enabled_features[] = {
     { .sensor_id = BMI2_ACCEL, .cfg_func = configue_accel},
-    { .sensor_id = BMI2_GYRO, .cfg_func = configue_gyro},
+    // Gyro not used for now, disable to keep power consumption down
+    //{ .sensor_id = BMI2_GYRO, .cfg_func = configue_gyro},
     { .sensor_id = BMI2_STEP_COUNTER, .cfg_func = configure_step_counter},
     { .sensor_id = BMI2_SIG_MOTION, .cfg_func = NULL},
     { .sensor_id = BMI2_ANY_MOTION, .cfg_func = configure_anymotion},
@@ -266,7 +267,7 @@ static void configue_accel(struct bmi2_sens_config *config)
 {
     /* NOTE: The user can change the following configuration parameters according to their requirement. */
     /* Set Output Data Rate */
-    config->cfg.acc.odr = BMI2_ACC_ODR_200HZ;
+    config->cfg.acc.odr = BMI2_ACC_ODR_100HZ;
 
     /* Gravity range of the sensor (+/- 2G, 4G, 8G, 16G). */
     config->cfg.acc.range = BMI2_ACC_RANGE_2G;
@@ -287,7 +288,7 @@ static void configue_accel(struct bmi2_sens_config *config)
         *  1 -> High performance mode(Default)
         * For more info refer datasheet.
         */
-    config->cfg.acc.filter_perf = BMI2_PERF_OPT_MODE;
+    config->cfg.acc.filter_perf = BMI2_POWER_OPT_MODE;
 }
 
 static void configue_gyro(struct bmi2_sens_config *config)
