@@ -66,7 +66,7 @@ int pressure_sensor_set_odr(uint8_t bmp5_odr)
 
     if (rslt == BMP5_OK) {
         /* Set ODR as 50Hz */
-        osr_odr_press_cfg.odr = BMP5_ODR_0_250_HZ;
+        osr_odr_press_cfg.odr = bmp5_odr;
 
         /* Enable pressure */
         osr_odr_press_cfg.press_en = BMP5_ENABLE;
