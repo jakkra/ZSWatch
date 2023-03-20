@@ -308,6 +308,7 @@ static int gc9a01_set_pixel_format(const struct device *dev,
 
 static int gc9a01_controller_init(const struct device *dev)
 {
+    int rc;
     const struct gc9a01_config *config = dev->config;
 
     LOG_DBG("Initialize GC9A01 controller");
@@ -315,7 +316,8 @@ static int gc9a01_controller_init(const struct device *dev)
     k_msleep(5);
     gpio_pin_set_dt(&config->reset_gpio, 1);
     k_msleep(150);
-    __ASSERT(pm_device_action_run(config->bus.bus, PM_DEVICE_ACTION_RESUME) == 0, "Failed resume SPI Bus");
+    rc = pm_device_action_run(config->bus.bus, PM_DEVICE_ACTION_RESUME);
+    __ASSERT(rc == -EALREADY || rc == 0, "Failed resume SPI Bus");
 
     uint8_t cmd, x, numArgs;
     int i = 0;
@@ -355,7 +357,7 @@ static int gc9a01_init(const struct device *dev)
         LOG_ERR("DC GPIO device not ready");
         return -ENODEV;
     }
-    gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
+    gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
     gpio_pin_configure_dt(&config->dc_gpio, GPIO_OUTPUT_INACTIVE);
     k_msleep(500);
 
@@ -364,7 +366,8 @@ static int gc9a01_init(const struct device *dev)
         return -ENODEV;
     }
 
-    gpio_pin_configure_dt(&config->bl_gpio, GPIO_OUTPUT_ACTIVE);
+    // Default to 0 brightness
+    gpio_pin_configure_dt(&config->bl_gpio, GPIO_OUTPUT_INACTIVE);
     return gc9a01_controller_init(dev);
 }
 
