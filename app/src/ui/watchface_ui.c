@@ -37,6 +37,15 @@ static lv_obj_t *notification_text;
 static lv_obj_t *date_label;
 static lv_obj_t *day_label;
 
+// Remember last values as if no change then
+// no reason to waste resourses and redraw
+static int last_hour;
+static int last_minute;
+#ifdef USE_SECOND_HAND
+static int last_second;
+#endif
+static int last_num_not = -1;
+
 static void tick_draw_event_cb(lv_event_t *e)
 {
     lv_event_code_t code = lv_event_get_code(e);
@@ -328,16 +337,27 @@ void watchface_set_time(int32_t hour, int32_t minute, int32_t second)
     if (hour_offset >= 60) {
         hour_offset = 60;
     }
-    lv_meter_set_indicator_end_value(clock_meter, indic_min, minute);
-    lv_meter_set_indicator_end_value(clock_meter, indic_hour, hour_offset);
+    if (minute != last_minute) {
+        lv_meter_set_indicator_end_value(clock_meter, indic_min, minute);
+    }
+    if (hour != last_hour) {
+        lv_meter_set_indicator_end_value(clock_meter, indic_hour, hour_offset);
+    }
 #ifdef USE_SECOND_HAND
-    lv_meter_set_indicator_end_value(clock_meter, indic_second, second);
+    if (second != last_second) {
+        lv_meter_set_indicator_end_value(clock_meter, indic_second, second);
+    }
 #endif
 }
 
 void watchface_set_num_notifcations(int32_t value)
 {
     char not_text_buf[2]; // 0-9 and \0
+
+    if (value == last_num_not) {
+        return;
+    }
+
     if (value > 0) {
         if (value < 10) {
             snprintf(not_text_buf, 2, "%d", value);

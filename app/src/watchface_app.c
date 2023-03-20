@@ -37,7 +37,7 @@ ZBUS_LISTENER_DEFINE(watchface_accel_lis, zbus_accel_data_callback);
 
 #define RENDER_INTERVAL_LVGL    K_MSEC(100)
 #define ACCEL_INTERVAL          K_MSEC(100)
-#define BATTERY_INTERVAL        K_SECONDS(10)
+#define BATTERY_INTERVAL        K_MINUTES(1)
 #define SEND_STATUS_INTERVAL    K_SECONDS(30) // TODO move out from here
 #define DATE_UPDATE_INTERVAL    K_MINUTES(1)
 
@@ -219,6 +219,7 @@ static void check_notifications(void)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
+    if (!running) return;
     if (err) {
         LOG_ERR("Connection failed (err %u)", err);
         return;
@@ -230,6 +231,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+    if (!running) return;
     watchface_set_ble_connected(false);
 }
 
