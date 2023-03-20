@@ -11,6 +11,9 @@
 #include <math.h>
 #include <zephyr/logging/log.h>
 #include <inttypes.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 LOG_MODULE_REGISTER(gc9a01, CONFIG_DISPLAY_LOG_LEVEL_ERR);
 
@@ -140,8 +143,8 @@ static const uint8_t initcmd[] = {
     0x98, 2, 0x3e, 0x07,
     GC9A01A_TEON, 1, GC9A01A_INVOFF,
     GC9A01A_INVON, 0,
-    GC9A01A_SLPOUT, 0x80, // Exit sleep
     GC9A01A_DISPON, 0x80, // Display on
+    GC9A01A_SLPOUT, 0x80, // Exit sleep
     0x00                  // End of list
 };
 
@@ -218,6 +221,8 @@ static int gc9a01_write(const struct device *dev, const uint16_t x, const uint16
                         const struct display_buffer_descriptor *desc,
                         const void *buf)
 {
+    const struct gc9a01_config *config = dev->config;
+    __ASSERT(pm_device_action_run(config->bus.bus, PM_DEVICE_ACTION_RESUME) == 0, "Failed resume SPI Bus");
 #ifdef GC9A01_SPI_PROFILING
     uint32_t start_time;
     uint32_t stop_time;
@@ -246,7 +251,7 @@ static int gc9a01_write(const struct device *dev, const uint16_t x, const uint16
     nanoseconds_spent = k_cyc_to_ns_ceil32(cycles_spent);
     LOG_DBG("%d =>: %dns", len, nanoseconds_spent);
 #endif
-
+    __ASSERT(pm_device_action_run(config->bus.bus, PM_DEVICE_ACTION_SUSPEND) == 0, "Failed suspend SPI Bus");
     return 0;
 }
 
@@ -306,11 +311,11 @@ static int gc9a01_controller_init(const struct device *dev)
     const struct gc9a01_config *config = dev->config;
 
     LOG_DBG("Initialize GC9A01 controller");
-
     gpio_pin_set_dt(&config->reset_gpio, 0);
     k_msleep(5);
     gpio_pin_set_dt(&config->reset_gpio, 1);
     k_msleep(150);
+    __ASSERT(pm_device_action_run(config->bus.bus, PM_DEVICE_ACTION_RESUME) == 0, "Failed resume SPI Bus");
 
     uint8_t cmd, x, numArgs;
     int i = 0;
@@ -326,6 +331,7 @@ static int gc9a01_controller_init(const struct device *dev)
         i++;
     }
 
+    __ASSERT(pm_device_action_run(config->bus.bus, PM_DEVICE_ACTION_SUSPEND) == 0, "Failed suspend SPI Bus");
     return 0;
 }
 
