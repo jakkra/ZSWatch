@@ -2,6 +2,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/logging/log.h>
 #include <inttypes.h>
 #include <math.h>
@@ -29,7 +32,7 @@ void magnetometer_init(void)
     struct sensor_trigger trig;
     struct sensor_value odr_attr;
 
-    odr_attr.val1 = 10; // TODO what value
+    odr_attr.val1 = 1; // TODO what value
     odr_attr.val2 = 0;
 
     if (sensor_attr_set(magnetometer, SENSOR_CHAN_ALL,
@@ -41,6 +44,9 @@ void magnetometer_init(void)
     trig.type = SENSOR_TRIG_DATA_READY;
     trig.chan = SENSOR_CHAN_MAGN_XYZ;
     sensor_trigger_set(magnetometer, &trig, lis2mdl_trigger_handler);
+
+    // TODO handle power save, enable/disable etc. to save power
+    //int rc = pm_device_action_run(magnetometer, PM_DEVICE_ACTION_SUSPEND);
 }
 
 double magnetometer_get_heading(void)
