@@ -94,7 +94,6 @@ ZBUS_LISTENER_DEFINE(main_accel_lis, zbus_accel_data_callback);
 
 void run_init_work(struct k_work *item)
 {
-    //zbus_chan_add_obs(&data_chan, &ble_comm_data_listener, K_MSEC(200));
     load_retention_ram();
     heart_rate_sensor_init();
     notifications_page_init(on_notification_page_close, on_notification_page_notification_close);
@@ -108,7 +107,9 @@ void run_init_work(struct k_work *item)
     vibration_motor_init();
     vibration_motor_set_on(false);
 
-    display_control_set_brightness(50);
+    // Not to self, PWM consumes like 250uA...
+    // Need to disable also when screen is off.
+    display_control_set_brightness(100);
 
     lv_indev_drv_init(&enc_drv);
     enc_drv.type = LV_INDEV_TYPE_ENCODER;
