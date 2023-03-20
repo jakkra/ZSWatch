@@ -213,7 +213,7 @@
 /* UART0 GPIOs can be configured for other use-cases */
 &uart0 {
     current-speed = <115200>;
-    status = "okay";
+    status = "disabled";
     pinctrl-0 = <&uart0_default>;
     pinctrl-1 = <&uart0_sleep>;
     pinctrl-names = "default", "sleep";
