@@ -44,17 +44,40 @@ int pressure_sensor_init(void)
             rslt = set_config(&osr_odr_press_cfg, &bmp5_dev);
             bmp5_error_codes_print_result("set_config", rslt);
         }
-    }
 
-    if (rslt == BMP5_OK) {
-        if (int_gpio.port) {
-            if (bmp581_init_interrupt() < 0) {
-                LOG_DBG("Could not initialize interrupts");
-                return -EIO;
+        if (rslt == BMP5_OK) {
+            if (int_gpio.port) {
+                if (bmp581_init_interrupt() < 0) {
+                    LOG_DBG("Could not initialize interrupts");
+                    return -EIO;
+                }
             }
         }
     }
 
+    return rslt == BMP5_OK ? 0 : -EIO;
+}
+
+int pressure_sensor_set_odr(uint8_t bmp5_odr)
+{
+    /* Get default odr */
+    uint8_t rslt = bmp5_get_osr_odr_press_config(&osr_odr_press_cfg, &bmp5_dev);
+    bmp5_error_codes_print_result("bmp5_get_osr_odr_press_config", rslt);
+
+    if (rslt == BMP5_OK) {
+        /* Set ODR as 50Hz */
+        osr_odr_press_cfg.odr = BMP5_ODR_0_250_HZ;
+
+        /* Enable pressure */
+        osr_odr_press_cfg.press_en = BMP5_ENABLE;
+
+        /* Set Over-sampling rate with respect to odr */
+        osr_odr_press_cfg.osr_t = BMP5_OVERSAMPLING_64X;
+        osr_odr_press_cfg.osr_p = BMP5_OVERSAMPLING_4X;
+
+        rslt = bmp5_set_osr_odr_press_config(&osr_odr_press_cfg, &bmp5_dev);
+        bmp5_error_codes_print_result("bmp5_set_osr_odr_press_config", rslt);
+    }
     return rslt == BMP5_OK ? 0 : -EIO;
 }
 
@@ -159,7 +182,7 @@ static int8_t set_config(struct bmp5_osr_odr_press_config *osr_odr_press_cfg, st
 
         if (rslt == BMP5_OK) {
             /* Set ODR as 50Hz */
-            osr_odr_press_cfg->odr = BMP5_ODR_50_HZ;
+            osr_odr_press_cfg->odr = BMP5_ODR_0_250_HZ;
 
             /* Enable pressure */
             osr_odr_press_cfg->press_en = BMP5_ENABLE;
