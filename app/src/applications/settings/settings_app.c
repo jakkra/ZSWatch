@@ -11,7 +11,7 @@ static void settings_app_stop(void);
 
 static void on_close_settings(void);
 static void on_brightness_changed(lv_setting_value_t value, bool final);
-static void on_display_always_on_changed(lv_setting_value_t value, bool final);
+static void on_display_on_changed(lv_setting_value_t value, bool final);
 static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
 static void on_reset_steps_changed(lv_setting_value_t value, bool final);
 
@@ -52,7 +52,7 @@ static lv_settings_item_t general_page_items[] = {
     {
         .type = LV_SETTINGS_TYPE_SWITCH,
         .icon = LV_SYMBOL_TINT,
-        .change_callback = on_display_always_on_changed,
+        .change_callback = on_display_on_changed,
         .item = {
             .sw = {
                 .name = "Display always on",
@@ -148,12 +148,12 @@ static void on_brightness_changed(lv_setting_value_t value, bool final)
     display_control_set_brightness(value.item.slider * 10);
 }
 
-static void on_display_always_on_changed(lv_setting_value_t value, bool final)
+static void on_display_on_changed(lv_setting_value_t value, bool final)
 {
     if (value.item.sw) {
-        display_control_set_brightness(100);
+        display_control_power_on(true);
     } else {
-        display_control_set_brightness(10);
+        display_control_power_on(false);
     }
 }
 

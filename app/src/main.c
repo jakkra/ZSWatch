@@ -109,7 +109,9 @@ void run_init_work(struct k_work *item)
 
     // Not to self, PWM consumes like 250uA...
     // Need to disable also when screen is off.
-    display_control_set_brightness(100);
+    display_control_init();
+    display_control_power_on(true);
+    display_control_set_brightness(10);
 
     lv_indev_drv_init(&enc_drv);
     enc_drv.type = LV_INDEV_TYPE_ENCODER;
@@ -273,7 +275,6 @@ static void async_turn_off_buttons_allocation(void *unused)
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
 {
     LOG_WRN("Pressed %d, type: %d", id, type);
-
     // Always allow force restart
     if (type == BUTTONS_LONG_PRESS && id == BUTTON_TOP_LEFT) {
         retained.off_count += 1;
