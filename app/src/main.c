@@ -213,6 +213,7 @@ static void play_press_vibration(void)
     k_msleep(150);
     vibration_motor_set_power(80);
     vibration_motor_set_on(false);
+    vibration_motor_set_power(0);
     vibrator_on = false;
 }
 
