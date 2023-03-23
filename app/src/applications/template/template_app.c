@@ -6,7 +6,7 @@
 // Functions needed for all applications
 static void template_app_start(lv_obj_t *root, lv_group_t *group);
 static void template_app_stop(void);
-static void on_close_template(void);
+static void on_incrementation(void);
 
 // Functions related to app functionality
 static void timer_callback(lv_timer_t *timer);
@@ -21,13 +21,13 @@ static application_t app = {
 };
 
 static lv_timer_t *counter_timer;
-static int counter;
+static int timer_counter;
+static int btn_counter;
 
 static void template_app_start(lv_obj_t *root, lv_group_t *group)
 {
-    template_ui_show(root, on_close_template);
-    counter = 0;
-    counter_timer = lv_timer_create(timer_callback, 1000,  NULL);
+    template_ui_show(root, on_incrementation);
+    counter_timer = lv_timer_create(timer_callback, 500,  NULL);
 }
 
 static void template_app_stop(void)
@@ -38,13 +38,14 @@ static void template_app_stop(void)
 
 static void timer_callback(lv_timer_t *timer)
 {
-    counter++;
-    template_ui_set_value(counter);
+    timer_counter++;
+    template_ui_set_timer_counter_value(timer_counter);
 }
 
-static void on_close_template(void)
+static void on_incrementation(void)
 {
-    application_manager_app_close_request(&app);
+    btn_counter++;
+    template_ui_set_button_counter_value(btn_counter);
 }
 
 static int template_app_add(const struct device *arg)
