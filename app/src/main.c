@@ -83,7 +83,6 @@ static bool vibrator_on = false;
 static ui_state_t watch_state = INIT_STATE;
 
 K_WORK_DEFINE(init_work, run_init_work);
-K_WORK_DELAYABLE_DEFINE(lvgl_work, lvgl_render);
 
 ZBUS_CHAN_DECLARE(ble_comm_data_chan);
 ZBUS_LISTENER_DEFINE(main_ble_comm_lis, zbus_ble_comm_data_callback);
@@ -111,7 +110,6 @@ void run_init_work(struct k_work *item)
     // Need to disable also when screen is off.
     display_control_init();
     display_control_power_on(true);
-    display_control_set_brightness(10);
 
     lv_indev_drv_init(&enc_drv);
     enc_drv.type = LV_INDEV_TYPE_ENCODER;
@@ -125,13 +123,6 @@ void run_init_work(struct k_work *item)
 
     watch_state = WATCHFACE_STATE;
     watchface_app_start(input_group);
-    k_work_schedule(&lvgl_work, K_MSEC(1));
-}
-
-static void lvgl_render(struct k_work *item)
-{
-    const int64_t next_update_in_ms = lv_task_handler();
-    k_work_schedule(&lvgl_work, K_MSEC(next_update_in_ms));
 }
 
 void main(void)
@@ -281,6 +272,9 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
         retained_update();
         sys_reboot(SYS_REBOOT_COLD);
     }
+    // TODO Handle somewhere else, but for now turn on
+    // display if it's off when a button is pressed.
+    display_control_power_on(true);
 
     if (id == BUTTON_BOTTOM_RIGHT && watch_state == APPLICATION_MANAGER_STATE) {
         // TODO doesn't work, as this press is read later with lvgl and causes extra press in settings.
@@ -421,27 +415,19 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
 {
     const struct accel_event *event = zbus_chan_const_msg(chan);
     switch (event->data.type) {
-        case ACCELEROMETER_EVT_TYPE_DOOUBLE_TAP: {
-            if (vibrator_on || (watch_state != WATCHFACE_STATE)) {
-                // Vibrator causes false double tap detections.
-                // Need more work to not detect when vibration is running, hence for now only allow on watchface page
-                break;
-            }
-            display_on = !display_on;
-            if (display_on) {
-                display_control_set_brightness(100);
-            } else {
-                display_control_set_brightness(1);
-            }
-            break;
-        }
         case ACCELEROMETER_EVT_TYPE_XYZ: {
             LOG_ERR("x: %d y: %d z: %d", event->data.data.xyz.x, event->data.data.xyz.y, event->data.data.xyz.z);
             break;
         }
-        case ACCELEROMETER_EVT_TYPE_TILT: {
-            // Tilt detect not working as we want yet, so don't do for now.
-            //display_control_set_brightness(100);
+        case ACCELEROMETER_EVT_TYPE_GESTURE:
+        {
+            if (event->data.data.gesture == ACCELEROMETER_EVT_GESTURE_WRIST_SHAKE) {
+                display_control_power_on(true);
+            }
+        }
+        case ACCELEROMETER_EVT_TYPE_WRIST_WAKEUP:
+        {
+            display_control_power_on(true);
             break;
         }
         default:

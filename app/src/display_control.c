@@ -6,17 +6,25 @@
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/logging/log.h>
+#include "lvgl.h"
 
 LOG_MODULE_REGISTER(display_control, LOG_LEVEL_WRN);
 
+static void lvgl_render(struct k_work *item);
 
 static const struct pwm_dt_spec pwm_led0 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led0));
 static const struct device *const reg_dev = DEVICE_DT_GET(DT_PATH(regulator_3v3_ctrl));
 const struct device *display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 
+K_WORK_DELAYABLE_DEFINE(lvgl_work, lvgl_render);
+
+static struct k_work_sync canel_work_sync;
+static bool is_on;
+static bool last_brightness = 5;
+
 void display_control_init(void)
 {
-        if (!device_is_ready(display_dev)) {
+    if (!device_is_ready(display_dev)) {
         LOG_ERR("Device display not ready.");
         return;
     }
@@ -32,12 +40,32 @@ void display_control_init(void)
 
 void display_control_power_on(bool on)
 {
+    if (on == is_on) {
+        return;
+    }
+    is_on = on;
     if (on) {
+        // Turn on 3V3 regulator that powers display related stuff.
         regulator_enable(reg_dev);
-        display_control_set_brightness(1);
+        // Zephyr does not have APIs for re-init or power save for displays.
+        // We reuse the blanking API for this functioality for now.
+        // This actually re-inits the display.
+        display_blanking_on(display_dev);
+        // Turn backlight on. TODO use same brightness as before.
+        display_control_set_brightness(last_brightness);
+        k_work_schedule(&lvgl_work, K_MSEC(1));
     } else {
+        // Turn off 3v3 regulator
         regulator_disable(reg_dev);
+        // Turn off PWM peripheral as it consumes like 200-250uA
         display_control_set_brightness(0);
+        // Cancel pending call to lv_task_handler
+        // Don't waste resosuces to rendering when display is off anyway.
+        k_work_cancel_delayable_sync(&lvgl_work, &canel_work_sync);
+        // Prepare for next call to lv_task_handler when screen is enabled again,
+        // Since the display will have been powered off, we need to tell LVGL
+        // to rerender the complete display.
+        lv_obj_invalidate(lv_scr_act());
     }
 }
 
@@ -53,8 +81,13 @@ void display_control_set_brightness(uint8_t percent)
                pwm_led0.dev->name);
         return;
     }
-
+    last_brightness = percent;
     ret = pwm_set_pulse_dt(&pwm_led0, pulse_width);
     __ASSERT(ret == 0, "pwm error: %d for pulse: %d", ret, pulse_width);
 }
 
+static void lvgl_render(struct k_work *item)
+{
+    const int64_t next_update_in_ms = lv_task_handler();
+    k_work_schedule(&lvgl_work, K_MSEC(next_update_in_ms));
+}

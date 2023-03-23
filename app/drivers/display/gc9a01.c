@@ -92,6 +92,8 @@ LOG_MODULE_REGISTER(gc9a01, CONFIG_DISPLAY_LOG_LEVEL_ERR);
 #define SLPIN               0x10
 #define SLPOUT              0x11
 
+static int gc9a01_init(const struct device *dev);
+
 static const uint8_t initcmd[] = {
     GC9A01A_INREGEN2, 0,
     0xEB, 1, 0x14,
@@ -214,7 +216,11 @@ static int gc9a01_blanking_off(const struct device *dev)
 
 static int gc9a01_blanking_on(const struct device *dev)
 {
-    return gc9a01_write_cmd(dev, GC9A01A_DISPON, NULL, 0);
+    //return gc9a01_write_cmd(dev, GC9A01A_DISPON, NULL, 0);
+
+    // Due to lack of re-init or display power management in Zephyr APIs,
+    // we reuse the blanking API for turning display completely off and on.
+    return gc9a01_init(dev);
 }
 
 static int gc9a01_write(const struct device *dev, const uint16_t x, const uint16_t y,
@@ -340,7 +346,6 @@ static int gc9a01_controller_init(const struct device *dev)
 static int gc9a01_init(const struct device *dev)
 {
     const struct gc9a01_config *config = dev->config;
-
     LOG_DBG("");
 
     if (!spi_is_ready(&config->bus)) {
@@ -359,7 +364,6 @@ static int gc9a01_init(const struct device *dev)
     }
     gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
     gpio_pin_configure_dt(&config->dc_gpio, GPIO_OUTPUT_INACTIVE);
-    k_msleep(500);
 
     if (!device_is_ready(config->bl_gpio.port)) {
         LOG_ERR("Busy GPIO device not ready");
