@@ -32,7 +32,7 @@ void magnetometer_init(void)
     struct sensor_trigger trig;
     struct sensor_value odr_attr;
 
-    odr_attr.val1 = 1; // TODO what value
+    odr_attr.val1 = 10; // TODO what value
     odr_attr.val2 = 0;
 
     if (sensor_attr_set(magnetometer, SENSOR_CHAN_ALL,
