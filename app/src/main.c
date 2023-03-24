@@ -34,6 +34,7 @@
 #include <magnetometer.h>
 #include <pressure_sensor.h>
 #include <zephyr/zbus/zbus.h>
+#include <zsw_cpu_freq.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
 
@@ -49,7 +50,6 @@ typedef enum ui_state {
 } ui_state_t;
 
 void run_init_work(struct k_work *item);
-static void lvgl_render(struct k_work *item);
 
 static void enable_bluetoth(void);
 static void open_notifications_page(void *unused);
@@ -77,7 +77,6 @@ static lv_indev_drv_t enc_drv;
 static lv_indev_t *enc_indev;
 static buttonId_t last_pressed;
 
-static bool display_on = true;
 static bool vibrator_on = false;
 
 static ui_state_t watch_state = INIT_STATE;
