@@ -51,6 +51,8 @@
         label = "vsys-3v3-ctrl";
         regulator-name = "display";
         enable-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+        regulator-boot-on;
+        startup-delay-us = < 50000 >;
     };
 
     regulator_5v: regulator-5v-ctrl {
