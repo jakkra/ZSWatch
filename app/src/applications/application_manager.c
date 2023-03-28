@@ -196,12 +196,12 @@ static void draw_application_picker(void)
     for (int i = 0; i < num_apps; i++) {
         LOG_DBG("Apps[%d]: %s", i, apps[i]->name);
         entry = create_application_list_entry(grid, apps[i]->icon, apps[i]->name, i);
-        lv_obj_add_event_cb(entry, app_clicked, LV_EVENT_RELEASED, (void *)i);
+        lv_obj_add_event_cb(entry, app_clicked, LV_EVENT_CLICKED, (void *)i);
     }
 
     LV_IMG_DECLARE(close_icon);
     entry = create_application_list_entry(grid, &close_icon, "Close", num_apps);
-    lv_obj_add_event_cb(entry, app_manager_close_button_pressed, LV_EVENT_RELEASED, NULL);
+    lv_obj_add_event_cb(entry, app_manager_close_button_pressed, LV_EVENT_CLICKED, NULL);
 
     lv_group_focus_obj(lv_obj_get_child(grid, 0));
 
