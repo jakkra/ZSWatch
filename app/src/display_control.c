@@ -21,7 +21,7 @@ K_WORK_DELAYABLE_DEFINE(lvgl_work, lvgl_render);
 
 static struct k_work_sync canel_work_sync;
 static bool is_on;
-static bool last_brightness = 5;
+static uint8_t last_brightness = 5;
 
 void display_control_init(void)
 {
@@ -52,7 +52,7 @@ void display_control_power_on(bool on)
         // We reuse the blanking API for this functioality for now.
         // This actually re-inits the display.
         display_blanking_on(display_dev);
-        // Turn backlight on. TODO use same brightness as before.
+        // Turn backlight on.
         display_control_set_brightness(last_brightness);
         k_work_schedule(&lvgl_work, K_MSEC(1));
     } else {
