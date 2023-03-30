@@ -35,6 +35,7 @@
 #include <pressure_sensor.h>
 #include <zephyr/zbus/zbus.h>
 #include <zsw_cpu_freq.h>
+#include <zsw_charger.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
 
