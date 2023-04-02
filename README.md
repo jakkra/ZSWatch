@@ -15,9 +15,32 @@ Smartwatch built from scratch, both hardware and software. Built on the [Zephyrâ
 ## Building or getting one
 I have received quite some requests regarding building or getting the ZSWatch, I suggest to wait for the v2 version I'm working on. If you want to get notified when I'm done with v2 then simply press the `Watch` button (next to Fork and Star) -> `Custom -> Releases` and you will see in your feed when it's released.
 <br/>
-<br/>
 **Or** you can fill in your **[mail here (Google form)](https://forms.gle/G48Sm5zDe9aCaYtT9)** and I'll send a reminder when it's ready (or if I decide to make a few kits, who knows).
 <br/>
+
+# Table of content ZSWatch
+- [Building or getting one](#building-or-getting-one)
+- [Hardware Features in ZSWatch v1](#hardware-features-in-zswatch-v1)
+  * [BOM](#bom)
+  * [PCB Issues in v1](#pcb-issues-in-v1)
+- [Hardware features in ZSWatch v2](#hardware-features-in-zswatch-v2)
+- [Progress on v2](#progress-on-v2)
+- [Charger/Dock](#charger-dock)
+- [Enclosure/Casing](#enclosure-casing)
+- [Software Features](#software-features)
+  * [Larger not yet implemented SW Features and TODOs](#larger-not-yet-implemented-sw-features-and-todos)
+- [Android phone communication](#android-phone-communication)
+- [PCB](#pcb)
+- [ZSWatch in action](#zswatch-in-action)
+- [Environment, Compiling and running the code](#environment--compiling-and-running-the-code)
+  * [Setting up the environment](#setting-up-the-environment)
+  * [Compiling](#compiling)
+  * [Running and developing the ZSWatch SW without the actual ZSWatch HW](#running-and-developing-the-zswatch-sw-without-the-actual-zswatch-hw)
+- [Writing apps for the Application Manager](#writing-apps-for-the-application-manager)
+- [Dock](#dock)
+- [Licence GPL-3.0](#licence-gpl-30)
+
+
 ## Hardware Features in ZSWatch v1
 - nRF52833 BLE chip [(u-blox ANNA-B402 module)](https://content.u-blox.com/sites/default/files/ANNA-B402_DataSheet_UBX-20032372.pdf).
 - 1.28" 240x240 IPS TFT Circular Display with [GC9A01 driver](https://www.buydisplay.com/1-28-inch-tft-lcd-display-240x240-round-circle-screen-for-smart-watch).
@@ -86,18 +109,16 @@ Basic pogo-pin dock that connects the power and SWD pins to the bottom of the wa
    - Number unread notifications
    - Heart rate (not implemented yet however)
 - Pop-up notifications
-- Setting menu system, with easy extendability
 - [Application picker and app concept](#writing-apps-for-the-application-manager)
+   - [Setting menu system, with easy extendability](app/src/applications/settings/)
    - [Music control app](app/src/applications/music_control/)
    - [Settings app](app/src/applications/settings/)
+   - [Compass app](app/src/applications/compass/)
    - etc.
 - Step counting
 
 ### Larger not yet implemented SW Features and TODOs
-- Heart rate, right now only samples the raw data, but no heart rate is calculated from it.
-- Proper BLE pairing, currently removed due to flash constraints (fixed by nRF5340 upgrade).
-- Watchface should also be an application.
-- Use the new sensors in ZSWatch v2 for some really cool new features.
+There are almost endless of posiblities for features that could be implemented, see [here for full progress](https://github.com/users/jakkra/projects/1) for my current ideas and progress.
 
 ## Android phone communication
 Fortunately there is a great Android app called [GadgetBridge](https://codeberg.org/Freeyourgadget) which handles everything needed on the phone side, such as notifications management, music control and so much more... The ZSWatch right now pretends to be one of the supported Smart Watches in Gadgetbridge, following the same API as it does. In future there may be a point adding native support, we'll see.
@@ -163,7 +184,7 @@ VScode:
 - Done, press `Build Configuration`.
 
 ### Running and developing the ZSWatch SW without the actual ZSWatch HW
-This is possible, what you need is a [nRF5340-DK](https://www.digikey.se/en/products/detail/nordic-semiconductor-asa/NRF5340-DK/13544603) and a breakout of the screen I use [https://www.waveshare.com/1.28inch-touch-lcd.htm](https://www.waveshare.com/1.28inch-touch-lcd.htm).
+This is possible, what you need is a [nRF5340-DK](https://www.digikey.se/en/products/detail/nordic-semiconductor-asa/NRF5340-DK/13544603) (or EVK-NORA-B1) and a breakout of the screen I use [https://www.waveshare.com/1.28inch-touch-lcd.htm](https://www.waveshare.com/1.28inch-touch-lcd.htm).
 <br>
 You may also add _any_ of the sensors on the ZSWatch, Sparkfun for example have them all:<br>
 [BMI270](https://www.sparkfun.com/products/17353)
