@@ -143,7 +143,9 @@ Compiling [from VSCode nRF Connect plugin](https://nrfconnect.github.io/vscode-n
 
 __NOTE__
 <br>
-If you are building with Zephyr you need to manually also compile and flash the `zephyr/samples/bluetooth/hci_rpmsg` sample and flash that to the NET core. Using nRF Connect this is done automatically thanks to the `child_image/hci_rpmsg.conf`.
+If you are building with Zephyr you need in addition manually compile and flash the `zephyr/samples/bluetooth/hci_rpmsg` sample and flash that to the NET core. With nRF Connect this is done automatically thanks to the `child_image/hci_rpmsg.conf`. For convenience I have also uploaded a pre-compiled [hex image for NET CPU](app/child_image/GENERATED_CP_NETWORK_merged_domains.hex) if you don't want to recompile it yourself. Flash it using following:
+<br>
+`nrfjprog -f NRF53 --coprocessor CP_NETWORK --program app/child_image/GENERATED_CP_NETWORK_merged_domains.hex --chiperase`
 
 To build the NET core image:
 Command line: 
