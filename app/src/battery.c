@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(BATTERY, LOG_LEVEL_WRN);
 
 #define VBATT DT_PATH(vbatt)
 
+#if DT_IO_CHANNELS_INPUT(VBATT)
 /* This board uses a divider that reduces max voltage to
  * reference voltage (600 mV).
  */
@@ -212,3 +213,22 @@ unsigned int battery_level_pptt(unsigned int batt_mV,
               * (batt_mV - pb->lvl_mV)
               / (pa->lvl_mV - pb->lvl_mV));
 }
+
+#else
+
+int battery_measure_enable(bool enable)
+{
+    return 0;
+}
+
+int battery_sample(void)
+{
+    return 4000;
+}
+
+unsigned int battery_level_pptt(unsigned int batt_mV, const struct battery_level_point *curve)
+{
+    return 10000;
+}
+
+#endif // VBATT

@@ -130,6 +130,8 @@ Everything works with both Zephyr and with nRF Connect (Nordic Semi. Zephyr fork
 - Zephyr 3.3.0
 - nRF Connect SDK 2.3.0
 
+### Compiling
+
 After setting up the environment using one of the two above options you can compile the application from either command line or within VSCode.
 
 Building [with command line](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/getting_started/programming.html#building-on-the-command-line):
@@ -159,6 +161,18 @@ VScode:
 - Select `zswatch_nrf5340_cpunet` as board (VSCode should pick this one up automatically if you added the ZSWatch application earlier).
 - Press `Add Fragment` and select the `nrf5340_cpunet_df-bt_ll_sw_split.conf`
 - Done, press `Build Configuration`.
+
+### Running and developing the ZSWatch SW without the actual ZSWatch HW
+This is possible, what you need is a [nRF5340-DK](https://www.digikey.se/en/products/detail/nordic-semiconductor-asa/NRF5340-DK/13544603) and a breakout of the screen I use [https://www.waveshare.com/1.28inch-touch-lcd.htm](https://www.waveshare.com/1.28inch-touch-lcd.htm).
+<br>
+You may also add _any_ of the sensors on the ZSWatch, Sparkfun for example have them all:<br>
+[BMI270](https://www.sparkfun.com/products/17353)
+[BME688](https://www.sparkfun.com/products/19096)
+[BMP581](https://www.sparkfun.com/products/20170)
+[MAX30101](https://www.sparkfun.com/products/16474)
+[LIS2MDL](https://www.sparkfun.com/products/19851)
+
+When using the nRF5340-DK all you need to do is to replace `zswatch_nrf5340_cpuapp` with `nrf5340dk_nrf5340_cpuapp` as the board in the compiling instructions above. You may also need to tweak the pin assignment in [app/boards/nrf5340dk_nrf5340_cpuapp.overlay](app/boards/nrf5340dk_nrf5340_cpuapp.overlay) for your needs.
 
 ## Writing apps for the Application Manager
 Check out [the sample application](app/src/applications/template/) for the general app design. The main idea is each app have an `<app_name>_app.c` file which registers the app, chooses icon and drives the logic for the app. Then there should be one or more files named for example `<app_name>_ui.c` containing pure LVGL code with no dependencies to Zephyr or the watch software. The idea is that this UI code should be runnable in a LVGL simulator to speed up development of UI, however right now that's not set up yet. The `<app_name>_app.c` will do all logic and call functions in `<app_name>_ui.c` to update the UI accordingly. 

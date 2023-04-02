@@ -13,8 +13,8 @@ LOG_MODULE_REGISTER(display_control, LOG_LEVEL_WRN);
 
 static void lvgl_render(struct k_work *item);
 
-static const struct pwm_dt_spec pwm_led0 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led0));
-static const struct device *const reg_dev = DEVICE_DT_GET(DT_PATH(regulator_3v3_ctrl));
+static const struct pwm_dt_spec display_blk = PWM_DT_SPEC_GET_OR(DT_ALIAS(display_blk), {});
+static const struct device *const reg_dev = DEVICE_DT_GET_OR_NULL(DT_PATH(regulator_3v3_ctrl));
 const struct device *display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 
 K_WORK_DELAYABLE_DEFINE(lvgl_work, lvgl_render);
@@ -29,12 +29,12 @@ void display_control_init(void)
         LOG_ERR("Device display not ready.");
         return;
     }
-    if (!device_is_ready(pwm_led0.dev)) {
-        LOG_ERR("Device PWM not ready.");
+    if (!device_is_ready(display_blk.dev)) {
+        LOG_WRN("Display brightness control not supported");
         return;
     }
     if (!device_is_ready(reg_dev)) {
-        LOG_ERR("Regulator device not ready.");
+        LOG_WRN("Display regulator control not supported");
         return;
     }
 }
@@ -47,7 +47,9 @@ void display_control_power_on(bool on)
     is_on = on;
     if (on) {
         // Turn on 3V3 regulator that powers display related stuff.
-        regulator_enable(reg_dev);
+        if (device_is_ready(reg_dev)) {
+            regulator_enable(reg_dev);
+        }
         // Zephyr does not have APIs for re-init or power save for displays.
         // We reuse the blanking API for this functioality for now.
         // This actually re-inits the display.
@@ -57,7 +59,9 @@ void display_control_power_on(bool on)
         k_work_schedule(&lvgl_work, K_MSEC(1));
     } else {
         // Turn off 3v3 regulator
-        regulator_disable(reg_dev);
+        if (device_is_ready(reg_dev)) {
+            regulator_disable(reg_dev);
+        }
         // Turn off PWM peripheral as it consumes like 200-250uA
         display_control_set_brightness(0);
         // Cancel pending call to lv_task_handler
@@ -72,18 +76,17 @@ void display_control_power_on(bool on)
 
 void display_control_set_brightness(uint8_t percent)
 {
-    __ASSERT(percent >= 0 && percent <= 100, "Invalid range for brightness, valid range 0-100, was %d", percent);
-    int ret;
-    uint32_t step = pwm_led0.period / 100;
-    uint32_t pulse_width = step * (100 - percent);
-
-    if (!device_is_ready(pwm_led0.dev)) {
-        LOG_ERR("Error: PWM device %s is not ready\n",
-               pwm_led0.dev->name);
+    if (!device_is_ready(display_blk.dev)) {
         return;
     }
+    __ASSERT(percent >= 0 && percent <= 100, "Invalid range for brightness, valid range 0-100, was %d", percent);
+    int ret;
+    uint32_t step = display_blk.period / 100;
+    uint32_t pulse_width = step * (100 - percent);
+
+
     last_brightness = percent;
-    ret = pwm_set_pulse_dt(&pwm_led0, pulse_width);
+    ret = pwm_set_pulse_dt(&display_blk, pulse_width);
     __ASSERT(ret == 0, "pwm error: %d for pulse: %d", ret, pulse_width);
 }
 
