@@ -216,11 +216,7 @@ static int gc9a01_blanking_off(const struct device *dev)
 
 static int gc9a01_blanking_on(const struct device *dev)
 {
-    //return gc9a01_write_cmd(dev, GC9A01A_DISPON, NULL, 0);
-
-    // Due to lack of re-init or display power management in Zephyr APIs,
-    // we reuse the blanking API for turning display completely off and on.
-    return gc9a01_init(dev);
+    return gc9a01_write_cmd(dev, GC9A01A_DISPON, NULL, 0);
 }
 
 static int gc9a01_write(const struct device *dev, const uint16_t x, const uint16_t y,
@@ -375,6 +371,34 @@ static int gc9a01_init(const struct device *dev)
     return gc9a01_controller_init(dev);
 }
 
+static int gc9a01_pm_action(const struct device *dev,
+                enum pm_device_action action)
+{
+    int err = 0;
+
+    switch (action) {
+    case PM_DEVICE_ACTION_RESUME:
+        err = gc9a01_write_cmd(dev, GC9A01A_DISPON, NULL, 0);
+        break;
+    case PM_DEVICE_ACTION_SUSPEND:
+        err = gc9a01_write_cmd(dev, GC9A01A_DISPOFF, NULL, 0);
+        break;
+    case PM_DEVICE_ACTION_TURN_ON:
+        err = gc9a01_init(dev);
+        break;
+    case PM_DEVICE_ACTION_TURN_OFF:
+        break;
+    default:
+        return -ENOTSUP;
+    }
+
+    if (err < 0) {
+        LOG_ERR("%s: failed to set power mode", dev->name);
+    }
+
+    return err;
+}
+
 static const struct gc9a01_config gc9a01_config = {
     .bus = SPI_DT_SPEC_INST_GET(0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),
     .reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
@@ -395,6 +419,6 @@ static struct display_driver_api gc9a01_driver_api = {
     .set_orientation = gc9a01_set_orientation,
 };
 
-
-DEVICE_DT_INST_DEFINE(0, gc9a01_init, NULL, NULL, &gc9a01_config, POST_KERNEL,
+PM_DEVICE_DT_INST_DEFINE(0, gc9a01_pm_action);
+DEVICE_DT_INST_DEFINE(0, gc9a01_init, PM_DEVICE_DT_INST_GET(0), NULL, &gc9a01_config, POST_KERNEL,
                       CONFIG_DISPLAY_INIT_PRIORITY, &gc9a01_driver_api);

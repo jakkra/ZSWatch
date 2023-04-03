@@ -1,6 +1,7 @@
 #include <display_control.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/regulator.h>
@@ -49,11 +50,10 @@ void display_control_power_on(bool on)
         // Turn on 3V3 regulator that powers display related stuff.
         if (device_is_ready(reg_dev)) {
             regulator_enable(reg_dev);
+            pm_device_action_run(display_dev, PM_DEVICE_ACTION_TURN_ON);
+        } else {
+            pm_device_action_run(display_dev, PM_DEVICE_ACTION_RESUME);
         }
-        // Zephyr does not have APIs for re-init or power save for displays.
-        // We reuse the blanking API for this functioality for now.
-        // This actually re-inits the display.
-        display_blanking_on(display_dev);
         // Turn backlight on.
         display_control_set_brightness(last_brightness);
         k_work_schedule(&lvgl_work, K_MSEC(1));
@@ -61,6 +61,9 @@ void display_control_power_on(bool on)
         // Turn off 3v3 regulator
         if (device_is_ready(reg_dev)) {
             regulator_disable(reg_dev);
+            pm_device_action_run(display_dev, PM_DEVICE_ACTION_TURN_OFF);
+        } else {
+            pm_device_action_run(display_dev, PM_DEVICE_ACTION_SUSPEND);
         }
         // Turn off PWM peripheral as it consumes like 200-250uA
         display_control_set_brightness(0);
