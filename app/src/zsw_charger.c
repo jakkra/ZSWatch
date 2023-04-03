@@ -4,8 +4,13 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
+#include <events/chg_event.h>
+#include <zephyr/zbus/zbus.h>
 
 LOG_MODULE_REGISTER(zsw_charger, LOG_LEVEL_ERR);
+
+ZBUS_CHAN_DECLARE(chg_state_data_chan);
+
 
 #define CHECK_CHG_INTERVAL_MS  2500
 
@@ -29,9 +34,12 @@ bool zsw_charger_is_charging(void)
     return is_charging;
 }
 
-static bool send_chg_status_event(void)
+static void send_chg_status_event(void)
 {
-    // TODO Send ZBUS event of is_charging
+    struct chg_state_event evt = {
+        .is_charging = is_charging,
+    };
+    zbus_chan_pub(&chg_state_data_chan, &evt, K_MSEC(250));
 }
 
 static void charger_status_work_cb(struct k_work *work)

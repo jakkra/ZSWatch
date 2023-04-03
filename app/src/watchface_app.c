@@ -20,17 +20,23 @@
 #include <events/accel_event.h>
 #include <notification_manager.h>
 #include <zephyr/zbus/zbus.h>
+#include <zsw_charger.h>
+#include <events/chg_event.h>
 
 LOG_MODULE_REGISTER(watcface_app, LOG_LEVEL_WRN);
 
 static void zbus_ble_comm_data_callback(const struct zbus_channel *chan);
 static void zbus_accel_data_callback(const struct zbus_channel *chan);
+static void zbus_chg_state_data_callback(const struct zbus_channel *chan);
 
 ZBUS_CHAN_DECLARE(ble_comm_data_chan);
 ZBUS_LISTENER_DEFINE(watchface_ble_comm_lis, zbus_ble_comm_data_callback);
 
 ZBUS_CHAN_DECLARE(accel_data_chan);
 ZBUS_LISTENER_DEFINE(watchface_accel_lis, zbus_accel_data_callback);
+
+ZBUS_CHAN_DECLARE(chg_state_data_chan);
+ZBUS_LISTENER_DEFINE(watchface_chg_event, zbus_chg_state_data_callback);
 
 #define WORK_STACK_SIZE 3000
 #define WORK_PRIORITY   5
@@ -158,12 +164,14 @@ void general_work(struct k_work *item)
             int batt_mv;
             int batt_percent;
             int msg_len;
+            int is_charging;
             char buf[100];
             memset(buf, 0, sizeof(buf));
 
             if (read_battery(&batt_mv, &batt_percent) == 0) {
+                is_charging = zsw_charger_is_charging();
                 msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"status\", \"bat\": %d, \"volt\": %d, \"chg\": %d} \n", batt_percent,
-                                   batt_mv, 0);
+                                   batt_mv, is_charging);
                 ble_comm_send(buf, msg_len);
             }
             __ASSERT(0 <= k_work_schedule(&status_work.work, SEND_STATUS_INTERVAL),
@@ -269,6 +277,17 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
         if (event->data.type == ACCELEROMETER_EVT_TYPE_STEP) {
             watchface_set_step(event->data.data.step.count);
         }
+    }
+}
+
+static void zbus_chg_state_data_callback(const struct zbus_channel *chan)
+{
+    if (running) {
+        struct chg_state_event *event = zbus_chan_msg(chan);
+        // TODO Show some nice animation or similar
+        LOG_WRN("CHG: %d", event->is_charging);
+        __ASSERT(0 <= k_work_reschedule(&status_work.work, K_MSEC(10)),
+                     "Failed schedule status work");
     }
 }
 
