@@ -75,10 +75,16 @@ static void async_app_start(lv_timer_t *timer)
 
 static void async_app_close(lv_timer_t *timer)
 {
-    LOG_DBG("Stop %d", current_app);
-    apps[current_app]->stop_func();
-    current_app = INVALID_APP_ID;
-    draw_application_picker();
+    if (current_app < num_apps) {
+        LOG_DBG("Stop %d", current_app);
+        apps[current_app]->stop_func();
+        current_app = INVALID_APP_ID;
+        draw_application_picker();
+    } else {
+        // No app running, then close whole application_manager
+        application_manager_delete();
+        close_cb_func();
+    }
 }
 
 static void async_app_manager_close(lv_timer_t *timer)
