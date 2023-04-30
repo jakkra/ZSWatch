@@ -276,11 +276,6 @@ void page_event_cb(lv_event_t *e)
 
 void watchface_show(void)
 {
-    if (root_page != NULL) {
-        lv_obj_clear_flag(root_page, LV_OBJ_FLAG_HIDDEN);
-        lv_obj_add_event_cb(lv_scr_act(), page_event_cb, LV_EVENT_GESTURE, NULL);
-        return;
-    }
     lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x161B22), LV_PART_MAIN);
     root_page = lv_obj_create(lv_scr_act());
 
@@ -306,7 +301,8 @@ void watchface_show(void)
 void watchface_remove(void)
 {
     lv_obj_remove_event_cb(lv_scr_act(), page_event_cb);
-    lv_obj_add_flag(root_page, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_del(root_page);
+    root_page = NULL;
 }
 
 void watchface_set_battery_percent(int32_t percent, int32_t value)
