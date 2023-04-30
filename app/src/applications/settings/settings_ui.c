@@ -158,7 +158,7 @@ void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char
     _mainPage = lv_menu_page_create(_menu, NULL);
 
     for (int i = 0; i < num_pages; i++) {
-        sub_page = lv_menu_page_create(_menu, "Settings");
+        sub_page = lv_menu_page_create(_menu, NULL);
         lv_obj_set_scrollbar_mode(sub_page, LV_SCROLLBAR_MODE_OFF);
         cont = lv_menu_cont_create(sub_page);
 
