@@ -40,7 +40,6 @@ void template_ui_show(lv_obj_t *root, on_ui_increment_cb_t close_cb)
     counter_label = lv_label_create(root_page);
     lv_obj_align(counter_label, LV_ALIGN_TOP_MID, 0, 10);
     lv_label_set_text(counter_label, "-");
-    lv_obj_set_style_text_color(counter_label, lv_color_black(), LV_PART_MAIN);
 
     // Add the manual counter label
     btn_counter_label = lv_label_create(root_page);

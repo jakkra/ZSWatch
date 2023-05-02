@@ -33,7 +33,6 @@ static void create_ui(lv_obj_t *parent)
     lv_obj_set_height(compass_label, LV_SIZE_CONTENT);
     lv_obj_set_align(compass_label, LV_ALIGN_TOP_MID);
     lv_label_set_text(compass_label, "360");
-    lv_obj_set_style_text_color(compass_label, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(compass_label, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 }
 

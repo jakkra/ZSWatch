@@ -36,7 +36,7 @@ static void row_focused(lv_event_t *e)
     if (row && lv_obj_get_child_cnt(row) > 0) {
         lv_obj_t *title_label = lv_obj_get_user_data(row);
         if (title_label) {
-            lv_obj_set_style_text_color(title_label, lv_color_black(), LV_PART_MAIN);
+            lv_obj_set_style_text_color(title_label, lv_color_white(), LV_PART_MAIN);
         }
     }
 }
@@ -186,6 +186,7 @@ static void draw_application_picker(void)
     lv_style_set_layout(&style, LV_LAYOUT_FLEX);
 
     lv_obj_set_scrollbar_mode(lv_scr_act(), LV_SCROLLBAR_MODE_OFF);
+
 
     assert(grid == NULL);
     grid = lv_obj_create(root_obj);

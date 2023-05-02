@@ -136,7 +136,7 @@ void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char
 
     // Border around selected menu row when focused
     lv_style_init(&outline_primary);
-    lv_style_set_border_color(&outline_primary, lv_color_hex(0x001833));
+    lv_style_set_border_color(&outline_primary, lv_color_hex(0xF99B7D));
     lv_style_set_border_width(&outline_primary, lv_disp_dpx(lv_disp_get_next(NULL), 3));
     lv_style_set_border_opa(&outline_primary, LV_OPA_50);
     lv_style_set_border_side(&outline_primary, LV_BORDER_SIDE_BOTTOM);

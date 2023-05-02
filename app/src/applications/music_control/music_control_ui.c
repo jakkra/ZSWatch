@@ -151,7 +151,6 @@ void music_control_ui_show(lv_obj_t *root, on_music_control_ui_event_cb_t close_
     lv_label_set_long_mode(track_name_label, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_width(track_name_label, LV_PCT(50));
     lv_label_set_text(track_name_label, "No music playing...");
-    lv_obj_set_style_text_color(track_name_label, lv_color_black(), LV_PART_MAIN);
     lv_obj_set_style_anim_speed(track_name_label, 10, 0);
 
     artist_name_label = lv_label_create(root_page);
@@ -160,7 +159,6 @@ void music_control_ui_show(lv_obj_t *root, on_music_control_ui_event_cb_t close_
     lv_label_set_long_mode(artist_name_label, LV_LABEL_LONG_SCROLL_CIRCULAR);
     lv_obj_set_width(artist_name_label, LV_PCT(50));
     lv_label_set_text(artist_name_label, "Artist...");
-    lv_obj_set_style_text_color(artist_name_label, lv_color_black(), LV_PART_MAIN);
     lv_obj_set_style_anim_speed(artist_name_label, 10, 0);
 
     time_label = lv_label_create(root_page);
@@ -168,7 +166,6 @@ void music_control_ui_show(lv_obj_t *root, on_music_control_ui_event_cb_t close_
     lv_obj_set_style_text_align(time_label, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_width(time_label, LV_SIZE_CONTENT);
     lv_label_set_text(time_label, "...");
-    lv_obj_set_style_text_color(time_label, lv_color_black(), LV_PART_MAIN);
 }
 
 void music_control_ui_remove(void)
