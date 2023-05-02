@@ -20,6 +20,7 @@ static lv_obj_t *root_obj;
 static lv_group_t *group_obj;
 static on_application_manager_cb_fn close_cb_func;
 static lv_obj_t *grid;
+static uint8_t last_index;
 
 static void delete_application_picker(void)
 {
@@ -57,6 +58,7 @@ static void app_clicked(lv_event_t *e)
 {
     int app_id = (int)lv_event_get_user_data(e);
     current_app = app_id;
+    last_index = app_id;
     // This function may be called within a lvgl callback such
     // as a button click. If we create a new ui in this callback
     // which registers a button press callback then that callback
@@ -209,13 +211,13 @@ static void draw_application_picker(void)
     entry = create_application_list_entry(grid, &close_icon, "Close", num_apps);
     lv_obj_add_event_cb(entry, app_manager_close_button_pressed, LV_EVENT_CLICKED, NULL);
 
-    lv_group_focus_obj(lv_obj_get_child(grid, 0));
+    lv_group_focus_obj(lv_obj_get_child(grid, last_index));
 
     /* Update the notifications position manually firt time */
     lv_event_send(grid, LV_EVENT_SCROLL, NULL);
 
     /* Be sure the fist notification is in the middle */
-    lv_obj_scroll_to_view(lv_obj_get_child(grid, 0), LV_ANIM_OFF);
+    lv_obj_scroll_to_view(lv_obj_get_child(grid, last_index), LV_ANIM_OFF);
 }
 
 void application_manager_show(on_application_manager_cb_fn close_cb, lv_obj_t *root, lv_group_t *group)
