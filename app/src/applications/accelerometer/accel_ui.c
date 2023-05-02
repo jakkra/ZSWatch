@@ -25,14 +25,9 @@ void accel_ui_show(lv_obj_t *root, on_close_cb_t close_cb)
     assert(root_page == NULL);
 
     close_callback = close_cb;
-    //if (root_page != NULL) {
-    //    lv_obj_clear_flag(root_page, LV_OBJ_FLAG_HIDDEN);
-    //    return;
-    //}
 
     root_page = lv_obj_create(root);
     lv_obj_set_scrollbar_mode(root_page, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_set_style_bg_opa(root_page, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_border_width(root_page, 0, LV_PART_MAIN);
     lv_obj_set_size(root_page, 240, 240);
     lv_obj_center(root_page);
@@ -87,9 +82,6 @@ void accel_ui_show(lv_obj_t *root, on_close_cb_t close_cb)
 
 void accel_ui_remove(void)
 {
-    //lv_obj_add_flag(root_page, LV_OBJ_FLAG_HIDDEN);
-    //general_ui_anim_out_all(lv_scr_act(), 0);
-    //if (!root_page) return;
     lv_obj_del(root_page);
     root_page = NULL;
 }
