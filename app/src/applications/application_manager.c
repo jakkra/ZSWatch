@@ -33,7 +33,12 @@ static void delete_application_picker(void)
 static void row_focused(lv_event_t *e)
 {
     lv_obj_t *row = lv_event_get_target(e);
+    int app_id = (int)lv_event_get_user_data(e);
     if (row && lv_obj_get_child_cnt(row) > 0) {
+        // Don't show close button as last focused row
+        if (app_id != num_apps) {
+            last_index = app_id;
+        }
         lv_obj_t *title_label = lv_obj_get_user_data(row);
         if (title_label) {
             lv_obj_set_style_text_color(title_label, lv_color_white(), LV_PART_MAIN);
@@ -99,6 +104,8 @@ static void app_manager_close_button_pressed(lv_event_t *e)
 {
     lv_timer_t *timer = lv_timer_create(async_app_manager_close, 500,  NULL);
     lv_timer_set_repeat_count(timer, 1);
+    // Next time we open focus on first app and not close button.
+    last_index = 0;
 }
 
 static void scroll_event_cb(lv_event_t *e)
