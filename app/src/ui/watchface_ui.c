@@ -109,13 +109,12 @@ static void add_clock(lv_obj_t *parent)
 
     LV_IMG_DECLARE(minute_hand)
     LV_IMG_DECLARE(hour_hand)
-
-    indic_hour = lv_meter_add_needle_img(clock_meter, scale_hour, &hour_hand, 31, 9);
-    indic_min = lv_meter_add_needle_img(clock_meter, scale_min, &minute_hand, 31, 9);
 #ifdef USE_SECOND_HAND
     LV_IMG_DECLARE(second_hand)
     indic_second = lv_meter_add_needle_img(clock_meter, scale_second, &second_hand, 12, 2);
 #endif
+    indic_hour = lv_meter_add_needle_img(clock_meter, scale_hour, &hour_hand, 31, 9);
+    indic_min = lv_meter_add_needle_img(clock_meter, scale_min, &minute_hand, 31, 9);
 }
 
 static void add_battery_indicator(lv_obj_t *parent)
