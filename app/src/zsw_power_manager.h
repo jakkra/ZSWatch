@@ -18,6 +18,11 @@
 #define __ZSW_POWER_MANAGER_H_
 #include <stdbool.h>
 
+typedef enum zsw_power_manager_state_t {
+    ZSW_ACTIVITY_STATE_ACTIVE,
+    ZSW_ACTIVITY_STATE_INACTIVE
+} zsw_power_manager_state_t;
+
 /*
 *   Resets the inactivity timeout that will make the watch go
 *   into inactive mode with display etc. turned off to save power.

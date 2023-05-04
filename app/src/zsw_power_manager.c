@@ -23,10 +23,11 @@
 #include <display_control.h>
 #include <lvgl.h>
 #include <zephyr/logging/log.h>
+#include <events/activity_event.h>
 
 LOG_MODULE_REGISTER(zsw_power_manager, LOG_LEVEL_DBG);
 
-#define IDLE_TIMEOUT_SECONDS    5
+#define IDLE_TIMEOUT_SECONDS    30
 
 static void enter_active(void);
 static void enter_inactive(void);
@@ -34,6 +35,8 @@ static void handle_idle_timeout(struct k_work *item);
 static void zbus_accel_data_callback(const struct zbus_channel *chan);
 
 K_WORK_DELAYABLE_DEFINE(idle_work, handle_idle_timeout);
+
+ZBUS_CHAN_DECLARE(activity_state_data_chan);
 
 ZBUS_CHAN_DECLARE(accel_data_chan);
 ZBUS_LISTENER_DEFINE(power_manager_accel_lis, zbus_accel_data_callback);
@@ -59,6 +62,11 @@ static void enter_inactive(void)
     LOG_DBG("Enter inactive");
     is_active = false;
     display_control_power_on(false);
+
+    struct activity_state_event evt = {
+        .state = ZSW_ACTIVITY_STATE_INACTIVE,
+    };
+    zbus_chan_pub(&activity_state_data_chan, &evt, K_MSEC(250));
 }
 
 static void enter_active(void)
@@ -66,6 +74,12 @@ static void enter_active(void)
     LOG_DBG("Enter active");
     is_active = true;
     display_control_power_on(true);
+
+    struct activity_state_event evt = {
+        .state = ZSW_ACTIVITY_STATE_ACTIVE,
+    };
+    zbus_chan_pub(&activity_state_data_chan, &evt, K_MSEC(250));
+
     k_work_schedule(&idle_work, K_SECONDS(IDLE_TIMEOUT_SECONDS));
 }
 
