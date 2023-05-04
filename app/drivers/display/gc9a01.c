@@ -372,24 +372,24 @@ static int gc9a01_init(const struct device *dev)
 }
 
 static int gc9a01_pm_action(const struct device *dev,
-                enum pm_device_action action)
+                            enum pm_device_action action)
 {
     int err = 0;
 
     switch (action) {
-    case PM_DEVICE_ACTION_RESUME:
-        err = gc9a01_write_cmd(dev, GC9A01A_DISPON, NULL, 0);
-        break;
-    case PM_DEVICE_ACTION_SUSPEND:
-        err = gc9a01_write_cmd(dev, GC9A01A_DISPOFF, NULL, 0);
-        break;
-    case PM_DEVICE_ACTION_TURN_ON:
-        err = gc9a01_init(dev);
-        break;
-    case PM_DEVICE_ACTION_TURN_OFF:
-        break;
-    default:
-        return -ENOTSUP;
+        case PM_DEVICE_ACTION_RESUME:
+            err = gc9a01_write_cmd(dev, GC9A01A_DISPON, NULL, 0);
+            break;
+        case PM_DEVICE_ACTION_SUSPEND:
+            err = gc9a01_write_cmd(dev, GC9A01A_DISPOFF, NULL, 0);
+            break;
+        case PM_DEVICE_ACTION_TURN_ON:
+            err = gc9a01_init(dev);
+            break;
+        case PM_DEVICE_ACTION_TURN_OFF:
+            break;
+        default:
+            return -ENOTSUP;
     }
 
     if (err < 0) {

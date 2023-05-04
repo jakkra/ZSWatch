@@ -56,7 +56,7 @@ static void sensors_summary_app_stop(void)
 
 static double get_relative_height_m(double relative_pressure, double new_pressure, double temperature)
 {
-    return ((powf((relative_pressure / new_pressure), 1.f/5.257f) - 1.f) * (temperature + 273.15f)) / 0.0065f;
+    return ((powf((relative_pressure / new_pressure), 1.f / 5.257f) - 1.f) * (temperature + 273.15f)) / 0.0065f;
 }
 
 static void timer_callback(lv_timer_t *timer)

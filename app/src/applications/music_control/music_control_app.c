@@ -107,7 +107,8 @@ static void handle_update_ui(struct k_work *item)
 
         if (last_music_update.type == BLE_COMM_DATA_TYPE_MUSTIC_STATE) {
             music_control_ui_set_music_state(last_music_update.data.music_state.playing,
-                                             (((float)last_music_update.data.music_state.position / (float)track_duration)) * 100, last_music_update.data.music_state.shuffle);
+                                             (((float)last_music_update.data.music_state.position / (float)track_duration)) * 100,
+                                             last_music_update.data.music_state.shuffle);
             progress_seconds = last_music_update.data.music_state.position;
             playing = last_music_update.data.music_state.playing;
         }

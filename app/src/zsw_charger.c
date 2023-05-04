@@ -24,7 +24,8 @@ static void charger_status_work_cb(struct k_work *work);
 static void charger_status_chg_detected_isr(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
 
 static K_WORK_DELAYABLE_DEFINE(charger_work, charger_status_work_cb);
-static const struct gpio_dt_spec is_charging_pin = GPIO_DT_SPEC_GET_BY_IDX_OR(DT_NODELABEL(charging_status), gpios, 0, {});
+static const struct gpio_dt_spec is_charging_pin = GPIO_DT_SPEC_GET_BY_IDX_OR(DT_NODELABEL(charging_status), gpios,
+                                                                              0, {});
 static struct gpio_callback gpio_charger_cb;
 static bool is_charging;
 static chg_state_t chg_state;

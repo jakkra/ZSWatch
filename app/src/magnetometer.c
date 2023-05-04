@@ -36,7 +36,7 @@ void magnetometer_init(void)
     odr_attr.val2 = 0;
 
     if (sensor_attr_set(magnetometer, SENSOR_CHAN_ALL,
-                SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+                        SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
         LOG_ERR("Cannot set sampling frequency for LIS2MDL\n");
         return;
     }
@@ -55,7 +55,7 @@ double magnetometer_get_heading(void)
 }
 
 static void lis2mdl_trigger_handler(const struct device *dev,
-                    const struct sensor_trigger *trig)
+                                    const struct sensor_trigger *trig)
 {
     struct sensor_value die_temp2;
     struct sensor_value magn[3];
@@ -65,17 +65,17 @@ static void lis2mdl_trigger_handler(const struct device *dev,
     sensor_channel_get(magnetometer, SENSOR_CHAN_DIE_TEMP, &die_temp2);
 
     LOG_DBG("LIS2MDL: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
-        sensor_value_to_double(&magn[0]),
-        sensor_value_to_double(&magn[1]),
-        sensor_value_to_double(&magn[2]));
+            sensor_value_to_double(&magn[0]),
+            sensor_value_to_double(&magn[1]),
+            sensor_value_to_double(&magn[2]));
 
     LOG_DBG("LIS2MDL: Temperature: %.1f C\n",
-        sensor_value_to_double(&die_temp2));
+            sensor_value_to_double(&die_temp2));
 
     last_heading = xyz_to_rotation(sensor_value_to_double(&magn[0]),
-        sensor_value_to_double(&magn[1]),
-        sensor_value_to_double(&magn[2]));
-    
+                                   sensor_value_to_double(&magn[1]),
+                                   sensor_value_to_double(&magn[2]));
+
     LOG_DBG("Rotation: %f", last_heading);
 }
 

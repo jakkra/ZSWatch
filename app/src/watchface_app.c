@@ -227,7 +227,9 @@ static void check_notifications(void)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-    if (!running) return;
+    if (!running) {
+        return;
+    }
     if (err) {
         LOG_ERR("Connection failed (err %u)", err);
         return;
@@ -239,7 +241,9 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-    if (!running) return;
+    if (!running) {
+        return;
+    }
     watchface_set_ble_connected(false);
 }
 
@@ -248,7 +252,8 @@ static void update_ui_from_event(struct k_work *item)
     if (running) {
         if (last_data_update.type == BLE_COMM_DATA_TYPE_WEATHER) {
             LOG_DBG("Weather: %s t: %d hum: %d code: %d wind: %d dir: %d", last_data_update.data.weather.report_text,
-                    last_data_update.data.weather.temperature_c, last_data_update.data.weather.humidity, last_data_update.data.weather.weather_code,
+                    last_data_update.data.weather.temperature_c, last_data_update.data.weather.humidity,
+                    last_data_update.data.weather.weather_code,
                     last_data_update.data.weather.wind,
                     last_data_update.data.weather.wind_direction);
             watchface_set_weather(last_data_update.data.weather.temperature_c, last_data_update.data.weather.weather_code);
@@ -261,7 +266,7 @@ static void update_ui_from_event(struct k_work *item)
 
 static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
 {
-	if (running) {
+    if (running) {
         struct ble_data_event *event = zbus_chan_msg(chan);
         // TODO getting this callback again before workqueue has ran will
         // cause previous to be lost.
@@ -272,7 +277,7 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
 
 static void zbus_accel_data_callback(const struct zbus_channel *chan)
 {
-	if (running) {
+    if (running) {
         struct accel_event *event = zbus_chan_msg(chan);
         if (event->data.type == ACCELEROMETER_EVT_TYPE_STEP) {
             watchface_set_step(event->data.data.step.count);
@@ -287,7 +292,7 @@ static void zbus_chg_state_data_callback(const struct zbus_channel *chan)
         // TODO Show some nice animation or similar
         LOG_WRN("CHG: %d", event->is_charging);
         __ASSERT(0 <= k_work_reschedule(&status_work.work, K_MSEC(10)),
-                     "Failed schedule status work");
+                 "Failed schedule status work");
     }
 }
 

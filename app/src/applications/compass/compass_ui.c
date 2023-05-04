@@ -15,9 +15,9 @@ static void create_ui(lv_obj_t *parent)
     lv_obj_set_height(compass_panel, 240);
     lv_obj_set_align(compass_panel, LV_ALIGN_CENTER);
     lv_obj_clear_flag(compass_panel, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_style_radius(compass_panel, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(compass_panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(compass_panel, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_width(compass_panel, 0, LV_PART_MAIN| LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(compass_panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     compass_img = lv_img_create(compass_panel);
     lv_img_set_src(compass_img, &cardinal_point);
@@ -33,7 +33,7 @@ static void create_ui(lv_obj_t *parent)
     lv_obj_set_height(compass_label, LV_SIZE_CONTENT);
     lv_obj_set_align(compass_label, LV_ALIGN_TOP_MID);
     lv_label_set_text(compass_label, "360");
-    lv_obj_set_style_text_opa(compass_label, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(compass_label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
 void compass_ui_show(lv_obj_t *root)

@@ -419,14 +419,12 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
             LOG_ERR("x: %d y: %d z: %d", event->data.data.xyz.x, event->data.data.xyz.y, event->data.data.xyz.z);
             break;
         }
-        case ACCELEROMETER_EVT_TYPE_GESTURE:
-        {
+        case ACCELEROMETER_EVT_TYPE_GESTURE: {
             if (event->data.data.gesture == ACCELEROMETER_EVT_GESTURE_WRIST_SHAKE) {
                 display_control_power_on(true);
             }
         }
-        case ACCELEROMETER_EVT_TYPE_WRIST_WAKEUP:
-        {
+        case ACCELEROMETER_EVT_TYPE_WRIST_WAKEUP: {
             display_control_power_on(true);
             break;
         }

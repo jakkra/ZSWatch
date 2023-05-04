@@ -1,21 +1,21 @@
 #include <sensors_summary/sensors_summary_ui.h>
 #include <lvgl.h>
 
-static void event_set_reference_button(lv_event_t * e);
+static void event_set_reference_button(lv_event_t *e);
 
 static lv_obj_t *root_page = NULL;
 static on_ui_close_cb_t close_callback;
 static on_reference_set_cb_t ref_set_callback;
 
-static lv_obj_t* set_ref_btn;
-static lv_obj_t* ref_btn_text;
-static lv_obj_t* pressure_label;
-static lv_obj_t* humidity_label;
-static lv_obj_t* temp_label;
-static lv_obj_t* rel_height_label;
-static lv_obj_t* gas_label;
+static lv_obj_t *set_ref_btn;
+static lv_obj_t *ref_btn_text;
+static lv_obj_t *pressure_label;
+static lv_obj_t *humidity_label;
+static lv_obj_t *temp_label;
+static lv_obj_t *rel_height_label;
+static lv_obj_t *gas_label;
 
-static void event_set_reference_button(lv_event_t * e)
+static void event_set_reference_button(lv_event_t *e)
 {
     ref_set_callback();
 }
@@ -28,8 +28,8 @@ static void create_ui(lv_obj_t *parent)
     lv_obj_set_x(set_ref_btn, 0);
     lv_obj_set_y(set_ref_btn, 80);
     lv_obj_set_align(set_ref_btn, LV_ALIGN_CENTER);
-    lv_obj_add_flag(set_ref_btn, LV_OBJ_FLAG_SCROLL_ON_FOCUS);  
-    lv_obj_clear_flag(set_ref_btn, LV_OBJ_FLAG_SCROLLABLE);   
+    lv_obj_add_flag(set_ref_btn, LV_OBJ_FLAG_SCROLL_ON_FOCUS);
+    lv_obj_clear_flag(set_ref_btn, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_text_font(set_ref_btn, &lv_font_montserrat_14, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ref_btn_text = lv_label_create(set_ref_btn);
@@ -57,7 +57,7 @@ static void create_ui(lv_obj_t *parent)
 
     temp_label = lv_label_create(parent);
     lv_obj_set_width(temp_label, LV_SIZE_CONTENT);
-    lv_obj_set_height(temp_label, LV_SIZE_CONTENT); 
+    lv_obj_set_height(temp_label, LV_SIZE_CONTENT);
     lv_obj_set_x(temp_label, 15);
     lv_obj_set_y(temp_label, -45);
     lv_obj_set_align(temp_label, LV_ALIGN_LEFT_MID);
@@ -65,7 +65,7 @@ static void create_ui(lv_obj_t *parent)
 
     rel_height_label = lv_label_create(parent);
     lv_obj_set_width(rel_height_label, LV_SIZE_CONTENT);
-    lv_obj_set_height(rel_height_label, LV_SIZE_CONTENT); 
+    lv_obj_set_height(rel_height_label, LV_SIZE_CONTENT);
     lv_obj_set_x(rel_height_label, 5);
     lv_obj_set_y(rel_height_label, -25);
     lv_obj_set_align(rel_height_label, LV_ALIGN_LEFT_MID);
@@ -73,7 +73,7 @@ static void create_ui(lv_obj_t *parent)
 
     gas_label = lv_label_create(parent);
     lv_obj_set_width(gas_label, LV_SIZE_CONTENT);
-    lv_obj_set_height(gas_label, LV_SIZE_CONTENT); 
+    lv_obj_set_height(gas_label, LV_SIZE_CONTENT);
     lv_obj_set_x(gas_label, 5);
     lv_obj_set_y(gas_label, -5);
     lv_obj_set_align(gas_label, LV_ALIGN_LEFT_MID);
