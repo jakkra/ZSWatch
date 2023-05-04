@@ -17,6 +17,7 @@ static void lvgl_render(struct k_work *item);
 static const struct pwm_dt_spec display_blk = PWM_DT_SPEC_GET_OR(DT_ALIAS(display_blk), {});
 static const struct device *const reg_dev = DEVICE_DT_GET_OR_NULL(DT_PATH(regulator_3v3_ctrl));
 const struct device *display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+const struct device *touch_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_keyboard_scan));
 
 K_WORK_DELAYABLE_DEFINE(lvgl_work, lvgl_render);
 
@@ -38,6 +39,9 @@ void display_control_init(void)
         LOG_WRN("Display regulator control not supported");
         return;
     }
+    if (!device_is_ready(touch_dev)) {
+        LOG_WRN("Device touch not ready.");
+    }
 }
 
 void display_control_power_on(bool on)
@@ -56,7 +60,9 @@ void display_control_power_on(bool on)
         }
         // Turn backlight on.
         display_control_set_brightness(last_brightness);
-        k_work_schedule(&lvgl_work, K_MSEC(1));
+        // Turn on the touch chip
+        pm_device_action_run(touch_dev, PM_DEVICE_ACTION_RESUME);
+        k_work_schedule(&lvgl_work, K_MSEC(250));
     } else {
         // Turn off 3v3 regulator
         if (device_is_ready(reg_dev)) {
@@ -65,6 +71,8 @@ void display_control_power_on(bool on)
         } else {
             pm_device_action_run(display_dev, PM_DEVICE_ACTION_SUSPEND);
         }
+        // Suspend the touch chip
+        pm_device_action_run(touch_dev, PM_DEVICE_ACTION_SUSPEND);
         // Turn off PWM peripheral as it consumes like 200-250uA
         display_control_set_brightness(0);
         // Cancel pending call to lv_task_handler
@@ -87,8 +95,9 @@ void display_control_set_brightness(uint8_t percent)
     uint32_t step = display_blk.period / 100;
     uint32_t pulse_width = step * (100 - percent);
 
-
-    last_brightness = percent;
+    if (percent != 0) {
+        last_brightness = percent;
+    }
     ret = pwm_set_pulse_dt(&display_blk, pulse_width);
     __ASSERT(ret == 0, "pwm error: %d for pulse: %d", ret, pulse_width);
 }

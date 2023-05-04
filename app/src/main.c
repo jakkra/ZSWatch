@@ -36,6 +36,7 @@
 #include <zephyr/zbus/zbus.h>
 #include <zsw_cpu_freq.h>
 #include <zsw_charger.h>
+#include <zsw_power_manager.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
 
@@ -266,20 +267,20 @@ static void async_turn_off_buttons_allocation(void *unused)
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
 {
     LOG_WRN("Pressed %d, type: %d", id, type);
+
+    if (zsw_power_manager_reset_idle_timout()) {
+        // Don't process the press if it caused wakeup.
+        return;
+    }
+
     // Always allow force restart
     if (type == BUTTONS_LONG_PRESS && id == BUTTON_TOP_LEFT) {
         retained.off_count += 1;
         retained_update();
         sys_reboot(SYS_REBOOT_COLD);
     }
-    // TODO Handle somewhere else, but for now turn on
-    // display if it's off when a button is pressed.
-    display_control_power_on(true);
 
     if (id == BUTTON_BOTTOM_RIGHT && watch_state == APPLICATION_MANAGER_STATE) {
-        // TODO doesn't work, as this press is read later with lvgl and causes extra press in settings.
-        // To fix each application must have exit button, maybe we can register long press on the whole view to exit
-        // apps without input device
         application_manager_exit_app();
         return;
     }
