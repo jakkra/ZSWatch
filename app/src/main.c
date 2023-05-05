@@ -375,6 +375,7 @@ static void ble_data_cb(ble_comm_cb_data_t *cb)
             if (buttons_allocated) {
                 return;
             }
+            zsw_power_manager_reset_idle_timout();
 
             buttons_allocated = true;
             lv_async_call(open_notification_popup, NULL);
