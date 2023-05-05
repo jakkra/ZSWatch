@@ -32,7 +32,7 @@ void lv_notification_show(char *title, char *body, notification_src_t icon, uint
 
     static lv_style_t style_indic_not_bg;
     lv_style_init(&style_indic_not_bg);
-    lv_style_set_bg_color(&style_indic_not_bg, lv_color_hex(0xC1C1C1));
+    lv_style_set_bg_color(&style_indic_not_bg, lv_color_hex(0x2a9df4));
     lv_obj_add_style(mbox, &style_indic_not_bg, 0);
 
     static lv_style_t color_style;
