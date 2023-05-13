@@ -280,7 +280,7 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
         sys_reboot(SYS_REBOOT_COLD);
     }
 
-    if (id == BUTTON_BOTTOM_RIGHT && watch_state == APPLICATION_MANAGER_STATE) {
+    if (id == BUTTON_TOP_RIGHT && watch_state == APPLICATION_MANAGER_STATE) {
         application_manager_exit_app();
         return;
     }
@@ -321,10 +321,10 @@ static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *da
         data->key = LV_KEY_LEFT;
         data->state = LV_INDEV_STATE_PR;
         last_pressed = BUTTON_TOP_LEFT;
-    } else if (button_read(BUTTON_TOP_RIGHT)) {
+    } else if (button_read(BUTTON_BOTTOM_RIGHT)) {
         data->key = LV_KEY_ENTER;
         data->state = LV_INDEV_STATE_PR;
-        last_pressed = BUTTON_TOP_RIGHT;
+        last_pressed = BUTTON_BOTTOM_RIGHT;
     } else if (button_read(BUTTON_BOTTOM_LEFT)) {
         data->key = LV_KEY_RIGHT;
         data->state = LV_INDEV_STATE_PR;
@@ -340,7 +340,7 @@ static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *da
             case BUTTON_TOP_LEFT:
                 data->key = LV_KEY_RIGHT;
                 break;
-            case BUTTON_TOP_RIGHT:
+            case BUTTON_BOTTOM_RIGHT:
                 data->key = LV_KEY_ENTER;
                 break;
             case BUTTON_BOTTOM_LEFT:
