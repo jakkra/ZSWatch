@@ -55,24 +55,23 @@ void display_control_power_on(bool on)
         if (device_is_ready(reg_dev)) {
             regulator_enable(reg_dev);
             pm_device_action_run(display_dev, PM_DEVICE_ACTION_TURN_ON);
-        } else {
-            pm_device_action_run(display_dev, PM_DEVICE_ACTION_RESUME);
         }
+        // Resume the display and touch chip
+        pm_device_action_run(display_dev, PM_DEVICE_ACTION_RESUME);
+        pm_device_action_run(touch_dev, PM_DEVICE_ACTION_RESUME);
         // Turn backlight on.
         display_control_set_brightness(last_brightness);
-        // Turn on the touch chip
-        pm_device_action_run(touch_dev, PM_DEVICE_ACTION_RESUME);
         k_work_schedule(&lvgl_work, K_MSEC(250));
     } else {
+        // Suspend the display and touch chip
+        pm_device_action_run(display_dev, PM_DEVICE_ACTION_SUSPEND);
+        pm_device_action_run(touch_dev, PM_DEVICE_ACTION_SUSPEND);
+
         // Turn off 3v3 regulator
         if (device_is_ready(reg_dev)) {
             regulator_disable(reg_dev);
             pm_device_action_run(display_dev, PM_DEVICE_ACTION_TURN_OFF);
-        } else {
-            pm_device_action_run(display_dev, PM_DEVICE_ACTION_SUSPEND);
         }
-        // Suspend the touch chip
-        pm_device_action_run(touch_dev, PM_DEVICE_ACTION_SUSPEND);
         // Turn off PWM peripheral as it consumes like 200-250uA
         display_control_set_brightness(0);
         // Cancel pending call to lv_task_handler
