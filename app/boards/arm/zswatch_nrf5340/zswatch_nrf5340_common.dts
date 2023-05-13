@@ -93,10 +93,10 @@
         sw1 = &button1;
         sw2 = &button2;
         sw3 = &button3;
-        sw-top-right = &button1;
-        sw-top-left = &button2;
-        sw-bottom-right = &button3;
-        sw-bottom-left = &button0;
+        sw-top-right = &button0;
+        sw-top-left = &button3;
+        sw-bottom-right = &button2;
+        sw-bottom-left = &button1;
         magn = &lis2mdl;
         watchdog0 = &wdt0;
         accel = &bmi270;
