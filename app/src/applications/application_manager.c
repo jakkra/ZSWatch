@@ -21,6 +21,7 @@ static lv_group_t *group_obj;
 static on_application_manager_cb_fn close_cb_func;
 static lv_obj_t *grid;
 static uint8_t last_index;
+static bool app_launch_only;
 
 static void delete_application_picker(void)
 {
@@ -86,7 +87,12 @@ static void async_app_close(lv_timer_t *timer)
         LOG_DBG("Stop %d", current_app);
         apps[current_app]->stop_func();
         current_app = INVALID_APP_ID;
-        draw_application_picker();
+        if (app_launch_only) {
+            application_manager_delete();
+            close_cb_func();
+        } else {
+            draw_application_picker();
+        }
     } else {
         // No app running, then close whole application_manager
         application_manager_delete();
@@ -229,12 +235,35 @@ static void draw_application_picker(void)
     lv_obj_scroll_to_view(lv_obj_get_child(grid, last_index), LV_ANIM_OFF);
 }
 
-void application_manager_show(on_application_manager_cb_fn close_cb, lv_obj_t *root, lv_group_t *group)
+int application_manager_show(on_application_manager_cb_fn close_cb, lv_obj_t *root, lv_group_t *group, char *app_name)
 {
+    int err = 0;
+    bool app_found;
     close_cb_func = close_cb;
     root_obj = root;
     group_obj = group;
-    draw_application_picker();
+    app_launch_only = false;
+
+    if (app_name == NULL) {
+        draw_application_picker();
+    } else {
+        app_found = false;
+        for (int i = 0; i < num_apps; i++) {
+            if (strcmp(apps[i]->name, app_name) == 0) {
+                app_launch_only = true;
+                current_app = i;
+                last_index = i;
+                lv_timer_t *timer = lv_timer_create(async_app_start, 1,  NULL);
+                lv_timer_set_repeat_count(timer, 1);
+            }
+        }
+    }
+
+    if (app_name != NULL && !app_found) {
+        err = -ENOENT;
+    }
+
+    return err;
 }
 
 void application_manager_delete(void)

@@ -68,8 +68,8 @@ static void on_notification_page_notification_close(uint32_t not_id);
 static void zbus_ble_comm_data_callback(const struct zbus_channel *chan);
 static void zbus_accel_data_callback(const struct zbus_channel *chan);
 
-
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
+static void screen_gesture_event(lv_event_t *e);
 
 static void on_close_application_manager(void);
 
@@ -90,7 +90,6 @@ ZBUS_LISTENER_DEFINE(main_ble_comm_lis, zbus_ble_comm_data_callback);
 
 ZBUS_CHAN_DECLARE(accel_data_chan);
 ZBUS_LISTENER_DEFINE(main_accel_lis, zbus_accel_data_callback);
-
 
 void run_init_work(struct k_work *item)
 {
@@ -123,6 +122,7 @@ void run_init_work(struct k_work *item)
     lv_indev_set_group(enc_indev, input_group);
 
     watch_state = WATCHFACE_STATE;
+    lv_obj_add_event_cb(lv_scr_act(), screen_gesture_event, LV_EVENT_GESTURE, NULL);
     watchface_app_start(input_group);
 }
 
@@ -196,7 +196,7 @@ static void open_application_manager_page(void *unused)
     watchface_app_stop();
     buttons_allocated = true;
     watch_state = APPLICATION_MANAGER_STATE;
-    application_manager_show(on_close_application_manager, lv_scr_act(), input_group);
+    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, NULL);
 }
 
 static void play_press_vibration(void)
@@ -350,6 +350,39 @@ static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *da
                 break;
         }
         last_pressed = 0xFF;
+    }
+}
+
+static void screen_gesture_event(lv_event_t *e)
+{
+    lv_event_code_t event = lv_event_get_code(e);
+    if (event == LV_EVENT_GESTURE) {
+        lv_dir_t  dir = lv_indev_get_gesture_dir(lv_indev_get_act());
+#ifdef __ZEPHYR__
+        LOG_WRN("EVENT_GESTURE dir: %d\n", dir);
+#endif
+        if (watch_state == WATCHFACE_STATE) {
+            watchface_app_stop();
+            buttons_allocated = true;
+            watch_state = APPLICATION_MANAGER_STATE;
+
+            switch (dir) {
+                case LV_DIR_BOTTOM:
+                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, NULL);
+                    break;
+                case LV_DIR_TOP:
+                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "Music");
+                    break;
+                case LV_DIR_RIGHT:
+                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "Settings");
+                    break;
+                case LV_DIR_LEFT:
+                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "Sensors");
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 }
 

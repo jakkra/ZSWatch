@@ -260,19 +260,6 @@ void watchface_init(void)
     lv_obj_clean(lv_scr_act());
 }
 
-void page_event_cb(lv_event_t *e)
-{
-    lv_event_code_t event = lv_event_get_code(e);
-    if (event == LV_EVENT_GESTURE) {
-        lv_dir_t  dir = lv_indev_get_gesture_dir(lv_indev_get_act());
-#ifdef __ZEPHYR__
-        LOG_WRN("EVENT_GESTURE dir: %d\n", dir);
-#endif
-        // TODO handle swipe gestures.
-        // Could for example open other apps or display some other info.
-    }
-}
-
 void watchface_show(void)
 {
     //lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x161B22), LV_PART_MAIN);
@@ -281,8 +268,6 @@ void watchface_show(void)
     lv_obj_clear_flag(root_page, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_scrollbar_mode(root_page, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_bg_opa(root_page, LV_OPA_TRANSP, LV_PART_MAIN);
-
-    lv_obj_add_event_cb(lv_scr_act(), page_event_cb, LV_EVENT_GESTURE, NULL);
 
     lv_obj_set_style_border_width(root_page, 0, LV_PART_MAIN);
     lv_obj_set_size(root_page, 240, 240);
@@ -299,7 +284,6 @@ void watchface_show(void)
 
 void watchface_remove(void)
 {
-    lv_obj_remove_event_cb(lv_scr_act(), page_event_cb);
     lv_obj_del(root_page);
     root_page = NULL;
 }

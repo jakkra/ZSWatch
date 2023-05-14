@@ -15,7 +15,7 @@ typedef struct application_t {
     const lv_img_dsc_t     *icon;
 } application_t;
 
-void application_manager_show(on_application_manager_cb_fn close_cb, lv_obj_t *root, lv_group_t *group);
+int application_manager_show(on_application_manager_cb_fn close_cb, lv_obj_t *root, lv_group_t *group, char *app_name);
 
 void application_manager_delete(void);
 
