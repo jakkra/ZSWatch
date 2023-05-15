@@ -41,7 +41,7 @@ static bmi270_feature_config_set_t bmi270_enabled_features[] = {
     //{ .sensor_id = BMI2_GYRO, .cfg_func = configue_gyro},
     { .sensor_id = BMI2_STEP_COUNTER, .cfg_func = configure_step_counter},
     { .sensor_id = BMI2_SIG_MOTION, .cfg_func = NULL},
-    { .sensor_id = BMI2_ANY_MOTION, .cfg_func = configure_anymotion},
+    //{ .sensor_id = BMI2_ANY_MOTION, .cfg_func = configure_anymotion},
     { .sensor_id = BMI2_STEP_ACTIVITY, .cfg_func = NULL},
     { .sensor_id = BMI2_WRIST_GESTURE, .cfg_func = configure_gesture_detect},
     { .sensor_id = BMI2_WRIST_WEAR_WAKE_UP, .cfg_func = configure_wrist_wakeup},
@@ -187,11 +187,16 @@ static void bmi270_int2_work_cb(struct k_work *work)
     rslt = bmi2_get_int_status(&int_status, &bmi2_dev);
     bmi2_error_codes_print_result(rslt);
 
+    // For some reason step count ISR is nor firing, for now
+    // just poll it whenever there is another event.
+    int_status |= BMI270_STEP_CNT_STATUS_MASK;
+
     if (int_status & BMI270_SIG_MOT_STATUS_MASK) {
         LOG_DBG("INT: BMI270_SIG_MOT_STATUS_MASK\n");
         evt.type = ACCELEROMETER_EVT_TYPE_SIGNIFICANT_MOTION;
         send_accel_event(&evt);
-    } else if (int_status & BMI270_STEP_CNT_STATUS_MASK) {
+    }
+    if (int_status & BMI270_STEP_CNT_STATUS_MASK) {
         LOG_DBG("INT: BMI270_STEP_CNT_STATUS_MASK\n");
         sensor_data.type = BMI2_STEP_COUNTER;
         rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
@@ -200,7 +205,8 @@ static void bmi270_int2_work_cb(struct k_work *work)
         evt.data.step.count = (long unsigned int)sensor_data.sens_data.step_counter_output;
         send_accel_event(&evt);
         LOG_DBG("No of steps counted  = %lu", (long unsigned int)evt.data.step.count );
-    } else if (int_status & BMI270_STEP_ACT_STATUS_MASK) {
+    }
+    if (int_status & BMI270_STEP_ACT_STATUS_MASK) {
         LOG_DBG("INT: BMI270_STEP_ACT_STATUS_MASK\n");
         sensor_data.type = BMI2_STEP_ACTIVITY;
         rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
@@ -210,11 +216,13 @@ static void bmi270_int2_work_cb(struct k_work *work)
         const char *activity_output[4] = { "BMI2_STILL", "BMI2_WALK", "BMI2_RUN", "BMI2_UNKNOWN" };
         LOG_DBG("Step activity: %s", activity_output[sensor_data.sens_data.activity_output]);
         send_accel_event(&evt);
-    } else if (int_status & BMI270_WRIST_WAKE_UP_STATUS_MASK) {
+    }
+    if (int_status & BMI270_WRIST_WAKE_UP_STATUS_MASK) {
         LOG_DBG("INT: BMI270_WRIST_WAKE_UP_STATUS_MASK\n");
         evt.type = ACCELEROMETER_EVT_TYPE_WRIST_WAKEUP;
         send_accel_event(&evt);
-    } else if (int_status & BMI270_WRIST_GEST_STATUS_MASK) {
+    }
+    if (int_status & BMI270_WRIST_GEST_STATUS_MASK) {
         LOG_DBG("INT: BMI270_WRIST_GEST_STATUS_MASK\n");
         sensor_data.type = BMI2_WRIST_GESTURE;
         rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
@@ -224,8 +232,12 @@ static void bmi270_int2_work_cb(struct k_work *work)
         const char *gesture_output[6] = { "unknown_gesture", "push_arm_down", "pivot_up", "wrist_shake_jiggle", "flick_in", "flick_out" };
         LOG_DBG("Gesture detected: %s", gesture_output[sensor_data.sens_data.wrist_gesture_output]);
         send_accel_event(&evt);
-    } else if (int_status & BMI270_NO_MOT_STATUS_MASK) {
-    } else if (int_status & BMI270_ANY_MOT_STATUS_MASK) {
+    }
+    if (int_status & BMI270_NO_MOT_STATUS_MASK) {
+        LOG_DBG("No MO");
+    }
+    if (int_status & BMI270_ANY_MOT_STATUS_MASK) {
+         LOG_DBG("No any MO");
     }
 
     setup_int2(true);
