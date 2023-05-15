@@ -21,6 +21,7 @@ typedef struct bmi270_feature_config_set_t {
 
 static void send_accel_event(accelerometer_evt_t *data);
 
+static int8_t configure_axis_remapping(struct bmi2_dev *bmi2_dev);
 static int8_t configure_enable_all_bmi270(struct bmi2_dev *bmi2_dev);
 static void configue_accel(struct bmi2_sens_config *config);
 static void configue_gyro(struct bmi2_sens_config *config);
@@ -66,6 +67,10 @@ int accelerometer_init(void)
     /* Initialize bmi270. */
     rslt = bmi270_init(&bmi2_dev);
     bmi2_error_codes_print_result(rslt);
+
+    if (rslt == BMI2_OK) {
+        rslt = configure_axis_remapping(&bmi2_dev);
+    }
 
     if (rslt == BMI2_OK) {
         /* Accel and gyro configuration settings. */
@@ -439,4 +444,34 @@ static int8_t configure_enable_all_bmi270(struct bmi2_dev *bmi2_dev)
     }
 
     return 0;
+}
+
+static int8_t configure_axis_remapping(struct bmi2_dev *bmi2_dev)
+{
+    int8_t rslt;
+    struct bmi2_remap remapped_axis = { 0 };
+
+    rslt = bmi2_get_remap_axes(&remapped_axis, bmi2_dev);
+    bmi2_error_codes_print_result(rslt);
+
+    // In ZSWatch the PCB is mounted upsidedown in enclosure, hence we need
+    // to remap axises. BMI270 is rotated 180 degrees, hence below config.
+    remapped_axis.x = BMI2_NEG_X;
+    remapped_axis.y = BMI2_NEG_Y;
+
+    if (rslt == BMI2_OK) {
+        rslt = bmi2_set_remap_axes(&remapped_axis, bmi2_dev);
+        bmi2_error_codes_print_result(rslt);
+    }
+
+    if (rslt == BMI2_OK) {
+        rslt = bmi2_get_remap_axes(&remapped_axis, bmi2_dev);
+        bmi2_error_codes_print_result(rslt);
+    }
+
+    if (!((remapped_axis.x == BMI2_NEG_X) && (remapped_axis.y == BMI2_NEG_Y) && (remapped_axis.z == BMI2_Z))) {
+        LOG_ERR("Wrong axis remapping read after setting");
+    }
+
+    return rslt;
 }
