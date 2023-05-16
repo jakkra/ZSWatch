@@ -13,16 +13,13 @@ Smartwatch built from scratch, both hardware and software. Built on the [Zephyrâ
 <br/>
 
 ## Building or getting one
-I have received quite some requests regarding building or getting the ZSWatch, I suggest to wait for the v2 version I'm working on. If you want to get notified when I'm done with v2 then simply press the `Watch` button (next to Fork and Star) -> `Custom -> Releases` and you will see in your feed when it's released.
+I have received quite some requests regarding building or getting the ZSWatch, I am nearly finished with v2. If you want to get notified when I'm done with v2 then simply press the `Watch` button (next to Fork and Star) -> `Custom -> Releases` and you will see in your feed when it's released.
 <br/>
 **Or** you can fill in your **[mail here (Google form)](https://forms.gle/G48Sm5zDe9aCaYtT9)** and I'll send a reminder when it's ready (or if I decide to make a few kits, who knows).
 <br/>
 
 # Table of content ZSWatch
 - [Building or getting one](#building-or-getting-one)
-- [Hardware Features in ZSWatch v1](#hardware-features-in-zswatch-v1)
-  * [BOM](#bom)
-  * [PCB Issues in v1](#pcb-issues-in-v1)
 - [Hardware features in ZSWatch v2](#hardware-features-in-zswatch-v2)
 - [Progress on v2](#progress-on-v2)
 - [Charger/Dock](#charger-dock)
@@ -31,7 +28,7 @@ I have received quite some requests regarding building or getting the ZSWatch, I
   * [Larger not yet implemented SW Features and TODOs](#larger-not-yet-implemented-sw-features-and-todos)
 - [Android phone communication](#android-phone-communication)
 - [PCB](#pcb)
-- [ZSWatch in action](#zswatch-in-action)
+- [ZSWatch v1 in action](#zswatch-v1-in-action)
 - [Environment, Compiling and running the code](#environment-compiling-and-running-the-code)
   * [Setting up the environment](#setting-up-the-environment)
   * [Compiling](#compiling)
@@ -40,48 +37,24 @@ I have received quite some requests regarding building or getting the ZSWatch, I
 - [Dock](#dock)
 - [Licence GPL-3.0](#licence-gpl-30)
 
-
-## Hardware Features in ZSWatch v1
-- nRF52833 BLE chip [(u-blox ANNA-B402 module)](https://content.u-blox.com/sites/default/files/ANNA-B402_DataSheet_UBX-20032372.pdf).
-- 1.28" 240x240 IPS TFT Circular Display with [GC9A01 driver](https://www.buydisplay.com/1-28-inch-tft-lcd-display-240x240-round-circle-screen-for-smart-watch).
-- Accelerometer for step counting etc. [(LIS2DS12TR)](https://www.st.com/content/ccc/resource/technical/document/datasheet/ce/32/55/ac/e1/87/46/84/DM00177048.pdf/files/DM00177048.pdf/jcr:content/translations/en.DM00177048.pdf).
-- Pulse oximetry and heartrate using [(MAX30101EFD)](https://datasheets.maximintegrated.com/en/ds/MAX30101.pdf)).
-- Vibration motor with haptics driver to give better vibration control [(DRV2603RUNT)](https://www.ti.com/lit/ds/symlink/drv2603.pdf?HQS=dis-dk-null-digikeymode-dsf-pf-null-wwe&ts=1662847620221).
-- External 8MB flash [(MX25R6435FZNIL0)](https://static6.arrow.com/aropdfconversion/a35c4dff799e6b2e44732bd665796d74a8a3f62a/244684669660894mx25r6435f20wide20range2064mb20v1..pdf).
-- Battery charger and battery supervisor ([MAX1811ESA+ datasheet](https://datasheets.maximintegrated.com/en/ds/MAX1811.pdf), [TLV840MAPL3](https://www.ti.com/lit/ds/symlink/tlv840-q1.pdf?ts=1662823963602&ref_url=https%253A%252F%252Fwww.ti.com%252Fpower-management%252Fsupervisor-reset-ic%252Fproducts.html)).
-- 3 buttons for navigation (prev/next/enter)
-- 220 mAh Li-Po battery.
-- Sapphire Crystal Glass to protect the display.
-
-### BOM
-Found [here](ZSWatch-kicad/zswatch-bom.csv)
-
-### PCB Issues in v1
-**Do not build the v1, wait for v2.**
-
-- Logic level converter pinout shifted, requires manual PCB rework.
-- Possible current leakage on some pins.
-- Max display brightness is 60% (however definitely bright enough).
-
 ## Hardware features in ZSWatch v2
-- nRF5340 BLE chip (u-blox NORA-B10 module).
+- nRF5340 BLE chip (u-blox NORA-B10 module) compared to v1.
   - 2x CPU frequenzy.
   - 4x RAM (Will allow double buffered of data to the screen and larger framebuffers to decrease lag/tearing).
   - 2x Flash.
   - 6x faster display communication (8-> 30 MHz), should improve lag/tearing.
-- **Touch screen** with [same size and features as v1](https://www.buydisplay.com/240x240-round-ips-tft-lcd-display-1-28-inch-capactive-touch-circle-screen)
-- Replace LIS2DS12TR accelerometer with a more modern and feature rich IMU [Bosch BMI270](https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmi270-ds000.pdf), with this one it's possible to do many fancy things such as navigation using gestures and the typical smartwatch wakeup by moving the arm so the display is viewable.
-- Bosch [BME688](https://www.bosch-sensortec.com/products/environmental-sensors/gas-sensors/bme688/) Environmental sensing with AI.
+- **Touch screen** with [240x240 round disply](https://www.buydisplay.com/240x240-round-ips-tft-lcd-display-1-28-inch-capactive-touch-circle-screen)
+- IMU [Bosch BMI270](https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmi270-ds000.pdf), with this one it's possible to do many fancy things such as navigation using gestures and the typical smartwatch wakeup by moving the arm so the display is viewable.
+- Bosch [BME688](https://www.bosch-sensortec.com/products/environmental-sensors/gas-sensors/bme688/) Environmental sensor with AI.
+- Bosch [BMP581](https://www.bosch-sensortec.com/products/environmental-sensors/pressure-sensors/bmp581/) High performance pressure sensor accuracy in units of ~20cm's.
 - ST [LIS2MDLTR](https://www.st.com/resource/en/datasheet/lis2mdl.pdf) Magnetometer.
-- [Magnetic 6 pin connector](https://www.aliexpress.com/item/1005002776015559.html?) for charging and programming which connects to a new dock/adapter.
-- Option to make the watch cheaper by using the v1 display without touch.
+- Analog Devices [MAX30101](https://www.analog.com/en/products/max30101.html) Heart-Rate Monitor and Pulse Oximeter Sensor.
 - Option to not mount some sensors to save BOM cost.
-- 8MB external flash is removed due to larger size of u-blox NORA-B10 vs. ANNA-B402, however plenty of flash in new MCU.
 
 ## Progress on v2
 [Schematic for v2](schematic/ZSWatch-v2-kicad.pdf) is uploaded and should be pretty much final.
 <br/>
-PCB are finished, ordered and sucessfully assembled. Everyhting works except I2C communication with touch screen due to the logic lever converter chip. Will fix this and some other minor things for next revision.
+PCB are finished, ordered and sucessfully assembled.
 
 You can follow the progress here [https://github.com/users/jakkra/projects/1/views/5](https://github.com/users/jakkra/projects/1/views/5)
 <p float="left">
@@ -108,6 +81,7 @@ Basic pogo-pin dock that connects the power and SWD pins to the bottom of the wa
    - Step count
    - Number unread notifications
    - Heart rate (not implemented yet however)
+   - ...
 - Pop-up notifications
 - [Application picker and app concept](#writing-apps-for-the-application-manager)
    - [Setting menu system, with easy extendability](app/src/applications/settings/)
@@ -135,7 +109,7 @@ A 4 layer board which measures 36mm in diameter designed in KiCad.
 <img src=".github/back.jpg" width="49%" object-fit="cover"/>
 </p>
 
-## ZSWatch in action
+## ZSWatch v1 in action
 |*Music control*|*Accelerometer for step count and tap detection*|
 |---|---|
 |  <img src=".github/music.gif" object-fit="cover" /> |  <img src=".github/accel.gif" object-fit="cover" /> |
