@@ -1,1 +1,2 @@
 rsource "display/Kconfig"
+rsource "kscan/Kconfig"

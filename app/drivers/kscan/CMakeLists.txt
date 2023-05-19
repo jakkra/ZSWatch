@@ -1,0 +1,1 @@
+zephyr_sources_ifdef(CONFIG_KSCAN_MODIFIED_CST816S		kscan_cst816s.c)
