@@ -237,7 +237,7 @@ static void bmi270_int2_work_cb(struct k_work *work)
         LOG_DBG("No MO");
     }
     if (int_status & BMI270_ANY_MOT_STATUS_MASK) {
-         LOG_DBG("No any MO");
+        LOG_DBG("No any MO");
     }
 
     setup_int2(true);

@@ -48,13 +48,11 @@ ZBUS_LISTENER_DEFINE(watchface_battery_event, zbus_battery_sample_data_callback)
 
 #define RENDER_INTERVAL_LVGL    K_MSEC(100)
 #define ACCEL_INTERVAL          K_MSEC(100)
-#define SEND_STATUS_INTERVAL    K_SECONDS(30) // TODO move out from here
 #define DATE_UPDATE_INTERVAL    K_MINUTES(1)
 
 typedef enum work_type {
     UPDATE_CLOCK,
     OPEN_WATCHFACE,
-    SEND_STATUS_UPDATE,
     UPDATE_DATE
 } work_type_t;
 
@@ -77,7 +75,6 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 };
 
 static delayed_work_item_t clock_work =     { .type = UPDATE_CLOCK };
-static delayed_work_item_t status_work =    { .type = SEND_STATUS_UPDATE };
 static delayed_work_item_t date_work =      { .type = UPDATE_DATE };
 
 static delayed_work_item_t general_work_item;
@@ -92,7 +89,6 @@ static int watchface_app_init(const struct device *arg)
 {
     k_work_init_delayable(&general_work_item.work, general_work);
     k_work_init_delayable(&clock_work.work, general_work);
-    k_work_init_delayable(&status_work.work, general_work);
     k_work_init_delayable(&date_work.work, general_work);
     running = false;
 
@@ -142,25 +138,6 @@ void general_work(struct k_work *item)
             watchface_set_date(time->tm_wday, time->tm_mday);
             __ASSERT(0 <= k_work_schedule(&date_work.work, DATE_UPDATE_INTERVAL), "FAIL date_work");
         }
-        case SEND_STATUS_UPDATE: {
-            // TODO move to main
-            int batt_mv;
-            int batt_percent;
-            int msg_len;
-            int is_charging;
-            char buf[100];
-            memset(buf, 0, sizeof(buf));
-
-            if (zsw_battery_manager_sample_battery(&batt_mv, &batt_percent) == 0) {
-                is_charging = zsw_charger_is_charging();
-                msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"status\", \"bat\": %d, \"volt\": %d, \"chg\": %d} \n", batt_percent,
-                                   batt_mv, is_charging);
-                ble_comm_send(buf, msg_len);
-            }
-            __ASSERT(0 <= k_work_schedule(&status_work.work, SEND_STATUS_INTERVAL),
-                     "Failed schedule status work");
-            break;
-        }
     }
 }
 
@@ -179,7 +156,6 @@ static void connected(struct bt_conn *conn, uint8_t err)
         LOG_ERR("Connection failed (err %u)", err);
         return;
     }
-    __ASSERT(0 <= k_work_schedule(&status_work.work, K_MSEC(1000)), "FAIL status");
 
     watchface_set_ble_connected(true);
 }
@@ -235,9 +211,6 @@ static void zbus_chg_state_data_callback(const struct zbus_channel *chan)
     if (running) {
         struct chg_state_event *event = zbus_chan_msg(chan);
         // TODO Show some nice animation or similar
-        LOG_WRN("CHG: %d", event->is_charging);
-        __ASSERT(0 <= k_work_reschedule(&status_work.work, K_MSEC(10)),
-                 "Failed schedule status work");
     }
 }
 
