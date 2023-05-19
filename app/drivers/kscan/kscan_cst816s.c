@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Qingsong Gou <gouqs@hotmail.com>
+ * Copyright (c) 2022 Jakob Krantz <mail@jakobkrantz.se>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,7 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 
 LOG_MODULE_REGISTER(cst816s, CONFIG_KSCAN_LOG_LEVEL);
 
@@ -310,7 +312,34 @@ static const struct kscan_driver_api cst816s_driver_api = {
 	.disable_callback = cst816s_disable_callback,
 };
 
+#ifdef CONFIG_PM_DEVICE
+static int cst816s_pm_action(const struct device *dev,
+			     enum pm_device_action action)
+{
+	const struct cst816s_config *config = dev->config;
+	int status = 0;
+
+	switch (action) {
+		case PM_DEVICE_ACTION_SUSPEND:
+			LOG_DBG("State changed to suspended");
+			if (device_is_ready(config->rst_gpio.port)) {
+				status = gpio_pin_set_dt(&config->rst_gpio, 1);
+			}
+		break;
+		case PM_DEVICE_ACTION_RESUME:
+			LOG_DBG("State changed to active");
+			status = cst816s_chip_init(dev);
+			break;
+		default:
+			return -ENOTSUP;
+	}
+
+	return status;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #define CST816S_DEFINE(index)                                                     \
+	PM_DEVICE_DT_INST_DEFINE(index, cst816s_pm_action);                         \
 	static const struct cst816s_config cst816s_config_##index = {             \
 		.i2c = I2C_DT_SPEC_INST_GET(index),                               \
 		COND_CODE_1(CONFIG_KSCAN_CST816S_INTERRUPT,                       \
@@ -319,7 +348,7 @@ static const struct kscan_driver_api cst816s_driver_api = {
 		.rst_gpio = GPIO_DT_SPEC_INST_GET_OR(index, rst_gpios, {}),       \
 	};                                                                        \
 	static struct cst816s_data cst816s_data_##index;                          \
-	DEVICE_DT_INST_DEFINE(index, cst816s_init, NULL,                          \
+	DEVICE_DT_INST_DEFINE(index, cst816s_init, PM_DEVICE_DT_INST_GET(index),	\
 			     &cst816s_data_##index, &cst816s_config_##index,      \
 			     POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,             \
 			     &cst816s_driver_api);
