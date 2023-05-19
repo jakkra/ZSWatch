@@ -63,6 +63,8 @@ static struct divider_data divider_data = {
     .adc = DEVICE_DT_GET_OR_NULL(DT_IO_CHANNELS_CTLR(VBATT)),
 };
 
+static bool battery_ok;
+
 static int divider_setup(void)
 {
     const struct divider_config *cfg = &divider_config;
@@ -124,8 +126,6 @@ static int divider_setup(void)
     return rc;
 }
 
-static bool battery_ok;
-
 static int battery_setup(const struct device *arg)
 {
     int rc = divider_setup();
@@ -134,8 +134,6 @@ static int battery_setup(const struct device *arg)
     LOG_INF("Battery setup: %d %d", rc, battery_ok);
     return rc;
 }
-
-SYS_INIT(battery_setup, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
 int battery_measure_enable(bool enable)
 {
@@ -213,6 +211,8 @@ unsigned int battery_level_pptt(unsigned int batt_mV,
               * (batt_mV - pb->lvl_mV)
               / (pa->lvl_mV - pb->lvl_mV));
 }
+
+SYS_INIT(battery_setup, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
 #else
 
