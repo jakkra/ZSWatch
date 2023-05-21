@@ -82,8 +82,12 @@ static struct k_work_sync canel_work_sync;
 
 static K_WORK_DEFINE(update_ui_work, update_ui_from_event);
 static ble_comm_cb_data_t last_data_update;
+static ble_comm_weather_t last_weather_data;
+static struct battery_sample_event last_batt_evt = {.percent = 100, .mV = 4300};
+static struct chg_state_event last_chg_evt;
 
 static bool running;
+static bool is_connected;
 
 static int watchface_app_init(const struct device *arg)
 {
@@ -117,6 +121,11 @@ void general_work(struct k_work *item)
         case OPEN_WATCHFACE: {
             running = true;
             watchface_show();
+            watchface_set_ble_connected(is_connected);
+            watchface_set_battery_percent(last_batt_evt.percent, last_batt_evt.mV);
+            if (strlen(last_weather_data.report_text) > 0) {
+                watchface_set_weather(last_weather_data.temperature_c, last_weather_data.weather_code);
+            }
             __ASSERT(0 <= k_work_schedule(&clock_work.work, K_NO_WAIT), "FAIL clock_work");
             __ASSERT(0 <= k_work_schedule(&date_work.work, K_SECONDS(1)), "FAIL clock_work");
             break;
@@ -149,6 +158,7 @@ static void check_notifications(void)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
+    is_connected = true;
     if (!running) {
         return;
     }
@@ -156,12 +166,12 @@ static void connected(struct bt_conn *conn, uint8_t err)
         LOG_ERR("Connection failed (err %u)", err);
         return;
     }
-
     watchface_set_ble_connected(true);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+    is_connected = false;
     if (!running) {
         return;
     }
@@ -178,8 +188,9 @@ static void update_ui_from_event(struct k_work *item)
                     last_data_update.data.weather.wind,
                     last_data_update.data.weather.wind_direction);
             watchface_set_weather(last_data_update.data.weather.temperature_c, last_data_update.data.weather.weather_code);
+            memcpy(&last_weather_data, &last_data_update.data.weather, sizeof(last_data_update.data.weather));
         } else if (last_data_update.type == BLE_COMM_DATA_TYPE_SET_TIME) {
-            k_work_reschedule(&date_work.work, K_SECONDS(1));
+            k_work_reschedule(&date_work.work, K_NO_WAIT);
         }
         return;
     }
@@ -210,6 +221,7 @@ static void zbus_chg_state_data_callback(const struct zbus_channel *chan)
 {
     if (running) {
         struct chg_state_event *event = zbus_chan_msg(chan);
+        memcpy(&last_chg_evt, event, sizeof(struct chg_state_event));
         // TODO Show some nice animation or similar
     }
 }
@@ -218,6 +230,7 @@ static void zbus_battery_sample_data_callback(const struct zbus_channel *chan)
 {
     if (running) {
         struct battery_sample_event *event = zbus_chan_msg(chan);
+        memcpy(&last_batt_evt, event, sizeof(struct battery_sample_event));
         watchface_set_battery_percent(event->percent, event->mV);
     }
 }
