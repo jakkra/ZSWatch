@@ -108,9 +108,17 @@ int accelerometer_fetch_xyz(int16_t *x, int16_t *y, int16_t *z)
     return rslt == BMI2_OK ? 0 : -EIO;
 }
 
-int accelerometer_fetch_num_steps(int16_t *num_steps)
+int accelerometer_fetch_num_steps(uint32_t *num_steps)
 {
-    return -ENOENT;
+    int8_t rslt;
+    struct bmi2_feat_sensor_data sensor_data = { 0 };
+
+    sensor_data.type = BMI2_STEP_COUNTER;
+    rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
+    bmi2_error_codes_print_result(rslt);
+    *num_steps = sensor_data.sens_data.step_counter_output;
+
+    return rslt == BMI2_OK ? 0 : -EIO;
 }
 
 int accelerometer_fetch_temperature(struct sensor_value *temperature)

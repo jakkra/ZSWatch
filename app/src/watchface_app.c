@@ -116,6 +116,7 @@ void watchface_app_stop(void)
 void general_work(struct k_work *item)
 {
     delayed_work_item_t *the_work = CONTAINER_OF(item, delayed_work_item_t, work);
+    uint32_t steps;
 
     switch (the_work->type) {
         case OPEN_WATCHFACE: {
@@ -126,6 +127,10 @@ void general_work(struct k_work *item)
             if (strlen(last_weather_data.report_text) > 0) {
                 watchface_set_weather(last_weather_data.temperature_c, last_weather_data.weather_code);
             }
+            if (accelerometer_fetch_num_steps(&steps) == 0) {
+                watchface_set_step(steps);
+            }
+
             __ASSERT(0 <= k_work_schedule(&clock_work.work, K_NO_WAIT), "FAIL clock_work");
             __ASSERT(0 <= k_work_schedule(&date_work.work, K_SECONDS(1)), "FAIL clock_work");
             break;
