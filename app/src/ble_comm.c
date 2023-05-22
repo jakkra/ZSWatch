@@ -81,7 +81,6 @@ int ble_comm_init(on_data_cb_t data_cb)
 int ble_comm_send(uint8_t *data, uint16_t len)
 {
     if (len > max_send_len) {
-        LOG_ERR("MTU len is less than data length. Discarding...");
         return -EMSGSIZE;
     }
     return ble_transport_send(current_conn, data, len);
