@@ -23,7 +23,7 @@ K_WORK_DELAYABLE_DEFINE(lvgl_work, lvgl_render);
 
 static struct k_work_sync canel_work_sync;
 static bool is_on;
-static uint8_t last_brightness = 5;
+static uint8_t last_brightness = 30;
 
 void display_control_init(void)
 {
