@@ -40,10 +40,10 @@ static bmi270_feature_config_set_t bmi270_enabled_features[] = {
     // Gyro not used for now, disable to keep power consumption down
     //{ .sensor_id = BMI2_GYRO, .cfg_func = configue_gyro},
     { .sensor_id = BMI2_STEP_COUNTER, .cfg_func = configure_step_counter},
-    { .sensor_id = BMI2_SIG_MOTION, .cfg_func = NULL},
+    //{ .sensor_id = BMI2_SIG_MOTION, .cfg_func = NULL},
     //{ .sensor_id = BMI2_ANY_MOTION, .cfg_func = configure_anymotion},
-    { .sensor_id = BMI2_STEP_ACTIVITY, .cfg_func = NULL},
-    { .sensor_id = BMI2_WRIST_GESTURE, .cfg_func = configure_gesture_detect},
+    //{ .sensor_id = BMI2_STEP_ACTIVITY, .cfg_func = NULL},
+    //{ .sensor_id = BMI2_WRIST_GESTURE, .cfg_func = configure_gesture_detect},
     { .sensor_id = BMI2_WRIST_WEAR_WAKE_UP, .cfg_func = configure_wrist_wakeup},
 };
 

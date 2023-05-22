@@ -100,10 +100,6 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
     const struct accel_event *event = zbus_chan_const_msg(chan);
 
     switch (event->data.type) {
-        case ACCELEROMETER_EVT_TYPE_GESTURE:
-            if (event->data.data.gesture == ACCELEROMETER_EVT_GESTURE_WRIST_SHAKE) {
-                should_wakeup = true;
-            }
         case ACCELEROMETER_EVT_TYPE_WRIST_WAKEUP: {
             should_wakeup = true;
         }
