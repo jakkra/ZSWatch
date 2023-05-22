@@ -135,7 +135,7 @@ static int cst816s_process(const struct device *dev)
 	row = sys_be16_to_cpu(y) & 0x0fff;
 
 	event = (x & 0xff) >> CST816S_EVENT_BITS_POS;
-	pressed = (event == EVENT_PRESS_DOWN) || (event == EVENT_CONTACT);
+	pressed = (event == EVENT_CONTACT);
 
 	LOG_DBG("event: %d, row: %d, col: %d", event, row, col);
 
