@@ -84,6 +84,11 @@ void display_control_power_on(bool on)
     }
 }
 
+uint8_t display_control_get_brightness(void)
+{
+    return last_brightness;
+}
+
 void display_control_set_brightness(uint8_t percent)
 {
     if (!device_is_ready(display_blk.dev)) {
