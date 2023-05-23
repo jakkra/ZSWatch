@@ -1,8 +1,6 @@
 #include <music_control/music_control_ui.h>
 #include <lvgl.h>
 
-static void close_button_pressed(lv_event_t *e);
-
 static lv_obj_t *root_page = NULL;
 static lv_obj_t *track_name_label;
 static lv_obj_t *artist_name_label;
@@ -13,13 +11,14 @@ static lv_obj_t *progress_arc;
 static lv_obj_t *time_label;
 
 static on_music_control_ui_event_cb_t ui_evt_callback;
+static bool is_playing;
 
 static void create_progress_arc(lv_obj_t *parent)
 {
     progress_arc = lv_arc_create(parent);
     lv_arc_set_rotation(progress_arc, 270);
     lv_arc_set_bg_angles(progress_arc, 0, 360);
-    lv_arc_set_range(progress_arc, 0, 100); // 0-100% battery
+    lv_arc_set_range(progress_arc, 0, 100);
     lv_arc_set_value(progress_arc, 0);
 
     lv_obj_remove_style(progress_arc, NULL, LV_PART_KNOB);   /*Be sure the knob is not displayed*/
@@ -37,11 +36,13 @@ static void play_event_click_cb(lv_event_t *e)
     lv_obj_t *obj = lv_event_get_target(e);
     lv_event_code_t code = lv_event_get_code(e);
 
-    if (code == LV_EVENT_FOCUSED) {
+    if (code == LV_EVENT_FOCUSED && obj != play_pause_button) {
         lv_obj_set_style_border_side(obj, LV_BORDER_SIDE_BOTTOM, LV_PART_MAIN);
         lv_obj_set_style_border_width(obj, 1, LV_PART_MAIN);
-        lv_obj_set_style_border_color(obj, lv_color_black(), LV_PART_MAIN);
-    } else if (code == LV_EVENT_DEFOCUSED) {
+        lv_obj_set_style_border_color(obj, lv_palette_main(LV_PALETTE_ORANGE), LV_PART_MAIN);
+    } else if (code == LV_EVENT_DEFOCUSED && obj != play_pause_button) {
+        lv_obj_set_style_border_side(obj, LV_BORDER_SIDE_NONE, LV_PART_MAIN);
+    } else if (code == LV_EVENT_RELEASED && obj != play_pause_button) {
         lv_obj_set_style_border_side(obj, LV_BORDER_SIDE_NONE, LV_PART_MAIN);
     } else if (code == LV_EVENT_CLICKED) {
         if (obj == play_pause_button) {
@@ -61,12 +62,14 @@ static void play_event_click_cb(lv_event_t *e)
     }
 }
 
-static void create_buttons(lv_obj_t *parent, lv_group_t *group)
+static void create_buttons(lv_obj_t *parent)
 {
     LV_IMG_DECLARE(pause);
     LV_IMG_DECLARE(play);
     LV_IMG_DECLARE(next);
     LV_IMG_DECLARE(previous);
+
+    lv_group_t *group = lv_group_get_default();
 
     play_pause_button = lv_imgbtn_create(parent);
     lv_obj_clear_flag(play_pause_button, LV_OBJ_FLAG_SCROLLABLE);
@@ -102,21 +105,17 @@ static void create_buttons(lv_obj_t *parent, lv_group_t *group)
 
     // To get correct order when navigating the music control buttons they need to be removed and
     // re-add in the order we want.
-    lv_group_remove_obj(play_pause_button);
-    lv_group_remove_obj(next_button);
-    lv_group_remove_obj(prev_button);
-    lv_group_add_obj(group, prev_button);
-    lv_group_add_obj(group, play_pause_button);
-    lv_group_add_obj(group, next_button);
+
+
+    lv_group_focus_obj(play_pause_button);
 }
 
 
-void music_control_ui_show(lv_obj_t *root, on_music_control_ui_event_cb_t close_cb)
+void music_control_ui_show(lv_obj_t *root, on_music_control_ui_event_cb_t evt_cb)
 {
-    lv_obj_t *float_btn;
-
     assert(root_page == NULL);
-    ui_evt_callback = close_cb;
+    ui_evt_callback = evt_cb;
+    is_playing = false;
 
     // Create the root container
     root_page = lv_obj_create(root);
@@ -129,21 +128,9 @@ void music_control_ui_show(lv_obj_t *root, on_music_control_ui_event_cb_t close_
     lv_obj_set_scrollbar_mode(root_page, LV_SCROLLBAR_MODE_OFF);
     lv_obj_clear_flag(root_page, LV_OBJ_FLAG_SCROLLABLE);
 
-    float_btn = lv_btn_create(root_page);
-    lv_obj_set_size(float_btn, 150, 25);
-    lv_obj_add_flag(float_btn, LV_OBJ_FLAG_FLOATING);
-    lv_obj_align(float_btn, LV_ALIGN_BOTTOM_MID, 0, 10);
-    lv_obj_add_event_cb(float_btn, close_button_pressed, LV_EVENT_PRESSED, root_page);
-    lv_obj_set_style_radius(float_btn, 0, 0);
-    lv_obj_set_style_bg_img_src(float_btn, LV_SYMBOL_NEW_LINE, 0);
-    lv_obj_set_style_text_font(float_btn, lv_theme_get_font_large(float_btn), 0);
-    lv_obj_set_style_bg_color(float_btn, lv_palette_main(LV_PALETTE_BLUE_GREY), LV_PART_MAIN);
-
     create_progress_arc(root_page);
 
-    create_buttons(root_page, lv_obj_get_group(float_btn));
-
-    lv_group_focus_obj(float_btn);
+    create_buttons(root_page);
 
     track_name_label = lv_label_create(root_page);
     lv_obj_align(track_name_label, LV_ALIGN_TOP_MID, 0, 25);
@@ -196,17 +183,15 @@ void music_control_ui_set_time(int hour, int min, int second)
 void music_control_ui_set_music_state(bool playing, int percent_played, bool shuffle)
 {
     lv_arc_set_value(progress_arc, percent_played);
-    if (playing) {
-        lv_imgbtn_set_state(play_pause_button, LV_IMGBTN_STATE_CHECKED_RELEASED);
-    } else {
-        lv_imgbtn_set_state(play_pause_button, LV_IMGBTN_STATE_RELEASED);
+    if (playing != is_playing) {
+        is_playing = playing;
+        if (playing) {
+            lv_imgbtn_set_state(play_pause_button, LV_IMGBTN_STATE_CHECKED_RELEASED);
+        } else {
+            lv_imgbtn_set_state(play_pause_button, LV_IMGBTN_STATE_RELEASED);
+        }
+        // Need to update the height after the image changes on imgbtn for some reason.
+        LV_IMG_DECLARE(play);
+        lv_obj_set_height(play_pause_button, play.header.h + 5);
     }
-    // Need to update the height after the image changes on imgbtn for some reason.
-    LV_IMG_DECLARE(play);
-    lv_obj_set_height(play_pause_button, play.header.h + 5);
-}
-
-static void close_button_pressed(lv_event_t *e)
-{
-    ui_evt_callback(MUSIC_CONTROL_UI_CLOSE);
 }

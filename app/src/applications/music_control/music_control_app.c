@@ -22,7 +22,8 @@ ZBUS_CHAN_DECLARE(ble_comm_data_chan);
 ZBUS_LISTENER_DEFINE(music_app_ble_comm_lis, zbus_ble_comm_data_callback);
 
 static K_WORK_DEFINE(update_ui_work, handle_update_ui);
-static ble_comm_cb_data_t last_music_update;
+static ble_comm_music_info_t last_music_info;
+static ble_comm_music_state_t last_music_state = {.position = -1};
 
 LV_IMG_DECLARE(music);
 
@@ -37,13 +38,13 @@ static lv_timer_t *progress_timer;
 static int progress_seconds;
 static bool running;
 static bool playing;
-static int track_duration;
 
 static void music_control_app_start(lv_obj_t *root, lv_group_t *group)
 {
     progress_timer = lv_timer_create(timer_callback, 1000,  NULL);
     music_control_ui_show(root, on_music_ui_evt_music);
     running = true;
+    handle_update_ui(NULL);
 }
 
 static void music_control_app_stop(void)
@@ -64,11 +65,9 @@ static void on_music_ui_evt_music(music_control_ui_evt_type_t evt_type)
             break;
         case MUSIC_CONTROL_UI_PLAY:
             msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"music\", \"n\": %s} \n", "play");
-            playing = true;
             break;
         case MUSIC_CONTROL_UI_PAUSE:
             msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"music\", \"n\": %s} \n", "pause");
-            playing = false;
             break;
         case MUSIC_CONTROL_UI_NEXT_TRACK:
             msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"music\", \"n\": %s} \n", "next");
@@ -87,30 +86,32 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
     // Need to context switch to not get stack overflow.
     // We are here in host bluetooth thread.
     struct ble_data_event *event = zbus_chan_msg(chan);
-    memcpy(&last_music_update, &event->data, sizeof(ble_comm_cb_data_t));
-    k_work_submit(&update_ui_work);
+    if (event->data.type == BLE_COMM_DATA_TYPE_MUSTIC_INFO) {
+        memcpy(&last_music_info, &event->data.data.music_info, sizeof(ble_comm_music_info_t));
+        k_work_submit(&update_ui_work);
+    } else if (event->data.type == BLE_COMM_DATA_TYPE_MUSTIC_STATE) {
+        memcpy(&last_music_state, &event->data.data.music_state, sizeof(ble_comm_music_state_t));
+        k_work_submit(&update_ui_work);
+    }
 }
 
 static void handle_update_ui(struct k_work *item)
 {
     char buf[5 * MAX_MUSIC_FIELD_LENGTH];
     if (running) {
-        if (last_music_update.type == BLE_COMM_DATA_TYPE_MUSTIC_INFO) {
-            snprintf(buf, sizeof(buf), "Track: %s",
-                     last_music_update.data.music_info.track_name);
+        if (strlen(last_music_info.track_name) > 0) {
+            snprintf(buf, sizeof(buf), "Track: %s", last_music_info.track_name);
             progress_seconds = 0;
-            track_duration = last_music_update.data.music_info.duration;
-            music_control_ui_music_info(last_music_update.data.music_info.track_name, last_music_update.data.music_info.artist);
+            music_control_ui_music_info(last_music_info.track_name, last_music_info.artist);
             music_control_ui_set_track_progress(0);
-            playing = true;
         }
 
-        if (last_music_update.type == BLE_COMM_DATA_TYPE_MUSTIC_STATE) {
-            music_control_ui_set_music_state(last_music_update.data.music_state.playing,
-                                             (((float)last_music_update.data.music_state.position / (float)track_duration)) * 100,
-                                             last_music_update.data.music_state.shuffle);
-            progress_seconds = last_music_update.data.music_state.position;
-            playing = last_music_update.data.music_state.playing;
+        if (last_music_state.position >= 0) {
+            music_control_ui_set_music_state(last_music_state.playing,
+                                             (((float)last_music_state.position / (float)last_music_info.duration)) * 100,
+                                             last_music_state.shuffle);
+            progress_seconds = last_music_state.position;
+            playing = last_music_state.playing;
         }
     }
 }
@@ -121,7 +122,7 @@ static void timer_callback(lv_timer_t *timer)
     music_control_ui_set_time(time->tm_hour, time->tm_min, time->tm_sec);
     if (playing) {
         progress_seconds++;
-        music_control_ui_set_track_progress((((float)progress_seconds / (float)track_duration)) * 100);
+        music_control_ui_set_track_progress((((float)progress_seconds / (float)last_music_info.duration)) * 100);
     }
 }
 

@@ -13,7 +13,7 @@ typedef enum music_control_ui_evt_type {
 
 typedef void(*on_music_control_ui_event_cb_t)(music_control_ui_evt_type_t evt_type);
 
-void music_control_ui_show(lv_obj_t *root, on_music_control_ui_event_cb_t close_cb);
+void music_control_ui_show(lv_obj_t *root, on_music_control_ui_event_cb_t evt_cb);
 
 void music_control_ui_remove(void);
 
