@@ -195,18 +195,18 @@ static void draw_application_picker(void)
     lv_obj_t *entry;
     static lv_style_t style;
     lv_style_init(&style);
-    lv_style_set_flex_flow(&style, LV_FLEX_FLOW_ROW_WRAP);
-    lv_style_set_flex_main_place(&style, LV_FLEX_ALIGN_SPACE_EVENLY);
+    lv_style_set_flex_flow(&style, LV_FLEX_FLOW_ROW);
+    lv_style_set_flex_main_place(&style, LV_FLEX_ALIGN_START);
     lv_style_set_layout(&style, LV_LAYOUT_FLEX);
 
     lv_obj_set_scrollbar_mode(lv_scr_act(), LV_SCROLLBAR_MODE_OFF);
-
 
     assert(grid == NULL);
     grid = lv_obj_create(root_obj);
     lv_obj_add_style(grid, &style, 0);
     lv_obj_set_scrollbar_mode(root_obj, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_border_side(grid, LV_BORDER_SIDE_NONE, 0);
+    lv_obj_set_style_pad_row(grid, 2, 0);
 
     lv_obj_set_size(grid, LV_PCT(100), LV_PCT(100));
     lv_obj_center(grid);
