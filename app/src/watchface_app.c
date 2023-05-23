@@ -22,6 +22,7 @@
 #include <zsw_charger.h>
 #include <events/chg_event.h>
 #include <events/battery_event.h>
+#include <events/activity_event.h>
 #include <zsw_battery_manager.h>
 
 LOG_MODULE_REGISTER(watcface_app, LOG_LEVEL_WRN);
@@ -30,6 +31,7 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan);
 static void zbus_accel_data_callback(const struct zbus_channel *chan);
 static void zbus_chg_state_data_callback(const struct zbus_channel *chan);
 static void zbus_battery_sample_data_callback(const struct zbus_channel *chan);
+static void zbus_activity_event_callback(const struct zbus_channel *chan);
 
 ZBUS_CHAN_DECLARE(ble_comm_data_chan);
 ZBUS_LISTENER_DEFINE(watchface_ble_comm_lis, zbus_ble_comm_data_callback);
@@ -42,6 +44,9 @@ ZBUS_LISTENER_DEFINE(watchface_chg_event, zbus_chg_state_data_callback);
 
 ZBUS_CHAN_DECLARE(battery_sample_data_chan);
 ZBUS_LISTENER_DEFINE(watchface_battery_event, zbus_battery_sample_data_callback);
+
+ZBUS_CHAN_DECLARE(activity_state_data_chan);
+ZBUS_LISTENER_DEFINE(watchface_activity_state_event, zbus_activity_event_callback);
 
 #define WORK_STACK_SIZE 3000
 #define WORK_PRIORITY   5
@@ -88,6 +93,7 @@ static struct chg_state_event last_chg_evt;
 
 static bool running;
 static bool is_connected;
+static bool is_suspended;
 
 static int watchface_app_init(const struct device *arg)
 {
@@ -95,7 +101,7 @@ static int watchface_app_init(const struct device *arg)
     k_work_init_delayable(&clock_work.work, general_work);
     k_work_init_delayable(&date_work.work, general_work);
     running = false;
-
+    is_suspended = false;
     return 0;
 }
 
@@ -108,6 +114,7 @@ void watchface_app_start(lv_group_t *group)
 void watchface_app_stop(void)
 {
     running = false;
+    is_suspended = false;
     k_work_cancel_delayable_sync(&clock_work.work, &canel_work_sync);
     k_work_cancel_delayable_sync(&date_work.work, &canel_work_sync);
     watchface_remove();
@@ -121,6 +128,7 @@ void general_work(struct k_work *item)
     switch (the_work->type) {
         case OPEN_WATCHFACE: {
             running = true;
+            is_suspended = false;
             watchface_show();
             watchface_set_ble_connected(is_connected);
             watchface_set_battery_percent(last_batt_evt.percent, last_batt_evt.mV);
@@ -144,6 +152,11 @@ void general_work(struct k_work *item)
             retained.current_time_seconds = clock_get_time_unix();
             retained_update();
             check_notifications();
+
+            // Realtime update of steps
+            if (accelerometer_fetch_num_steps(&steps) == 0) {
+                watchface_set_step(steps);
+            }
             __ASSERT(0 <= k_work_schedule(&clock_work.work, K_SECONDS(1)), "FAIL clock_work");
             break;
         }
@@ -164,7 +177,7 @@ static void check_notifications(void)
 static void connected(struct bt_conn *conn, uint8_t err)
 {
     is_connected = true;
-    if (!running) {
+    if (!running || is_suspended) {
         return;
     }
     if (err) {
@@ -177,7 +190,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
     is_connected = false;
-    if (!running) {
+    if (!running | is_suspended) {
         return;
     }
     watchface_set_ble_connected(false);
@@ -185,7 +198,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 static void update_ui_from_event(struct k_work *item)
 {
-    if (running) {
+    if (running && !is_suspended) {
         if (last_data_update.type == BLE_COMM_DATA_TYPE_WEATHER) {
             LOG_DBG("Weather: %s t: %d hum: %d code: %d wind: %d dir: %d", last_data_update.data.weather.report_text,
                     last_data_update.data.weather.temperature_c, last_data_update.data.weather.humidity,
@@ -203,7 +216,7 @@ static void update_ui_from_event(struct k_work *item)
 
 static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
 {
-    if (running) {
+    if (running && !is_suspended) {
         struct ble_data_event *event = zbus_chan_msg(chan);
         // TODO getting this callback again before workqueue has ran will
         // cause previous to be lost.
@@ -214,7 +227,7 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
 
 static void zbus_accel_data_callback(const struct zbus_channel *chan)
 {
-    if (running) {
+    if (running && !is_suspended) {
         struct accel_event *event = zbus_chan_msg(chan);
         if (event->data.type == ACCELEROMETER_EVT_TYPE_STEP) {
             watchface_set_step(event->data.data.step.count);
@@ -224,7 +237,7 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
 
 static void zbus_chg_state_data_callback(const struct zbus_channel *chan)
 {
-    if (running) {
+    if (running && !is_suspended) {
         struct chg_state_event *event = zbus_chan_msg(chan);
         memcpy(&last_chg_evt, event, sizeof(struct chg_state_event));
         // TODO Show some nice animation or similar
@@ -233,10 +246,26 @@ static void zbus_chg_state_data_callback(const struct zbus_channel *chan)
 
 static void zbus_battery_sample_data_callback(const struct zbus_channel *chan)
 {
-    if (running) {
+    if (running && !is_suspended) {
         struct battery_sample_event *event = zbus_chan_msg(chan);
         memcpy(&last_batt_evt, event, sizeof(struct battery_sample_event));
         watchface_set_battery_percent(event->percent, event->mV);
+    }
+}
+
+static void zbus_activity_event_callback(const struct zbus_channel *chan)
+{
+    if (running) {
+        struct activity_state_event *event = zbus_chan_msg(chan);
+        if (event->state == ZSW_ACTIVITY_STATE_INACTIVE) {
+            is_suspended = true;
+            k_work_cancel_delayable_sync(&clock_work.work, &canel_work_sync);
+            k_work_cancel_delayable_sync(&date_work.work, &canel_work_sync);
+        } else if (event->state == ZSW_ACTIVITY_STATE_ACTIVE) {
+            is_suspended = false;
+            __ASSERT(0 <= k_work_schedule(&clock_work.work, K_NO_WAIT), "FAIL clock_work");
+            __ASSERT(0 <= k_work_schedule(&date_work.work, K_SECONDS(1)), "FAIL clock_work");
+        }
     }
 }
 

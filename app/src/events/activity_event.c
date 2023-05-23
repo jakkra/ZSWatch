@@ -5,6 +5,6 @@ ZBUS_CHAN_DEFINE(activity_state_data_chan,
                  struct activity_state_event,
                  NULL,
                  NULL,
-                 ZBUS_OBSERVERS(),
+                 ZBUS_OBSERVERS(watchface_activity_state_event),
                  ZBUS_MSG_INIT()
                 );
