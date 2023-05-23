@@ -374,7 +374,7 @@ static void screen_gesture_event(lv_event_t *e)
                     application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "Music");
                     break;
                 case LV_DIR_RIGHT:
-                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "Settings");
+                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "QR Code");
                     break;
                 case LV_DIR_LEFT:
                     application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "Sensors");
