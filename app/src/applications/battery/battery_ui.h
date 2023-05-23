@@ -5,7 +5,7 @@
 
 typedef void(*on_ui_increment_cb_t)(void);
 
-void battery_ui_show(lv_obj_t *root);
+void battery_ui_show(lv_obj_t *root, int max_samples);
 
 void battery_ui_remove(void);
 

@@ -17,6 +17,7 @@ static void battery_app_start(lv_obj_t *root, lv_group_t *group);
 static void battery_app_stop(void);
 
 static void zbus_battery_sample_data_callback(const struct zbus_channel *chan);
+static int get_num_samples(void);
 
 typedef struct battery_sample_t {
     int mV;
@@ -26,11 +27,11 @@ typedef struct battery_sample_t {
 ZBUS_CHAN_DECLARE(battery_sample_data_chan);
 ZBUS_LISTENER_DEFINE(battery_app_battery_event, zbus_battery_sample_data_callback);
 
-LV_IMG_DECLARE(templates);
+LV_IMG_DECLARE(battery_app_icon);
 
 static application_t app = {
     .name = "Battery",
-    .icon = &templates,
+    .icon = &battery_app_icon,
     .start_func = battery_app_start,
     .stop_func = battery_app_stop
 };
@@ -55,7 +56,7 @@ static void battery_app_start(lv_obj_t *root, lv_group_t *group)
         LOG_ERR("Failed disable battery measurement: %d\n", rc);
     }
 
-    battery_ui_show(root);
+    battery_ui_show(root, get_num_samples() + 1);
     battery_ui_set_current_measurement(batt_mv);
     for (int i = 0; i < NUM_BATTERY_SAMPLES_MAX; i++) {
         if (battery_samples[(next_battery_sample_index + i) % NUM_BATTERY_SAMPLES_MAX].timestamp != 0) {
@@ -89,6 +90,19 @@ static void zbus_battery_sample_data_callback(const struct zbus_channel *chan)
         LOG_DBG("Discard sample: %d, %d\n", battery_samples[previous_sample_index].mV,
                 (int)(k_uptime_get() - battery_samples[previous_sample_index].timestamp));
     }
+}
+
+static int get_num_samples(void)
+{
+    int num_samples = 0;
+
+    for (int i = 0; i < NUM_BATTERY_SAMPLES_MAX; i++) {
+        if (battery_samples[i].timestamp != 0) {
+            num_samples++;
+        }
+    }
+
+    return num_samples;
 }
 
 static int battery_app_add(const struct device *arg)
