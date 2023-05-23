@@ -16,7 +16,8 @@ typedef void(*feature_config_func)(struct bmi2_sens_config *config);
 
 typedef struct bmi270_feature_config_set_t {
     uint8_t                 sensor_id;
-    feature_config_func    cfg_func;
+    feature_config_func     cfg_func;
+    bool                    isr_disable;
 } bmi270_feature_config_set_t;
 
 static void send_accel_event(accelerometer_evt_t *data);
@@ -40,10 +41,10 @@ static bmi270_feature_config_set_t bmi270_enabled_features[] = {
     // Gyro not used for now, disable to keep power consumption down
     //{ .sensor_id = BMI2_GYRO, .cfg_func = configue_gyro},
     { .sensor_id = BMI2_STEP_COUNTER, .cfg_func = configure_step_counter},
-    //{ .sensor_id = BMI2_SIG_MOTION, .cfg_func = NULL},
+    { .sensor_id = BMI2_SIG_MOTION, .cfg_func = NULL, .isr_disable = true},
     //{ .sensor_id = BMI2_ANY_MOTION, .cfg_func = configure_anymotion},
-    //{ .sensor_id = BMI2_STEP_ACTIVITY, .cfg_func = NULL},
-    //{ .sensor_id = BMI2_WRIST_GESTURE, .cfg_func = configure_gesture_detect},
+    { .sensor_id = BMI2_STEP_ACTIVITY, .cfg_func = NULL, .isr_disable = true},
+    { .sensor_id = BMI2_WRIST_GESTURE, .cfg_func = configure_gesture_detect, .isr_disable = true},
     { .sensor_id = BMI2_WRIST_WEAR_WAKE_UP, .cfg_func = configure_wrist_wakeup},
 };
 
@@ -411,7 +412,11 @@ static int8_t configure_enable_all_bmi270(struct bmi2_dev *bmi2_dev)
         all_sensors[i] = bmi270_enabled_features[i].sensor_id;
         if (is_sensor_feature(bmi270_enabled_features[i].sensor_id)) {
             all_features[num_features].type = bmi270_enabled_features[i].sensor_id;
-            all_features[num_features].hw_int_pin = BMI2_INT2;
+            if (bmi270_enabled_features[i].isr_disable) {
+                all_features[num_features].hw_int_pin = BMI2_INT_NONE;
+            } else {
+                all_features[num_features].hw_int_pin = BMI2_INT2;
+            }
             num_features++;
         }
     }
