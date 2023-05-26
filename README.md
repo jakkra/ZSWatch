@@ -3,17 +3,24 @@
   
 <img src=".github/in_use.jpg"/>
 <sub>
-  The ZSWatch v1
+  ZSWatch v1
 </sub>
 </div>
 <br/>
 
+<img src=".github/v2_overview.jpg"/>
+<sub>
+  ZSWatch v2
+</sub>
+</div>
+<br/>
+<br/>
 
 Smartwatch built from scratch, both hardware and software. Built on the [Zephyr™ Project](https://www.zephyrproject.org/) RTOS, hence the name **ZSWatch** - *Zephyr Smartwatch*.
 <br/>
 
 ## Building or getting one
-I have received quite some requests regarding building or getting the ZSWatch, I am nearly finished with v2. If you want to get notified when I'm done with v2 then simply press the `Watch` button (next to Fork and Star) -> `Custom -> Releases` and you will see in your feed when it's released.
+I have received quite some requests regarding building or getting the ZSWatch, I am very close to finish with v2. If you want to get notified when I'm done with v2 then simply press the `Watch` button (next to Fork and Star) -> `Custom -> Releases` and you will see in your feed when it's released.
 <br/>
 **Or** you can fill in your **[mail here (Google form)](https://forms.gle/G48Sm5zDe9aCaYtT9)** and I'll send a reminder when it's ready (or if I decide to make a few kits, who knows).
 <br/>
@@ -52,9 +59,8 @@ I have received quite some requests regarding building or getting the ZSWatch, I
 - Option to not mount some sensors to save BOM cost.
 
 ## Progress on v2
-[Schematic for v2](schematic/ZSWatch-v2-kicad.pdf) is uploaded and should be pretty much final.
+[Schematic for v2](schematic/ZSWatch-v2-kicad.pdf) is uploaded and should be final.
 <br/>
-PCB are finished, ordered and sucessfully assembled.
 
 You can follow the progress here [https://github.com/users/jakkra/projects/1/views/5](https://github.com/users/jakkra/projects/1/views/5)
 <p float="left">
@@ -67,7 +73,10 @@ You can follow the progress here [https://github.com/users/jakkra/projects/1/vie
 </p>
 
 ## Charger/Dock
-Basic pogo-pin dock that connects the power and SWD pins to the bottom of the watch. Will be replaced for v2 with a much better solution. For the v2. dock variant I have not yet figured out how to best connect it to the watch, all connectors I found online are to thick, for example [Magnetic 6 pin connector](https://www.aliexpress.com/item/1005002776015559.html?).
+PCB done, casing to be designed. Idea is that watch will sit on top.
+<p float="left">
+<img src=".github/dock.jpg" width="65%"/>
+</p>
 
 ## Enclosure/Casing
 3D printed casing with 3D printed buttons. Does it's job, but for revision v2 of the watch I'll probably do something CNC'd for nicer looks.
@@ -184,12 +193,6 @@ When user for example presses a close button in the application:
 - `application_manager.c` will now draw the app picker again.
 
 The application manager can also at any time close a running application by calling it's `application_stop_fn`.
-
-## Dock
-Very basic, will be re-worked for next watch revision v2.
-<p float="left">
-<img src=".github/dock.jpg" width="420"/>
-</p>
 
 ## Licence GPL-3.0
 Main difference from MIT is now that if anyone want to build something more with this, then they need to also open source their changes back to the project, which I thinks is fair. This is so everyone can benefit from those improvements. If you think this is wrong for some reason feel free to contact me, I'm open to change the LICENCE.
