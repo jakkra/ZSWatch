@@ -77,4 +77,5 @@ typedef void(*on_data_cb_t)(ble_comm_cb_data_t *data);
 
 int ble_comm_init(on_data_cb_t data_cb);
 int ble_comm_send(uint8_t *data, uint16_t len);
+void ble_comm_set_pairable(bool pairable);
 #endif

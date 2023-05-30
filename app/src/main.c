@@ -37,6 +37,8 @@
 #include <zsw_cpu_freq.h>
 #include <zsw_charger.h>
 #include <zsw_power_manager.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/hci.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
 
@@ -144,12 +146,13 @@ static void enable_bluetoth(void)
         LOG_ERR("Failed to enable Bluetooth, err: %d", err);
         return;
     }
+
 #ifdef CONFIG_SETTINGS
     settings_load();
 #endif
 
-    __ASSERT_NO_MSG(bleAoaInit());
     __ASSERT_NO_MSG(ble_comm_init(ble_data_cb) == 0);
+    __ASSERT_NO_MSG(bleAoaInit());
 }
 
 static bool load_retention_ram(void)

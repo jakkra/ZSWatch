@@ -55,12 +55,64 @@ static parse_state_t parse_state = WAIT_GB;
 
 static on_data_cb_t data_parsed_cb;
 
+static int pairing_enabled;
+
 static struct ble_transport_cb ble_transport_callbacks = {
     .data_receive = bt_receive_cb,
 };
 
+static void auth_cancel(struct bt_conn *conn)
+{
+    char addr[BT_ADDR_LE_STR_LEN];
+
+    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+
+    LOG_ERR("Pairing cancelled: %s\n", addr);
+}
+
+static void pairing_complete(struct bt_conn *conn, bool bonded)
+{
+    LOG_ERR("Pairing Complete\n");
+    ble_comm_set_pairable(false);
+}
+
+static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
+{
+    LOG_ERR("Pairing Failed (%d). Disconnecting.\n", reason);
+    bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+}
+
+static void pairing_deny(struct bt_conn *conn)
+{
+    LOG_ERR("Pairing deny\n");
+    bt_conn_auth_cancel(conn);
+}
+
+static void pairing_accept(struct bt_conn *conn)
+{
+    LOG_ERR("Pairing accept\n");
+    bt_conn_auth_pairing_confirm(conn);
+}
+
+static struct bt_conn_auth_cb auth_cb_display = {
+    .passkey_display = NULL,
+    .passkey_entry = NULL,
+    .pairing_confirm = pairing_deny,
+    .cancel = auth_cancel,
+};
+
+static struct bt_conn_auth_info_cb auth_cb_info = {
+    .pairing_complete = pairing_complete,
+    .pairing_failed = pairing_failed,
+};
+
 int ble_comm_init(on_data_cb_t data_cb)
 {
+    bt_conn_auth_cb_register(&auth_cb_display);
+    bt_conn_auth_info_cb_register(&auth_cb_info);
+
+    ble_comm_set_pairable(false);
+
     int err = ble_transport_init(&ble_transport_callbacks);
     if (err) {
         LOG_ERR("Failed to initialize UART service (err: %d)", err);
@@ -70,9 +122,9 @@ int ble_comm_init(on_data_cb_t data_cb)
 
     err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
     if (err) {
-        printk("Advertising failed to start (err %d)\n", err);
+        LOG_ERR("Advertising failed to start (err %d)\n", err);
     } else {
-        printk("Advertising successfully started\n");
+        LOG_DBG("Advertising successfully started\n");
     }
 
     return err;
@@ -84,6 +136,20 @@ int ble_comm_send(uint8_t *data, uint16_t len)
         return -EMSGSIZE;
     }
     return ble_transport_send(current_conn, data, len);
+}
+
+void ble_comm_set_pairable(bool pairable)
+{
+    if (pairable) {
+        LOG_WRN("Enable Pairable");
+        auth_cb_display.pairing_confirm = pairing_accept;
+        bt_conn_auth_cb_register(&auth_cb_display);
+    } else {
+        LOG_WRN("Disable Pairable\n");
+        auth_cb_display.pairing_confirm = pairing_deny;
+        bt_conn_auth_cb_register(&auth_cb_display);
+    }
+    pairing_enabled = pairable;
 }
 
 static void mtu_exchange_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchange_params *params)
@@ -142,6 +208,13 @@ static void connected(struct bt_conn *conn, uint8_t err)
         LOG_ERR("bt_conn_le_param_update failed");
     }
     */
+    if (pairing_enabled) {
+        int rc = bt_conn_set_security(conn, BT_SECURITY_L2);
+        if (rc != 0) {
+            LOG_ERR("Failed to set security: %d", rc);
+            bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
+        }
+    }
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)

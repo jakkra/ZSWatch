@@ -5,6 +5,7 @@
 #include <ble_aoa.h>
 #include <display_control.h>
 #include <accelerometer.h>
+#include <ble_comm.h>
 
 static void settings_app_start(lv_obj_t *root, lv_group_t *group);
 static void settings_app_stop(void);
@@ -13,6 +14,7 @@ static void on_close_settings(void);
 static void on_brightness_changed(lv_setting_value_t value, bool final);
 static void on_display_on_changed(lv_setting_value_t value, bool final);
 static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
+static void on_pairing_enable_changed(lv_setting_value_t value, bool final);
 static void on_reset_steps_changed(lv_setting_value_t value, bool final);
 
 LV_IMG_DECLARE(settings);
@@ -77,11 +79,11 @@ static lv_settings_item_t bluetooth_page_items[] = {
     {
         .type = LV_SETTINGS_TYPE_SWITCH,
         .icon = LV_SYMBOL_BLUETOOTH,
-        .change_callback = on_aoa_enable_changed,
+        .change_callback = on_pairing_enable_changed,
         .item = {
             .sw = {
-                .name = "Bluetooth",
-                .inital_val = true
+                .name = "Bluetooth pairable",
+                .inital_val = false
             }
         }
     },
@@ -163,6 +165,17 @@ static void on_aoa_enable_changed(lv_setting_value_t value, bool final)
         bleAoaAdvertise(100, 100, 1);
     } else {
         bleAoaAdvertise(100, 100, 0);
+    }
+}
+
+static void on_pairing_enable_changed(lv_setting_value_t value, bool final)
+{
+    if (value.item.sw) {
+        printk("Set pairable\n");
+        ble_comm_set_pairable(true);
+    } else {
+        printk("Clear pairable\n");
+        ble_comm_set_pairable(false);
     }
 }
 

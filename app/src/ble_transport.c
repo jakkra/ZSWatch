@@ -28,17 +28,14 @@ BT_GATT_SERVICE_DEFINE(nus_service,
                        BT_GATT_PRIMARY_SERVICE(BLE_TRANSPORT_UUID_SERVICE),
                        BT_GATT_CHARACTERISTIC(BLE_TRANSPORT_UUID_TX,
                                               BT_GATT_CHRC_NOTIFY,
-                                              //BT_GATT_PERM_READ_AUTHEN, TODO when pairing is re-added
-                                              BT_GATT_PERM_READ,
+                                              BT_GATT_PERM_WRITE_ENCRYPT,
                                               NULL, NULL, NULL),
                        BT_GATT_CCC(NULL,
-                                   //BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_WRITE_AUTHEN),
-                                   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+                                   BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT),
                        BT_GATT_CHARACTERISTIC(BLE_TRANSPORT_UUID_RX,
                                               BT_GATT_CHRC_WRITE |
                                               BT_GATT_CHRC_WRITE_WITHOUT_RESP,
-                                              //BT_GATT_PERM_READ_AUTHEN | BT_GATT_PERM_WRITE_AUTHEN,
-                                              BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+                                              BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT,
                                               NULL, on_receive, NULL),
                       );
 
