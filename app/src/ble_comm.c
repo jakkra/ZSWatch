@@ -63,22 +63,18 @@ static struct ble_transport_cb ble_transport_callbacks = {
 
 static void auth_cancel(struct bt_conn *conn)
 {
-    char addr[BT_ADDR_LE_STR_LEN];
-
-    bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-    LOG_ERR("Pairing cancelled: %s\n", addr);
+    LOG_ERR("Pairing cancelled\n");
 }
 
 static void pairing_complete(struct bt_conn *conn, bool bonded)
 {
-    LOG_ERR("Pairing Complete\n");
+    LOG_DBG("Pairing Complete\n");
     ble_comm_set_pairable(false);
 }
 
 static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 {
-    LOG_ERR("Pairing Failed (%d). Disconnecting.\n", reason);
+    LOG_WRN("Pairing Failed (%d). Disconnecting.\n", reason);
     bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 }
 
@@ -90,7 +86,7 @@ static void pairing_deny(struct bt_conn *conn)
 
 static void pairing_accept(struct bt_conn *conn)
 {
-    LOG_ERR("Pairing accept\n");
+    LOG_WRN("Pairing accept\n");
     bt_conn_auth_pairing_confirm(conn);
 }
 

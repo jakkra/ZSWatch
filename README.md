@@ -106,6 +106,11 @@ There are almost endless of posiblities for features that could be implemented, 
 ## Android phone communication
 Fortunately there is a great Android app called [GadgetBridge](https://codeberg.org/Freeyourgadget) which handles everything needed on the phone side, such as notifications management, music control and so much more... The ZSWatch right now pretends to be one of the supported Smart Watches in Gadgetbridge, following the same API as it does. In future there may be a point adding native support, we'll see.
 
+### Pairing
+- In the watch go to Settings -> Bluetooth -> Enable pairing
+- Now go reconnect to the watch from Gadgetbridge app.
+- You should now be paired.
+
 ## PCB
 A 4 layer board which measures 36mm in diameter designed in KiCad.
 
