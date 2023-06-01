@@ -20,7 +20,7 @@ static lv_obj_t *clock_meter;
 static lv_meter_indicator_t *indic_min;
 static lv_meter_indicator_t *indic_hour;
 #ifdef USE_SECOND_HAND
-static lv_meter_indicator_t *indic_second;
+static lv_obj_t *second_img;
 #endif
 
 static lv_obj_t *battery_label;
@@ -77,6 +77,14 @@ static void tick_draw_event_cb(lv_event_t *e)
 
 static void add_clock(lv_obj_t *parent)
 {
+#ifdef USE_SECOND_HAND
+    LV_IMG_DECLARE(second_hand)
+    second_img = lv_img_create(parent);
+    lv_img_set_src(second_img, &second_hand);
+    lv_obj_align(second_img, LV_ALIGN_CENTER, (second_hand.header.w/2) - 12, 0);
+    lv_img_set_pivot(second_img, 12, 2);
+#endif
+
     clock_meter = lv_meter_create(parent);
     lv_obj_set_style_bg_opa(clock_meter, LV_OPA_TRANSP, LV_PART_MAIN);
     lv_obj_set_style_pad_all(clock_meter, 0, LV_PART_MAIN);
@@ -89,12 +97,6 @@ static void add_clock(lv_obj_t *parent)
     lv_meter_set_scale_ticks(clock_meter, scale_hour, 61, 1, 10, lv_palette_main(LV_PALETTE_BLUE_GREY));
     lv_meter_set_scale_range(clock_meter, scale_hour, 0, 60, 360, 270);
     lv_meter_set_scale_major_ticks(clock_meter, scale_hour, 5, 2, 20, lv_color_white(), 10); /*Every tick is major*/
-#ifdef USE_SECOND_HAND
-    lv_meter_scale_t *scale_second = lv_meter_add_scale(clock_meter);
-    lv_obj_set_style_pad_all(clock_meter, 0, LV_PART_MAIN);
-    lv_meter_set_scale_ticks(clock_meter, scale_second, 61, 1, 10, lv_palette_main(LV_PALETTE_BLUE_GREY));
-    lv_meter_set_scale_range(clock_meter, scale_second, 0, 60, 360, 270);
-#endif
 
     /* Create a scale for the minutes */
     /* 61 ticks in a 360 degrees range (the last and the first line overlaps) */
@@ -109,10 +111,6 @@ static void add_clock(lv_obj_t *parent)
 
     LV_IMG_DECLARE(minute_hand)
     LV_IMG_DECLARE(hour_hand)
-#ifdef USE_SECOND_HAND
-    LV_IMG_DECLARE(second_hand)
-    indic_second = lv_meter_add_needle_img(clock_meter, scale_second, &second_hand, 12, 2);
-#endif
     indic_hour = lv_meter_add_needle_img(clock_meter, scale_hour, &hour_hand, 31, 9);
     indic_min = lv_meter_add_needle_img(clock_meter, scale_min, &minute_hand, 31, 9);
 }
@@ -352,7 +350,7 @@ void watchface_set_time(int32_t hour, int32_t minute, int32_t second)
 #ifdef USE_SECOND_HAND
     if (second != last_second) {
         last_second = second;
-        lv_meter_set_indicator_end_value(clock_meter, indic_second, second);
+        lv_img_set_angle(second_img, second * 60 + 2700);
     }
 #endif
 }
