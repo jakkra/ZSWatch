@@ -217,7 +217,7 @@ static void update_ui_from_event(struct k_work *item)
 static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
 {
     if (running && !is_suspended) {
-        struct ble_data_event *event = zbus_chan_msg(chan);
+        const struct ble_data_event *event = zbus_chan_const_msg(chan);
         // TODO getting this callback again before workqueue has ran will
         // cause previous to be lost.
         memcpy(&last_data_update, &event->data, sizeof(ble_comm_cb_data_t));
@@ -228,7 +228,7 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
 static void zbus_accel_data_callback(const struct zbus_channel *chan)
 {
     if (running && !is_suspended) {
-        struct accel_event *event = zbus_chan_msg(chan);
+        const struct accel_event *event = zbus_chan_const_msg(chan);
         if (event->data.type == ACCELEROMETER_EVT_TYPE_STEP) {
             watchface_set_step(event->data.data.step.count);
         }
@@ -238,7 +238,7 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
 static void zbus_chg_state_data_callback(const struct zbus_channel *chan)
 {
     if (running && !is_suspended) {
-        struct chg_state_event *event = zbus_chan_msg(chan);
+        const struct chg_state_event *event = zbus_chan_const_msg(chan);
         memcpy(&last_chg_evt, event, sizeof(struct chg_state_event));
         // TODO Show some nice animation or similar
     }
@@ -247,7 +247,7 @@ static void zbus_chg_state_data_callback(const struct zbus_channel *chan)
 static void zbus_battery_sample_data_callback(const struct zbus_channel *chan)
 {
     if (running && !is_suspended) {
-        struct battery_sample_event *event = zbus_chan_msg(chan);
+        const struct battery_sample_event *event = zbus_chan_const_msg(chan);
         memcpy(&last_batt_evt, event, sizeof(struct battery_sample_event));
         watchface_set_battery_percent(event->percent, event->mV);
     }
@@ -256,7 +256,7 @@ static void zbus_battery_sample_data_callback(const struct zbus_channel *chan)
 static void zbus_activity_event_callback(const struct zbus_channel *chan)
 {
     if (running) {
-        struct activity_state_event *event = zbus_chan_msg(chan);
+        const struct activity_state_event *event = zbus_chan_const_msg(chan);
         if (event->state == ZSW_ACTIVITY_STATE_INACTIVE) {
             is_suspended = true;
             k_work_cancel_delayable_sync(&clock_work.work, &canel_work_sync);

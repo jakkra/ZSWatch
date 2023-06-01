@@ -85,7 +85,7 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
 {
     // Need to context switch to not get stack overflow.
     // We are here in host bluetooth thread.
-    struct ble_data_event *event = zbus_chan_msg(chan);
+    const struct ble_data_event *event = zbus_chan_const_msg(chan);
     if (event->data.type == BLE_COMM_DATA_TYPE_MUSTIC_INFO) {
         memcpy(&last_music_info, &event->data.data.music_info, sizeof(ble_comm_music_info_t));
         k_work_submit(&update_ui_work);

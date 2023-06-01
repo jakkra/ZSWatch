@@ -72,7 +72,7 @@ static void battery_app_stop(void)
 
 static void zbus_battery_sample_data_callback(const struct zbus_channel *chan)
 {
-    struct battery_sample_event *event = zbus_chan_msg(chan);
+    const struct battery_sample_event *event = zbus_chan_const_msg(chan);
     int previous_sample_index;
 
     if (next_battery_sample_index == 0) {
