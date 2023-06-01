@@ -263,6 +263,7 @@ static void zbus_activity_event_callback(const struct zbus_channel *chan)
             k_work_cancel_delayable_sync(&date_work.work, &canel_work_sync);
         } else if (event->state == ZSW_ACTIVITY_STATE_ACTIVE) {
             is_suspended = false;
+            watchface_ui_invalidate_cached();
             __ASSERT(0 <= k_work_schedule(&clock_work.work, K_NO_WAIT), "FAIL clock_work");
             __ASSERT(0 <= k_work_schedule(&date_work.work, K_SECONDS(1)), "FAIL clock_work");
         }

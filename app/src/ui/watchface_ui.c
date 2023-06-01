@@ -45,10 +45,10 @@ static lv_obj_t *day_label;
 
 // Remember last values as if no change then
 // no reason to waste resourses and redraw
-static int last_hour;
-static int last_minute;
+static int last_hour = -1;
+static int last_minute = -1;
 #ifdef USE_SECOND_HAND
-static int last_second;
+static int last_second = -1;
 #endif
 static int last_num_not = -1;
 
@@ -407,6 +407,16 @@ void watchface_set_date(int day_of_week, int date)
     lv_label_set_text(day_label, buf);
     snprintf(buf, sizeof(buf), "%d", date);
     lv_label_set_text(date_label, buf);
+}
+
+void watchface_ui_invalidate_cached(void)
+{
+    last_hour = -1;
+    last_minute = -1;
+    last_num_not = -1;
+    #ifdef USE_SECOND_HAND
+    last_second = -1;
+    #endif
 }
 
 LV_IMG_DECLARE(stormy);
