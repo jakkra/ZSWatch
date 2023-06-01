@@ -342,13 +342,16 @@ void watchface_set_time(int32_t hour, int32_t minute, int32_t second)
         hour_offset = 60;
     }
     if (minute != last_minute) {
+        last_minute = minute;
         lv_meter_set_indicator_end_value(clock_meter, indic_min, minute);
     }
-    if (hour != last_hour) {
+    if (hour_offset != last_hour) {
+        last_hour = hour_offset;
         lv_meter_set_indicator_end_value(clock_meter, indic_hour, hour_offset);
     }
 #ifdef USE_SECOND_HAND
     if (second != last_second) {
+        last_second = second;
         lv_meter_set_indicator_end_value(clock_meter, indic_second, second);
     }
 #endif
