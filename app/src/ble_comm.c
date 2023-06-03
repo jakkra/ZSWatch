@@ -10,6 +10,7 @@
 #include <ble_transport.h>
 #include <events/ble_data_event.h>
 #include <zephyr/zbus/zbus.h>
+#include <zsw_popup_window.h>
 
 LOG_MODULE_REGISTER(ble_comm, LOG_LEVEL_DBG);
 
@@ -69,11 +70,31 @@ static void auth_cancel(struct bt_conn *conn)
 static void pairing_complete(struct bt_conn *conn, bool bonded)
 {
     LOG_DBG("Pairing Complete\n");
+    struct bt_conn_info info;
+    char addr[BT_ADDR_LE_STR_LEN];
+
+    if (bt_conn_get_info(conn, &info) < 0) {
+        addr[0] = '\0';
+    }
+
+    bt_addr_le_to_str(info.le.remote, addr, sizeof(addr));
+    zsw_popup_show("Pairing successful", addr, NULL, 5);
     ble_comm_set_pairable(false);
 }
 
 static void pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 {
+    struct bt_conn_info info;
+    char addr[BT_ADDR_LE_STR_LEN];
+
+    if (bt_conn_get_info(conn, &info) < 0) {
+        addr[0] = '\0';
+    }
+
+    bt_addr_le_to_str(info.le.remote, addr, sizeof(addr));
+    if (pairing_enabled) {
+        zsw_popup_show("Pairing Failed", "Address:", NULL, 5);
+    }
     LOG_WRN("Pairing Failed (%d). Disconnecting.\n", reason);
     bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
 }
