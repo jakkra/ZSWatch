@@ -1,6 +1,5 @@
 #include <watchface_ui.h>
 #include <lvgl.h>
-#include <general_ui.h>
 
 #ifdef __ZEPHYR__
 #include <zephyr/logging/log.h>

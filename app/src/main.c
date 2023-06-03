@@ -16,7 +16,6 @@
 #include <clock.h>
 #include <lvgl.h>
 #include "watchface_app.h"
-#include <general_ui.h>
 #include <heart_rate_sensor.h>
 #include <sys/time.h>
 #include <ram_retention_storage.h>
