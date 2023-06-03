@@ -6,6 +6,8 @@
 #include <display_control.h>
 #include <accelerometer.h>
 #include <ble_comm.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/bluetooth.h>
 
 static void settings_app_start(lv_obj_t *root, lv_group_t *group);
 static void settings_app_stop(void);
@@ -16,6 +18,7 @@ static void on_display_on_changed(lv_setting_value_t value, bool final);
 static void on_aoa_enable_changed(lv_setting_value_t value, bool final);
 static void on_pairing_enable_changed(lv_setting_value_t value, bool final);
 static void on_reset_steps_changed(lv_setting_value_t value, bool final);
+static void on_clear_bonded_changed(lv_setting_value_t value, bool final);
 
 LV_IMG_DECLARE(settings);
 
@@ -83,6 +86,17 @@ static lv_settings_item_t bluetooth_page_items[] = {
         .item = {
             .sw = {
                 .name = "Pairable",
+                .inital_val = false
+            }
+        }
+    },
+    {
+        .type = LV_SETTINGS_TYPE_SWITCH,
+        .icon = LV_SYMBOL_BACKSPACE,
+        .change_callback = on_clear_bonded_changed,
+        .item = {
+            .sw = {
+                .name = "Delete all bonded peers",
                 .inital_val = false
             }
         }
@@ -174,6 +188,17 @@ static void on_pairing_enable_changed(lv_setting_value_t value, bool final)
         ble_comm_set_pairable(true);
     } else {
         ble_comm_set_pairable(false);
+    }
+}
+
+static void on_clear_bonded_changed(lv_setting_value_t value, bool final)
+{
+    if (final && value.item.sw) {
+        int err = bt_unpair(BT_ID_DEFAULT, NULL);
+        if (err) {
+            printk("Cannot unpair for default ID");
+            return;
+        }
     }
 }
 
