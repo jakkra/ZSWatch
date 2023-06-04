@@ -2,6 +2,15 @@ menu "Zephyr Kernel"
     source "Kconfig.zephyr"
 endmenu
 
+menu "ZSWatch"
+    config DISABLE_PAIRING_REQUIRED
+        bool
+    prompt "Disable encryption required for BLE connection (pairing/bonding)"
+    default n
+    help
+        "Disable encryption for BLE connection (pairing/bonding). Used only for debugging purposes."
+endmenu
+
 rsource "drivers/Kconfig"
 
 module = APP

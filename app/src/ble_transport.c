@@ -4,6 +4,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/logging/log.h>
 
+
 LOG_MODULE_REGISTER(ble_transport, LOG_LEVEL_DBG);
 
 static struct ble_transport_cb *callbacks;
@@ -28,14 +29,26 @@ BT_GATT_SERVICE_DEFINE(nus_service,
                        BT_GATT_PRIMARY_SERVICE(BLE_TRANSPORT_UUID_SERVICE),
                        BT_GATT_CHARACTERISTIC(BLE_TRANSPORT_UUID_TX,
                                               BT_GATT_CHRC_NOTIFY,
-                                              BT_GATT_PERM_WRITE_ENCRYPT,
+#if CONFIG_DISABLE_PAIRING_REQUIRED
+                                              BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+#else
+                                              BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT,
+#endif
                                               NULL, NULL, NULL),
                        BT_GATT_CCC(NULL,
-                                   BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT),
-                       BT_GATT_CHARACTERISTIC(BLE_TRANSPORT_UUID_RX,
+#if CONFIG_DISABLE_PAIRING_REQUIRED
+                                              BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+#else
+                                              BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT),
+#endif                      
+                        BT_GATT_CHARACTERISTIC(BLE_TRANSPORT_UUID_RX,
                                               BT_GATT_CHRC_WRITE |
                                               BT_GATT_CHRC_WRITE_WITHOUT_RESP,
-                                              BT_GATT_PERM_WRITE_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT,
+#if CONFIG_DISABLE_PAIRING_REQUIRED
+                                              BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+#else
+                                              BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT,
+#endif
                                               NULL, on_receive, NULL),
                       );
 
