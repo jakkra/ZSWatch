@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(watchface_ui, LOG_LEVEL_WRN);
 
 #define USE_SECOND_HAND
 
-const lv_img_dsc_t *get_icon_from_weather_code(int code, lv_color_t* icon_color);
+const lv_img_dsc_t *get_icon_from_weather_code(int code, lv_color_t *icon_color);
 
 static lv_obj_t *root_page = NULL;
 
@@ -80,7 +80,7 @@ static void add_clock(lv_obj_t *parent)
     LV_IMG_DECLARE(second_hand)
     second_img = lv_img_create(parent);
     lv_img_set_src(second_img, &second_hand);
-    lv_obj_align(second_img, LV_ALIGN_CENTER, (second_hand.header.w/2) - 12, 0);
+    lv_obj_align(second_img, LV_ALIGN_CENTER, (second_hand.header.w / 2) - 12, 0);
     lv_img_set_pivot(second_img, 12, 2);
 #endif
 
@@ -419,9 +419,9 @@ void watchface_ui_invalidate_cached(void)
     last_hour = -1;
     last_minute = -1;
     last_num_not = -1;
-    #ifdef USE_SECOND_HAND
+#ifdef USE_SECOND_HAND
     last_second = -1;
-    #endif
+#endif
 }
 
 LV_IMG_DECLARE(stormy);
@@ -434,7 +434,7 @@ LV_IMG_DECLARE(partly_cloudy);
 LV_IMG_DECLARE(cloudy);
 LV_IMG_DECLARE(unknown);
 
-const lv_img_dsc_t *get_icon_from_weather_code(int code, lv_color_t* icon_color)
+const lv_img_dsc_t *get_icon_from_weather_code(int code, lv_color_t *icon_color)
 {
     int code_group = code / 100;
 

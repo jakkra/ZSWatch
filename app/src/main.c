@@ -58,7 +58,7 @@ static void enable_bluetoth(void);
 static void open_notifications_page(void *unused);
 static bool load_retention_ram(void);
 static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
-static void encoder_vibration(struct _lv_indev_drv_t *drv, uint8_t e);
+static void click_feedback(struct _lv_indev_drv_t *drv, uint8_t e);
 static void play_not_vibration(void);
 static void ble_data_cb(ble_comm_cb_data_t *cb);
 static void open_notification_popup(void *data);
@@ -94,6 +94,7 @@ ZBUS_LISTENER_DEFINE(main_accel_lis, zbus_accel_data_callback);
 
 void run_init_work(struct k_work *item)
 {
+    lv_indev_t *touch_indev;
     load_retention_ram();
     heart_rate_sensor_init();
     notifications_page_init(on_notification_page_close, on_notification_page_notification_close);
@@ -115,12 +116,21 @@ void run_init_work(struct k_work *item)
     lv_indev_drv_init(&enc_drv);
     enc_drv.type = LV_INDEV_TYPE_ENCODER;
     enc_drv.read_cb = enocoder_read;
-    enc_drv.feedback_cb = encoder_vibration;
+    enc_drv.feedback_cb = click_feedback;
     enc_indev = lv_indev_drv_register(&enc_drv);
 
     input_group = lv_group_create();
     lv_group_set_default(input_group);
     lv_indev_set_group(enc_indev, input_group);
+
+    touch_indev = lv_indev_get_next(NULL);
+    while (touch_indev) {
+        if (lv_indev_get_type(touch_indev) == LV_INDEV_TYPE_POINTER) {
+            touch_indev->driver->feedback_cb = click_feedback;
+            break;
+        }
+        touch_indev = lv_indev_get_next(touch_indev);
+    }
 
     watch_state = WATCHFACE_STATE;
     lv_obj_add_event_cb(lv_scr_act(), screen_gesture_event, LV_EVENT_GESTURE, NULL);
@@ -388,9 +398,9 @@ static void screen_gesture_event(lv_event_t *e)
     }
 }
 
-void encoder_vibration(struct _lv_indev_drv_t *drv, uint8_t e)
+void click_feedback(struct _lv_indev_drv_t *drv, uint8_t e)
 {
-    if (e == LV_EVENT_PRESSED) {
+    if (e == LV_EVENT_CLICKED) {
         if (!vibrator_on) {
             play_press_vibration();
         }
