@@ -13,6 +13,7 @@ typedef enum ble_comm_data_type {
     BLE_COMM_DATA_TYPE_WEATHER,
     BLE_COMM_DATA_TYPE_MUSTIC_INFO,
     BLE_COMM_DATA_TYPE_MUSTIC_STATE,
+    BLE_COMM_DATA_TYPE_REMOTE_CONTROL,
     BLE_COMM_DATA_TYPE_EMPTY
 } ble_comm_data_type_t;
 
@@ -61,6 +62,10 @@ typedef struct ble_comm_music_state {
     int repeat;
 } ble_comm_music_state_t;
 
+typedef struct ble_comm_remote_control {
+    int button;
+} ble_comm_remote_control_t;
+
 typedef struct ble_comm_cb_data {
     ble_comm_data_type_t type;
     union {
@@ -70,6 +75,7 @@ typedef struct ble_comm_cb_data {
         ble_comm_weather_t weather;
         ble_comm_music_info_t music_info;
         ble_comm_music_state_t music_state;
+        ble_comm_remote_control_t remote_control;
     } data;
 } ble_comm_cb_data_t;
 

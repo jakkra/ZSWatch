@@ -21,6 +21,7 @@ static void handleButtonThread(void);
 typedef struct buttons_t {
     struct gpio_dt_spec btn;
     struct gpio_callback callback_data;
+    bool fake_pressed;
 } buttons_t;
 
 static buttons_t buttons[NUM_BUTTONS] = {
@@ -64,7 +65,27 @@ void buttonsInit(buttonHandlerCallback_t handler)
 
 int button_read(buttonId_t button)
 {
+    if (button >= NUM_BUTTONS) {
+        return -ERANGE;
+    }
+    if (buttons[button].fake_pressed) {
+        buttons[button].fake_pressed = false;
+        return 1;
+    }
     return gpio_pin_get_dt(&buttons[button].btn);
+}
+
+int button_set_fake_press(buttonId_t button, bool pressed)
+{
+    if (button >= NUM_BUTTONS) {
+        return -ERANGE;
+    }
+
+    buttons[button].fake_pressed = pressed;
+    if (pressed) {
+        callback(BUTTONS_SHORT_PRESS, button);
+    }
+    return 0;
 }
 
 static void buttonPressedIsr(const struct device *dev, struct gpio_callback *cb, uint32_t pins)

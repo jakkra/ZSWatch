@@ -25,6 +25,7 @@ typedef enum parse_state {
 static char *extract_value_str(char *key, char *data, int *value_len);
 static int parse_data(char *data, int len);
 static void parse_time(char *data);
+static void parse_remote_control(char *data, int len);
 static void send_ble_data_event(ble_comm_cb_data_t *data);
 
 static void connected(struct bt_conn *conn, uint8_t err);
@@ -260,6 +261,12 @@ static void param_updated(struct bt_conn *conn, uint16_t interval, uint16_t late
 static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint16_t len)
 {
     LOG_HEXDUMP_DBG(data, len, "RX");
+
+    if (strncmp("Control:", data, MIN(strlen("Control:"), len)) == 0) {
+        char *time_start = strstr(data, "Control:");
+        return parse_remote_control(time_start + strlen("Control:"), len - strlen("Control:"));
+    }
+
     char *gb_start = strstr(data, "GB(");
     if (gb_start && parse_state != WAIT_GB) {
         LOG_ERR("Parsing error, was waiting end, but got GB");
@@ -563,6 +570,23 @@ static int parse_data(char *data, int len)
     }
 
     return 0;
+}
+
+static void parse_remote_control(char *data, int len)
+{
+    int button;
+    ble_comm_cb_data_t cb;
+    memset(&cb, 0, sizeof(cb));
+
+    button = atoi(data);
+    printk("Pressed: %d, len: %d\n", button, len);
+    if (button < 0 || button > 3) {
+        return;
+    }
+
+    cb.type = BLE_COMM_DATA_TYPE_REMOTE_CONTROL;
+    cb.data.remote_control.button = button;
+    send_ble_data_event(&cb);
 }
 
 static void send_ble_data_event(ble_comm_cb_data_t *data)

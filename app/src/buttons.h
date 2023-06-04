@@ -31,6 +31,20 @@ typedef void(*buttonHandlerCallback_t)(buttonPressType_t type, buttonId_t id);
  */
 void buttonsInit(buttonHandlerCallback_t handler);
 
+/**
+ * @brief   Read button state
+ * @param   button          Button id to read
+ *
+ * @return  1 if button is pressed, 0 if not
+*/
 int button_read(buttonId_t button);
+
+/**
+ * @brief   Set fake button press. Use to allow emulating button presses.
+ *
+ * @param   button          Button id
+ * @param   pressed         True if button is pressed, false if not
+*/
+int button_set_fake_press(buttonId_t button, bool pressed);
 
 #endif

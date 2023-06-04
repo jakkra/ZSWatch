@@ -302,6 +302,11 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
         return;
     }
 
+    // A bit hacky, but if we consumed the fake press in the callback
+    // we need to clear it, otherwise LVGL will think the button is still pressed later.
+    // Clear it by reading the button.
+    button_read(id);
+
     if (type == BUTTONS_SHORT_PRESS && watch_state == WATCHFACE_STATE) {
         play_press_vibration();
         if (id == BUTTON_TOP_LEFT) {
@@ -452,6 +457,9 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
             break;
         }
         case BLE_COMM_DATA_TYPE_WEATHER:
+            break;
+        case BLE_COMM_DATA_TYPE_REMOTE_CONTROL:
+            button_set_fake_press((buttonId_t)event->data.data.remote_control.button, true);
             break;
         default:
             break;
