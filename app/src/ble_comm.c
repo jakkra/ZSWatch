@@ -47,6 +47,11 @@ static const struct bt_data ad[] = {
                   BT_UUID_16_ENCODE(BT_UUID_DIS_VAL))
 };
 
+static const struct bt_data ad_nus[] = {
+    BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+    BT_DATA_BYTES(BT_DATA_UUID128_ALL, BLE_UUID_TRANSPORT_VAL),
+};
+
 static struct bt_conn *current_conn;
 static uint32_t max_send_len;
 static uint8_t receive_buf[300];
@@ -137,7 +142,7 @@ int ble_comm_init(on_data_cb_t data_cb)
     }
     data_parsed_cb = data_cb;
 
-    err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+    err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), ad_nus, ARRAY_SIZE(ad_nus));
     if (err) {
         LOG_ERR("Advertising failed to start (err %d)\n", err);
     } else {
