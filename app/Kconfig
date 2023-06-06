@@ -16,6 +16,13 @@ menu "ZSWatch"
     default n
     help
         "When screen goes idle, don't turn off the display power, just put it into sleep mode. This will consume more power, but will make the screen wake up faster."
+
+    config DEMO_BUILD
+        bool
+    prompt "Add apps and features only aimed for demo purposes."
+    default y
+    help
+        "Enabling this option will add apps and features only aimed for demo purposes. This will increase the size of the firmware (flash usage)."
 endmenu
 
 rsource "drivers/Kconfig"
