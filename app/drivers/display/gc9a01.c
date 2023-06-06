@@ -15,7 +15,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 
-LOG_MODULE_REGISTER(gc9a01, CONFIG_DISPLAY_LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(gc9a01, CONFIG_DISPLAY_LOG_LEVEL);
 
 
 #define GC9A01_SPI_PROFILING
