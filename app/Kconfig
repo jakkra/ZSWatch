@@ -9,6 +9,13 @@ menu "ZSWatch"
     default n
     help
         "Disable encryption for BLE connection (pairing/bonding). Used only for debugging purposes."
+    
+    config DISPLAY_FAST_WAKEUP
+        bool
+    prompt "Don't turn off the display power, just put it into sleep mode when going idle."
+    default n
+    help
+        "When screen goes idle, don't turn off the display power, just put it into sleep mode. This will consume more power, but will make the screen wake up faster."
 endmenu
 
 rsource "drivers/Kconfig"

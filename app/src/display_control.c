@@ -16,8 +16,8 @@ static void lvgl_render(struct k_work *item);
 
 static const struct pwm_dt_spec display_blk = PWM_DT_SPEC_GET_OR(DT_ALIAS(display_blk), {});
 static const struct device *const reg_dev = DEVICE_DT_GET_OR_NULL(DT_PATH(regulator_3v3_ctrl));
-const struct device *display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
-const struct device *touch_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_keyboard_scan));
+static const struct device *display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+static const struct device *touch_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_keyboard_scan));
 
 K_WORK_DELAYABLE_DEFINE(lvgl_work, lvgl_render);
 
@@ -29,15 +29,12 @@ void display_control_init(void)
 {
     if (!device_is_ready(display_dev)) {
         LOG_ERR("Device display not ready.");
-        return;
     }
     if (!device_is_ready(display_blk.dev)) {
         LOG_WRN("Display brightness control not supported");
-        return;
     }
     if (!device_is_ready(reg_dev)) {
         LOG_WRN("Display regulator control not supported");
-        return;
     }
     if (!device_is_ready(touch_dev)) {
         LOG_WRN("Device touch not ready.");
@@ -52,10 +49,12 @@ void display_control_power_on(bool on)
     is_on = on;
     if (on) {
         // Turn on 3V3 regulator that powers display related stuff.
+#ifndef CONFIG_DISPLAY_FAST_WAKEUP
         if (device_is_ready(reg_dev)) {
             regulator_enable(reg_dev);
             pm_device_action_run(display_dev, PM_DEVICE_ACTION_TURN_ON);
         }
+#endif
         // Resume the display and touch chip
         pm_device_action_run(display_dev, PM_DEVICE_ACTION_RESUME);
         pm_device_action_run(touch_dev, PM_DEVICE_ACTION_RESUME);
@@ -68,10 +67,12 @@ void display_control_power_on(bool on)
         pm_device_action_run(touch_dev, PM_DEVICE_ACTION_SUSPEND);
 
         // Turn off 3v3 regulator
+#ifndef CONFIG_DISPLAY_FAST_WAKEUP
         if (device_is_ready(reg_dev)) {
             regulator_disable(reg_dev);
             pm_device_action_run(display_dev, PM_DEVICE_ACTION_TURN_OFF);
         }
+#endif
         // Turn off PWM peripheral as it consumes like 200-250uA
         display_control_set_brightness(0);
         // Cancel pending call to lv_task_handler
