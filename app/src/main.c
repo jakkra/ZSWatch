@@ -38,10 +38,11 @@
 #include <zsw_power_manager.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/task_wdt/task_wdt.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
 
-#define RENDER_INTERVAL_LVGL    K_MSEC(100)
+#define TASK_WDT_FEED_INTERVAL_MS  3000
 
 typedef enum ui_state {
     INIT_STATE,
@@ -52,8 +53,9 @@ typedef enum ui_state {
     NOTIFCATION_LIST_STATE,
 } ui_state_t;
 
-void run_init_work(struct k_work *item);
+static void run_init_work(struct k_work *item);
 
+static void run_wdt_work(struct k_work *item);
 static void enable_bluetoth(void);
 static void open_notifications_page(void *unused);
 static bool load_retention_ram(void);
@@ -74,6 +76,9 @@ static void screen_gesture_event(lv_event_t *e);
 
 static void on_close_application_manager(void);
 
+K_WORK_DELAYABLE_DEFINE(wdt_work, run_wdt_work);
+static int kernal_wdt_id;
+
 static bool buttons_allocated = false;
 static lv_group_t *input_group;
 static lv_indev_drv_t enc_drv;
@@ -92,7 +97,7 @@ ZBUS_LISTENER_DEFINE(main_ble_comm_lis, zbus_ble_comm_data_callback);
 ZBUS_CHAN_DECLARE(accel_data_chan);
 ZBUS_LISTENER_DEFINE(main_accel_lis, zbus_accel_data_callback);
 
-void run_init_work(struct k_work *item)
+static void run_init_work(struct k_work *item)
 {
     lv_indev_t *touch_indev;
     load_retention_ram();
@@ -137,8 +142,27 @@ void run_init_work(struct k_work *item)
     watchface_app_start(input_group);
 }
 
+void run_wdt_work(struct k_work *item)
+{
+    task_wdt_feed(kernal_wdt_id);
+    k_work_schedule(&wdt_work, K_MSEC(TASK_WDT_FEED_INTERVAL_MS));
+}
+
 void main(void)
 {
+#ifdef CONFIG_TASK_WDT
+    const struct device *hw_wdt_dev = DEVICE_DT_GET(DT_ALIAS(watchdog0));
+    if (!device_is_ready(hw_wdt_dev)) {
+		printk("Hardware watchdog %s is not ready; ignoring it.\n",
+		       hw_wdt_dev->name);
+		hw_wdt_dev = NULL;
+	}
+
+	task_wdt_init(hw_wdt_dev);
+    kernal_wdt_id = task_wdt_add(TASK_WDT_FEED_INTERVAL_MS * 2, NULL, NULL);
+
+    k_work_schedule(&wdt_work, K_NO_WAIT);
+#endif
     // The init code requires a bit of stack.
     // So in order to not increase CONFIG_MAIN_STACK_SIZE and loose
     // this RAM forever, instead re-use the system workqueue for init
