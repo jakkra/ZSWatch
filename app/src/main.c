@@ -131,7 +131,10 @@ static void run_init_work(struct k_work *item)
     touch_indev = lv_indev_get_next(NULL);
     while (touch_indev) {
         if (lv_indev_get_type(touch_indev) == LV_INDEV_TYPE_POINTER) {
-            touch_indev->driver->feedback_cb = click_feedback;
+            // TODO First fix so not all presses everywhere are registered as clicks and cause vibration
+            // Clicking anywehere with this below added right now will cause a vibration, which
+            // is not what we want
+            // touch_indev->driver->feedback_cb = click_feedback;
             break;
         }
         touch_indev = lv_indev_get_next(touch_indev);
@@ -239,9 +242,9 @@ static void play_press_vibration(void)
 {
     vibrator_on = true;
     vibration_motor_set_on(true);
-    vibration_motor_set_power(80);
-    k_msleep(150);
-    vibration_motor_set_power(80);
+    vibration_motor_set_power(75);
+    k_msleep(100);
+    vibration_motor_set_power(75);
     vibration_motor_set_on(false);
     vibration_motor_set_power(0);
     vibrator_on = false;
