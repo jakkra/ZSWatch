@@ -44,7 +44,7 @@ static bmi270_feature_config_set_t bmi270_enabled_features[] = {
     { .sensor_id = BMI2_SIG_MOTION, .cfg_func = NULL, .isr_disable = true},
     //{ .sensor_id = BMI2_ANY_MOTION, .cfg_func = configure_anymotion},
     { .sensor_id = BMI2_STEP_ACTIVITY, .cfg_func = NULL, .isr_disable = true},
-    { .sensor_id = BMI2_WRIST_GESTURE, .cfg_func = configure_gesture_detect, .isr_disable = true},
+    { .sensor_id = BMI2_WRIST_GESTURE, .cfg_func = configure_gesture_detect, .isr_disable = false},
     { .sensor_id = BMI2_WRIST_WEAR_WAKE_UP, .cfg_func = configure_wrist_wakeup},
 };
 
