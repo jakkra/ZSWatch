@@ -84,14 +84,12 @@ int pressure_sensor_set_odr(uint8_t bmp5_odr)
 int pressure_sensor_fetch_pressure(float *pressure, float *temperature)
 {
     int8_t rslt = 0;
-    uint8_t idx = 0;
     struct bmp5_sensor_data sensor_data;
 
     rslt = bmp5_get_sensor_data(&sensor_data, &osr_odr_press_cfg, &bmp5_dev);
     bmp5_error_codes_print_result("bmp5_get_sensor_data", rslt);
 
     if (rslt == BMP5_OK) {
-        printf("%d, %f, %f\n", idx, sensor_data.pressure, sensor_data.temperature);
         *pressure = sensor_data.pressure;
         *temperature = sensor_data.temperature;
     }
@@ -119,9 +117,6 @@ static void bmp581_work_cb(struct k_work *work)
     int8_t rslt = 0;
     uint8_t int_status;
     struct bmp5_sensor_data sensor_data;
-
-    printf("\nOutput :\n\n");
-    printf("Data, Pressure (Pa), Temperature (deg C)\n");
 
     rslt = bmp5_get_interrupt_status(&int_status, &bmp5_dev);
     bmp5_error_codes_print_result("bmp5_get_interrupt_status", rslt);
