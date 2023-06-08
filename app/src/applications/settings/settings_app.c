@@ -38,8 +38,8 @@ static lv_settings_item_t general_page_items[] = {
         .item = {
             .slider = {
                 .name = "Brightness",
-                .inital_val = 10,
-                .min_val = 0,
+                .inital_val = 3,
+                .min_val = 1,
                 .max_val = 10,
             }
         }
@@ -166,11 +166,7 @@ static void on_brightness_changed(lv_setting_value_t value, bool final)
 
 static void on_display_on_changed(lv_setting_value_t value, bool final)
 {
-    if (value.item.sw) {
-        display_control_power_on(true);
-    } else {
-        display_control_power_on(false);
-    }
+
 }
 
 static void on_aoa_enable_changed(lv_setting_value_t value, bool final)
