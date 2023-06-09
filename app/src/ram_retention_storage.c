@@ -166,7 +166,7 @@ bool retained_validate()
 
 void retained_update(void)
 {
-    uint64_t now = k_uptime_ticks();
+    uint64_t now = k_uptime_get();
 
     retained.uptime_sum += (now - retained.uptime_latest);
     retained.uptime_latest = now;

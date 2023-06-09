@@ -24,6 +24,7 @@
 #include <lvgl.h>
 #include <zephyr/logging/log.h>
 #include <events/activity_event.h>
+#include <ram_retention_storage.h>
 
 LOG_MODULE_REGISTER(zsw_power_manager, LOG_LEVEL_DBG);
 
@@ -42,6 +43,7 @@ ZBUS_CHAN_DECLARE(accel_data_chan);
 ZBUS_LISTENER_DEFINE(power_manager_accel_lis, zbus_accel_data_callback);
 
 static bool is_active = true;
+static uint32_t last_wakeup_time;
 
 bool zsw_power_manager_reset_idle_timout(void)
 {
@@ -58,9 +60,10 @@ bool zsw_power_manager_reset_idle_timout(void)
 
 static void enter_inactive(void)
 {
-    // TODO send event to system that user is not interacting with the watch.
     LOG_DBG("Enter inactive");
     is_active = false;
+    retained.wakeup_time += k_uptime_get_32() - last_wakeup_time;
+    retained_update();
     display_control_power_on(false);
 
     struct activity_state_event evt = {
@@ -73,6 +76,7 @@ static void enter_active(void)
 {
     LOG_DBG("Enter active");
     is_active = true;
+    last_wakeup_time = k_uptime_get_32();
     display_control_power_on(true);
 
     struct activity_state_event evt = {
@@ -115,6 +119,7 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
 
 static int zsw_power_manager_init(const struct device *arg)
 {
+    last_wakeup_time = k_uptime_get_32();
     k_work_schedule(&idle_work, K_SECONDS(IDLE_TIMEOUT_SECONDS));
     return 0;
 }

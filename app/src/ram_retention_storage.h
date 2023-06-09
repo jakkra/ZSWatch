@@ -12,6 +12,7 @@
 
 struct retained_data {
     time_t current_time_seconds;
+    uint64_t wakeup_time;
 
     /* The uptime from the current session the last time the
      * retained data was updated.
