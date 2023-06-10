@@ -100,6 +100,10 @@ void display_control_set_brightness(uint8_t percent)
     uint32_t step = display_blk.period / 100;
     uint32_t pulse_width = step * (100 - percent);
 
+    if (!is_on && percent != 0) {
+        LOG_WRN("Setting brightness when display is off may cause issues with active/inactive state, make sure you know what you are doing.");
+    }
+
     if (percent != 0) {
         last_brightness = percent;
     }

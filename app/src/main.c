@@ -69,7 +69,6 @@ static void on_popup_notifcation_closed(uint32_t id);
 static void on_notification_page_close(void);
 static void on_notification_page_notification_close(uint32_t not_id);
 static void zbus_ble_comm_data_callback(const struct zbus_channel *chan);
-static void zbus_accel_data_callback(const struct zbus_channel *chan);
 
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
 static void screen_gesture_event(lv_event_t *e);
@@ -93,9 +92,6 @@ K_WORK_DEFINE(init_work, run_init_work);
 
 ZBUS_CHAN_DECLARE(ble_comm_data_chan);
 ZBUS_LISTENER_DEFINE(main_ble_comm_lis, zbus_ble_comm_data_callback);
-
-ZBUS_CHAN_DECLARE(accel_data_chan);
-ZBUS_LISTENER_DEFINE(main_accel_lis, zbus_accel_data_callback);
 
 static void run_init_work(struct k_work *item)
 {
@@ -488,28 +484,6 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
         case BLE_COMM_DATA_TYPE_REMOTE_CONTROL:
             button_set_fake_press((buttonId_t)event->data.data.remote_control.button, true);
             break;
-        default:
-            break;
-    }
-}
-
-static void zbus_accel_data_callback(const struct zbus_channel *chan)
-{
-    const struct accel_event *event = zbus_chan_const_msg(chan);
-    switch (event->data.type) {
-        case ACCELEROMETER_EVT_TYPE_XYZ: {
-            LOG_ERR("x: %d y: %d z: %d", event->data.data.xyz.x, event->data.data.xyz.y, event->data.data.xyz.z);
-            break;
-        }
-        case ACCELEROMETER_EVT_TYPE_GESTURE: {
-            if (event->data.data.gesture == ACCELEROMETER_EVT_GESTURE_WRIST_SHAKE) {
-                display_control_power_on(true);
-            }
-        }
-        case ACCELEROMETER_EVT_TYPE_WRIST_WAKEUP: {
-            display_control_power_on(true);
-            break;
-        }
         default:
             break;
     }
