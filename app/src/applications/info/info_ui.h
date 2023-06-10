@@ -15,5 +15,7 @@ void info_ui_set_total_uptime_sec(uint32_t uptime_seconds);
 
 void info_ui_set_wakeup_time_sec(uint64_t total_wake_time, uint32_t percent_used);
 
+void info_ui_set_time_to_inactive_sec(uint32_t time_left_seconds);
+
 void info_ui_set_mac_addr(char* mac_str);
 

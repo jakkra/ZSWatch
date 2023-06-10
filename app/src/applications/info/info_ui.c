@@ -10,6 +10,7 @@ static lv_obj_t *resets_label;
 static lv_obj_t *runtime_label;
 static lv_obj_t *wake_time_label;
 static lv_obj_t *mac_addr_label;
+static lv_obj_t *inactive_time_label;
 
 static void create_ui(lv_obj_t *parent)
 {
@@ -33,7 +34,7 @@ static void create_ui(lv_obj_t *parent)
     uptime_label = lv_label_create(parent);
     lv_obj_set_width(uptime_label, LV_SIZE_CONTENT);
     lv_obj_set_height(uptime_label, LV_SIZE_CONTENT);
-    lv_obj_set_x(uptime_label, 5);
+    lv_obj_set_x(uptime_label, 10);
     lv_obj_set_y(uptime_label, -25);
     lv_obj_set_align(uptime_label, LV_ALIGN_LEFT_MID);
 
@@ -54,9 +55,16 @@ static void create_ui(lv_obj_t *parent)
     mac_addr_label = lv_label_create(parent);
     lv_obj_set_width(mac_addr_label, LV_SIZE_CONTENT);
     lv_obj_set_height(mac_addr_label, LV_SIZE_CONTENT);
-    lv_obj_set_x(mac_addr_label, 5);
+    lv_obj_set_x(mac_addr_label, 10);
     lv_obj_set_y(mac_addr_label, 35);
     lv_obj_set_align(mac_addr_label, LV_ALIGN_LEFT_MID);
+
+    inactive_time_label = lv_label_create(parent);
+    lv_obj_set_width(inactive_time_label, LV_SIZE_CONTENT);
+    lv_obj_set_height(inactive_time_label, LV_SIZE_CONTENT);
+    lv_obj_set_x(inactive_time_label, 20);
+    lv_obj_set_y(inactive_time_label, 50);
+    lv_obj_set_align(inactive_time_label, LV_ALIGN_LEFT_MID);
 }
 
 void info_ui_show(lv_obj_t *root)
@@ -123,6 +131,14 @@ void info_ui_set_wakeup_time_sec(uint64_t total_wake_time, uint32_t percent_used
     seconds_to_time_chunks(total_wake_time, &days, &hours, &minutes, &seconds);
     snprintf(buf, sizeof(buf), "Screen on: %02d:%02d:%02d:%02d (%d%%)", days, hours, minutes, seconds, percent_used);
     lv_label_set_text(wake_time_label, buf);
+}
+
+void info_ui_set_time_to_inactive_sec(uint32_t time_left_seconds)
+{
+    char buf[100] = {};
+
+    snprintf(buf, sizeof(buf), "Time to inactive: %ds", time_left_seconds);
+    lv_label_set_text(inactive_time_label, buf);
 }
 
 void info_ui_set_mac_addr(char* mac_str)

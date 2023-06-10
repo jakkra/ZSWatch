@@ -7,6 +7,7 @@
 #include <ram_retention_storage.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zsw_power_manager.h>
 
 LOG_MODULE_REGISTER(info_app, LOG_LEVEL_DBG);
 
@@ -40,6 +41,7 @@ static void info_app_start(lv_obj_t *root, lv_group_t *group)
     info_ui_set_uptime_sec(k_uptime_get() / 1000);
     info_ui_set_total_uptime_sec(retained.uptime_sum / 1000);
     info_ui_set_wakeup_time_sec(retained.wakeup_time / 1000, (retained.wakeup_time / (double)retained.uptime_sum) * 100);
+    info_ui_set_time_to_inactive_sec(zsw_power_manager_get_ms_to_inactive() / 1000);
     info_ui_set_resets(retained.boots);
 
     bt_id_get(&local_addr, &addr_count);
@@ -57,10 +59,10 @@ static void info_app_stop(void)
 
 static void timer_callback(lv_timer_t *timer)
 {
-    printk("ASSF: %" PRIu64", %" PRIu64 "%" PRIu64"\n", retained.uptime_latest, retained.uptime_latest, retained.uptime_sum);
     info_ui_set_uptime_sec(k_uptime_get() / 1000);
     info_ui_set_total_uptime_sec(retained.uptime_sum / 1000);
     info_ui_set_wakeup_time_sec(retained.wakeup_time / 1000, (retained.wakeup_time / (double)retained.uptime_sum) * 100);
+    info_ui_set_time_to_inactive_sec(zsw_power_manager_get_ms_to_inactive() / 1000);
 }
 
 static int info_app_add(const struct device *arg)

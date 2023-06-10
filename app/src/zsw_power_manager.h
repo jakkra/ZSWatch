@@ -17,6 +17,7 @@
 #ifndef __ZSW_POWER_MANAGER_H_
 #define __ZSW_POWER_MANAGER_H_
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef enum zsw_power_manager_state_t {
     ZSW_ACTIVITY_STATE_ACTIVE,
@@ -30,6 +31,11 @@ typedef enum zsw_power_manager_state_t {
 *   Return true if the call caused wakup from inactive state, false otherwise.
 */
 bool zsw_power_manager_reset_idle_timout(void);
+
+/*
+*   Returns the time in seconds until the watch will go into inactive state.
+*/
+uint32_t zsw_power_manager_get_ms_to_inactive(void);
 
 #endif // __ZSW_POWER_MANAGER_H_
 

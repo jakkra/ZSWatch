@@ -58,6 +58,21 @@ bool zsw_power_manager_reset_idle_timout(void)
     }
 }
 
+uint32_t zsw_power_manager_get_ms_to_inactive(void)
+{
+    if (!is_active) {
+        return 0;
+    }
+    uint32_t time_since_lvgl_activity = lv_disp_get_inactive_time(NULL);
+    uint32_t time_to_timeout = k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&idle_work));
+
+    if (time_since_lvgl_activity >= IDLE_TIMEOUT_SECONDS * 1000) {
+        return time_to_timeout;
+    } else {
+        return MAX(time_to_timeout, IDLE_TIMEOUT_SECONDS * 1000 - lv_disp_get_inactive_time(NULL));
+    }
+}
+
 static void enter_inactive(void)
 {
     LOG_DBG("Enter inactive");
