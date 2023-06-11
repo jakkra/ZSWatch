@@ -6,12 +6,21 @@
 LOG_MODULE_REGISTER(watchface_ui, LOG_LEVEL_WRN);
 #endif
 
-
 #define SMALL_WATCHFACE_CENTER_OFFSET 38
 
 #define USE_SECOND_HAND
 
 const lv_img_dsc_t *get_icon_from_weather_code(int code, lv_color_t *icon_color);
+
+LV_IMG_DECLARE(stormy);
+LV_IMG_DECLARE(snowy);
+LV_IMG_DECLARE(rainy);
+LV_IMG_DECLARE(snowy);
+LV_IMG_DECLARE(foggy);
+LV_IMG_DECLARE(sunny);
+LV_IMG_DECLARE(partly_cloudy);
+LV_IMG_DECLARE(cloudy);
+LV_IMG_DECLARE(unknown);
 
 static lv_obj_t *root_page = NULL;
 
@@ -236,7 +245,11 @@ static void add_weather_data(lv_obj_t *parent)
     lv_obj_set_size(weather_icon, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
     lv_obj_align_to(weather_icon, weather_temperature, LV_ALIGN_OUT_RIGHT_MID, 15, -13);
 
-    lv_obj_add_flag(weather_temperature, LV_OBJ_FLAG_HIDDEN);
+    // Show dummy data until we receive real data
+    lv_label_set_text_fmt(weather_temperature, "-°C");
+    lv_obj_set_style_img_recolor_opa(weather_icon, LV_OPA_COVER, 0);
+    lv_obj_set_style_img_recolor(weather_icon, lv_color_white(), 0);
+    lv_img_set_src(weather_icon, &partly_cloudy);
 }
 
 static void add_date(lv_obj_t *parent)
@@ -424,16 +437,6 @@ void watchface_ui_invalidate_cached(void)
     last_second = -1;
 #endif
 }
-
-LV_IMG_DECLARE(stormy);
-LV_IMG_DECLARE(snowy);
-LV_IMG_DECLARE(rainy);
-LV_IMG_DECLARE(snowy);
-LV_IMG_DECLARE(foggy);
-LV_IMG_DECLARE(sunny);
-LV_IMG_DECLARE(partly_cloudy);
-LV_IMG_DECLARE(cloudy);
-LV_IMG_DECLARE(unknown);
 
 const lv_img_dsc_t *get_icon_from_weather_code(int code, lv_color_t *icon_color)
 {
