@@ -435,16 +435,16 @@ static int parse_notify(char *data, int len)
     // Little hack since we know it's JSON, we can terminate all values in the data
     // which saves us some hassle and we can just pass all values null terminated
     // to the callback. Make sure to do it after finish parsing!
-    if (cb.data.notify.src_len > 0) {
+    if (cb.data.notify.src_len >= 0) {
         cb.data.notify.src[cb.data.notify.src_len] = '\0';
     }
-    if (cb.data.notify.sender_len > 0) {
+    if (cb.data.notify.sender_len >= 0) {
         cb.data.notify.sender[cb.data.notify.sender_len] = '\0';
     }
-    if (cb.data.notify.title_len > 0) {
+    if (cb.data.notify.title_len >= 0) {
         cb.data.notify.title[cb.data.notify.title_len] = '\0';
     }
-    if (cb.data.notify.body_len > 0) {
+    if (cb.data.notify.body_len >= 0) {
         cb.data.notify.body[cb.data.notify.body_len] = '\0';
     }
 
