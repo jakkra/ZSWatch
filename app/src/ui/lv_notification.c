@@ -45,8 +45,10 @@ void lv_notification_show(char *title, char *body, notification_src_t icon, uint
     lv_obj_t *title_label = lv_msgbox_get_title(mbox);
     lv_obj_align(title_label, LV_ALIGN_CENTER, 65, -100);
 
-    lv_obj_t *text_label = lv_msgbox_get_text(mbox);
-    lv_obj_set_style_text_align(text_label, LV_TEXT_ALIGN_CENTER, 0);
+    if (strlen(body) > 0) {
+        lv_obj_t *text_label = lv_msgbox_get_text(mbox);
+        lv_obj_set_style_text_align(text_label, LV_TEXT_ALIGN_CENTER, 0);
+    }
 
     lv_obj_align_to(mbox, lv_scr_act(), LV_ALIGN_CENTER, 0, 90);
 
