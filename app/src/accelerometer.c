@@ -49,6 +49,7 @@ static bmi270_feature_config_set_t bmi270_enabled_features[] = {
 };
 
 static struct bmi2_dev bmi2_dev;
+static bool bmi270_initialized = false;
 
 // Assumes only one sensor
 static const struct gpio_dt_spec int1_gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(bmi270), int1_gpios);
@@ -87,7 +88,7 @@ int accelerometer_init(void)
             }
         }
     }
-
+    bmi270_initialized = true;
     return 0;
 }
 
@@ -95,6 +96,10 @@ int accelerometer_fetch_xyz(int16_t *x, int16_t *y, int16_t *z)
 {
     int8_t rslt;
     struct bmi2_sens_data sensor_data = { { 0 } };
+
+    if (!bmi270_initialized) {
+        return -EIO;
+    }
 
     /* Get accel and gyro data for x, y and z axis. */
     rslt = bmi2_get_sensor_data(&sensor_data, &bmi2_dev);
@@ -113,6 +118,10 @@ int accelerometer_fetch_num_steps(uint32_t *num_steps)
 {
     int8_t rslt;
     struct bmi2_feat_sensor_data sensor_data = { 0 };
+
+    if (!bmi270_initialized) {
+        return -EIO;
+    }
 
     sensor_data.type = BMI2_STEP_COUNTER;
     rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
