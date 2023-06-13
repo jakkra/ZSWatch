@@ -77,6 +77,7 @@ static void timer_callback(lv_timer_t *timer)
     }
 
     sensor_channel_get(bme680, SENSOR_CHAN_AMBIENT_TEMP, &temp_sensor_val);
+    temperature = sensor_value_to_double(&temp_sensor_val);
 
     sensor_channel_get(bme680, SENSOR_CHAN_GAS_RES, &temp_sensor_val);
     gas_res = sensor_value_to_double(&temp_sensor_val);
