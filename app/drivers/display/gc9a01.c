@@ -375,6 +375,8 @@ static int gc9a01_pm_action(const struct device *dev,
                             enum pm_device_action action)
 {
     int err = 0;
+    const struct gc9a01_config *config = dev->config;
+    __ASSERT(pm_device_action_run(config->bus.bus, PM_DEVICE_ACTION_RESUME) == 0, "Failed resume SPI Bus");
 
     switch (action) {
         case PM_DEVICE_ACTION_RESUME:
@@ -389,8 +391,10 @@ static int gc9a01_pm_action(const struct device *dev,
         case PM_DEVICE_ACTION_TURN_OFF:
             break;
         default:
-            return -ENOTSUP;
+            err = -ENOTSUP;
     }
+
+    __ASSERT(pm_device_action_run(config->bus.bus, PM_DEVICE_ACTION_SUSPEND) == 0, "Failed suspend SPI Bus");
 
     if (err < 0) {
         LOG_ERR("%s: failed to set power mode", dev->name);
