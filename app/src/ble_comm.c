@@ -216,14 +216,14 @@ static void connected(struct bt_conn *conn, uint8_t err)
     struct bt_conn_info info;
     bt_conn_get_info(conn, &info);
     LOG_INF("Interval: %d, latency: %d, timeout: %d", info.le.interval, info.le.latency, info.le.timeout);
+
+    // Needs https://github.com/zephyrproject-rtos/zephyr/issues/56197
     /*
-    // TODO connection timeout 0x08 after this, why?
-    // TODO to this after GATT discovery is done
     struct bt_le_conn_param param = {
-        .interval_min = 100,
+        .interval_min = 300,
         .interval_max = 500,
         .latency = 0,
-        .timeout = 200,
+        .timeout = 500,
     };
 
     err = bt_conn_le_param_update(conn, &param);
