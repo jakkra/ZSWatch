@@ -143,7 +143,13 @@ int ble_comm_init(on_data_cb_t data_cb)
     }
     data_parsed_cb = data_cb;
 
-    err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), ad_nus, ARRAY_SIZE(ad_nus));
+    struct bt_le_adv_param adv_param = {
+        .options = BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME,
+        .interval_min = BT_GAP_ADV_SLOW_INT_MIN,
+        .interval_max = BT_GAP_ADV_SLOW_INT_MAX,
+    };
+
+    err = bt_le_adv_start(&adv_param, ad, ARRAY_SIZE(ad), ad_nus, ARRAY_SIZE(ad_nus));
     if (err) {
         LOG_ERR("Advertising failed to start (err %d)\n", err);
     } else {
