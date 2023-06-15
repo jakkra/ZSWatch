@@ -31,12 +31,14 @@ static void compass_app_start(lv_obj_t *root, lv_group_t *group)
 {
     compass_ui_show(root);
     refresh_timer = lv_timer_create(timer_callback, SENSOR_REFRESH_INTERVAL_MS,  NULL);
+    magnetometer_set_enable(true);
 }
 
 static void compass_app_stop(void)
 {
     lv_timer_del(refresh_timer);
     compass_ui_remove();
+    magnetometer_set_enable(false);
 }
 
 static void timer_callback(lv_timer_t *timer)

@@ -46,7 +46,20 @@ void magnetometer_init(void)
     sensor_trigger_set(magnetometer, &trig, lis2mdl_trigger_handler);
 
     // TODO handle power save, enable/disable etc. to save power
-    //int rc = pm_device_action_run(magnetometer, PM_DEVICE_ACTION_SUSPEND);
+    int rc = pm_device_action_run(magnetometer, PM_DEVICE_ACTION_SUSPEND);
+    __ASSERT(rc == 0, "Failed to suspend LIS2MDL: %d\n", rc);
+}
+
+void magnetometer_set_enable(bool enabled)
+{
+    int rc;
+    if (enabled) {
+        rc = pm_device_action_run(magnetometer, PM_DEVICE_ACTION_RESUME);
+        __ASSERT(rc == 0, "Failed to resume LIS2MDL: %d\n", rc);
+    } else {
+        rc = pm_device_action_run(magnetometer, PM_DEVICE_ACTION_SUSPEND);
+        __ASSERT(rc == 0, "Failed to suspend LIS2MDL: %d\n", rc);
+    }
 }
 
 double magnetometer_get_heading(void)
