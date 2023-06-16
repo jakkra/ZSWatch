@@ -394,7 +394,12 @@ static int gc9a01_pm_action(const struct device *dev,
             err = -ENOTSUP;
     }
 
-    __ASSERT(pm_device_action_run(config->bus.bus, PM_DEVICE_ACTION_SUSPEND) == 0, "Failed suspend SPI Bus");
+    err = pm_device_action_run(config->bus.bus, PM_DEVICE_ACTION_SUSPEND);
+    __ASSERT(err == 0 || err == -EALREADY, "Failed suspend SPI Bus");
+
+    if (err == -EALREADY) {
+        err = 0;
+    }
 
     if (err < 0) {
         LOG_ERR("%s: failed to set power mode", dev->name);
