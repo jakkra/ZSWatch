@@ -7,3 +7,6 @@
 [submodule "app/src/ext_drivers/bmp581/BMP5-Sensor-API"]
 	path = app/src/ext_drivers/bmp581/BMP5-Sensor-API
 	url = https://github.com/boschsensortec/BMP5-Sensor-API.git
+[submodule "app/src/applications/2048/2048_lib"]
+	path = app/src/applications/2048/2048_lib
+	url = https://github.com/100askTeam/lv_lib_100ask.git
