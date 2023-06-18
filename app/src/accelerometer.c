@@ -52,8 +52,8 @@ static struct bmi2_dev bmi2_dev;
 static bool bmi270_initialized = false;
 
 // Assumes only one sensor
-static const struct gpio_dt_spec int1_gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(bmi270), int1_gpios);
-static const struct gpio_dt_spec int2_gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(bmi270), int2_gpios);
+static const struct gpio_dt_spec int1_gpio = GPIO_DT_SPEC_GET_OR(DT_NODELABEL(bmi270), int1_gpios, {});
+static const struct gpio_dt_spec int2_gpio = GPIO_DT_SPEC_GET_OR(DT_NODELABEL(bmi270), int2_gpios, {});
 static K_WORK_DEFINE(int1_work, bmi270_int1_work_cb);
 static K_WORK_DEFINE(int2_work, bmi270_int2_work_cb);
 static struct gpio_callback gpio_int1_cb;
@@ -65,6 +65,10 @@ int accelerometer_init(void)
 
     rslt = bmi2_interface_init(&bmi2_dev, BMI2_I2C_INTF);
     bmi2_error_codes_print_result(rslt);
+
+    if (rslt != BMI2_OK) {
+        return -ENODEV;
+    }
 
     /* Initialize bmi270. */
     rslt = bmi270_init(&bmi2_dev);

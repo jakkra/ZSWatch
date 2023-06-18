@@ -53,6 +53,8 @@ struct bt_df_adv_cte_tx_param m_cte_params = {
     .ant_ids = NULL
 };
 
+static bool initialized;
+
 // Offsets of the different data in bt_data m_adv_data[] below
 #define ADV_DATA_OFFSET_NAMESPACE 4
 #define ADV_DATA_OFFSET_INSTANCE 14
@@ -106,11 +108,16 @@ bool bleAoaInit()
     ok = ok && bt_df_set_adv_cte_tx_param(m_ext_adv, &m_cte_params) == 0;
     ok = ok && set_adv_params(500, 500);
     ok = ok && bt_df_adv_cte_tx_enable(m_ext_adv) == 0;
+
+    initialized = ok;
     return ok;
 }
 
 bool bleAoaAdvertise(uint16_t min, uint16_t max, bool on)
 {
+    if (!initialized) {
+        return false;
+    }
     bool ok = true;
     bt_le_per_adv_stop(m_ext_adv);
     bt_le_ext_adv_stop(m_ext_adv);

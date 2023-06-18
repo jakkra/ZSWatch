@@ -13,7 +13,7 @@
 #include "bmp5_defs.h"
 #include <bmp5_port.h>
 
-LOG_MODULE_REGISTER(BMP581, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(BMP581, LOG_LEVEL_DBG);
 
 #define BMP5_SHUTTLE_ID_PRIM  UINT16_C(0x1B3)
 #define BMP5_SHUTTLE_ID_SEC   UINT16_C(0x1D3)
@@ -56,7 +56,7 @@ int8_t bmp5_interface_init(struct bmp5_dev *bmp5_dev, uint8_t intf)
 {
     int8_t rslt = BMP5_OK;
 
-    if (bmp5_dev  != NULL) {
+    if (bmp5_dev  != NULL && device != NULL) {
         bmp5_dev->read = bmp5_i2c_read;
         bmp5_dev->write = bmp5_i2c_write;
         bmp5_dev->intf = BMP5_I2C_INTF;

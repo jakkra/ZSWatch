@@ -60,8 +60,10 @@ void display_control_power_on(bool on)
         pm_device_action_run(touch_dev, PM_DEVICE_ACTION_RESUME);
         // Turn backlight on.
         display_control_set_brightness(last_brightness);
+        display_blanking_off(display_dev);
         k_work_schedule(&lvgl_work, K_MSEC(250));
     } else {
+        display_blanking_on(display_dev);
         // Suspend the display and touch chip
         pm_device_action_run(display_dev, PM_DEVICE_ACTION_SUSPEND);
         pm_device_action_run(touch_dev, PM_DEVICE_ACTION_SUSPEND);

@@ -17,6 +17,7 @@
 
 #include <zsw_cpu_freq.h>
 #include <zephyr/kernel.h>
+#ifndef CONFIG_BOARD_NATIVE_POSIX
 #include <nrfx_clock.h>
 
 //#define CPU_CLOCK_PROFILING
@@ -77,3 +78,11 @@ zsw_cpu_freq_t zsw_cpu_get_freq(void)
     return ZSW_CPU_FREQ_DEFAULT;
 #endif
 }
+#else
+void zsw_cpu_set_freq(zsw_cpu_freq_t freq, bool wait) {}
+
+zsw_cpu_freq_t zsw_cpu_get_freq(void)
+{
+    return ZSW_CPU_FREQ_DEFAULT;
+}
+#endif

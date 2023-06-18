@@ -108,7 +108,6 @@ static void run_init_work(struct k_work *item)
     buttonsInit(&onButtonPressCb);
     vibration_motor_init();
     vibration_motor_set_on(false);
-
     // Not to self, PWM consumes like 250uA...
     // Need to disable also when screen is off.
     display_control_init();
@@ -173,6 +172,20 @@ static void enable_bluetoth(void)
 {
     int err;
 
+#ifdef CONFIG_BOARD_NATIVE_POSIX
+    bt_addr_le_t addr;
+
+    err = bt_addr_le_from_str("DE:AD:BE:EF:BA:11", "random", &addr);
+    if (err) {
+        LOG_ERR("Invalid BT address (err %d)", err);
+    }
+
+    err = bt_id_create(&addr, NULL);
+    if (err < 0) {
+        LOG_ERR("Creating new ID failed (err %d)", err);
+    }
+#endif
+
     err = bt_enable(NULL);
     if (err != 0) {
         LOG_ERR("Failed to enable Bluetooth, err: %d", err);
@@ -182,8 +195,9 @@ static void enable_bluetoth(void)
 #ifdef CONFIG_SETTINGS
     settings_load();
 #endif
+
     __ASSERT_NO_MSG(ble_comm_init(ble_data_cb) == 0);
-    __ASSERT_NO_MSG(bleAoaInit());
+    bleAoaInit();
 }
 
 static bool load_retention_ram(void)
@@ -421,6 +435,11 @@ static void screen_gesture_event(lv_event_t *e)
                 default:
                     break;
             }
+        } else if (watch_state == APPLICATION_MANAGER_STATE && dir == LV_DIR_RIGHT) {
+#ifdef CONFIG_BOARD_NATIVE_POSIX
+            // Until there is a better way to go back without access to buttons.
+            application_manager_exit_app();
+#endif
         }
     }
 }

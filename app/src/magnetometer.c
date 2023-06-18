@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(magnetometer, LOG_LEVEL_WRN);
 #define M_PI        3.14159265358979323846
 #endif
 
-static const struct device *const magnetometer = DEVICE_DT_GET_ONE(st_lis2mdl);
+static const struct device *const magnetometer = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(lis2mdl));
 
 static double xyz_to_rotation(double x, double y, double z);
 static void lis2mdl_trigger_handler(const struct device *dev, const struct sensor_trigger *trig);
@@ -25,7 +25,7 @@ static double last_heading = 0;
 void magnetometer_init(void)
 {
     if (!device_is_ready(magnetometer)) {
-        LOG_ERR("Device %s is not ready\n", magnetometer->name);
+        LOG_ERR("Device magnetometer is not ready\n");
         return;
     }
 
@@ -52,6 +52,9 @@ void magnetometer_init(void)
 
 void magnetometer_set_enable(bool enabled)
 {
+    if (!device_is_ready(magnetometer)) {
+        return;
+    }
     int rc;
     if (enabled) {
         rc = pm_device_action_run(magnetometer, PM_DEVICE_ACTION_RESUME);

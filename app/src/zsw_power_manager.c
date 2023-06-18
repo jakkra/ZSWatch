@@ -28,7 +28,11 @@
 
 LOG_MODULE_REGISTER(zsw_power_manager, LOG_LEVEL_DBG);
 
+#ifdef CONFIG_BOARD_NATIVE_POSIX
+#define IDLE_TIMEOUT_SECONDS    UINT32_MAX
+#else
 #define IDLE_TIMEOUT_SECONDS    30
+#endif
 
 static void enter_active(void);
 static void enter_inactive(void);

@@ -11,7 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(BMI270, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(BMI270, LOG_LEVEL_DBG);
 
 #define BMI2XY_SHUTTLE_ID  UINT16_C(0x1B8)
 
@@ -53,7 +53,7 @@ int8_t bmi2_interface_init(struct bmi2_dev *bmi_dev, uint8_t intf)
 {
     int8_t rslt = BMI2_OK;
 
-    if (bmi_dev != NULL) {
+    if (bmi_dev != NULL && device != NULL) {
         bmi_dev->intf = BMI2_I2C_INTF;
         bmi_dev->read = bmi2_i2c_read;
         bmi_dev->write = bmi2_i2c_write;

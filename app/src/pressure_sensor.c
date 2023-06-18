@@ -17,7 +17,7 @@ static struct bmp5_dev bmp5_dev;
 static struct bmp5_osr_odr_press_config osr_odr_press_cfg = { 0 };
 
 // Assumes only one sensor
-static const struct gpio_dt_spec int_gpio = GPIO_DT_SPEC_GET(DT_NODELABEL(bmp581), int_gpios);
+static const struct gpio_dt_spec int_gpio = GPIO_DT_SPEC_GET_OR(DT_NODELABEL(bmp581), int_gpios, {});
 static K_WORK_DEFINE(int_work, bmp581_work_cb);
 static struct gpio_callback gpio_cb;
 

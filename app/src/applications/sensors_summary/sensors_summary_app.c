@@ -30,7 +30,7 @@ static application_t app = {
     .stop_func = sensors_summary_app_stop
 };
 
-static const struct device *const bme680 = DEVICE_DT_GET_ONE(bosch_bme680);
+static const struct device *const bme680 = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(bme688));
 
 static lv_timer_t *refresh_timer;
 
@@ -67,6 +67,10 @@ static void timer_callback(lv_timer_t *timer)
     double gas_res;
     double humidity;
     int rc;
+
+    if (!device_is_ready(bme680)) {
+        return;
+    }
 
     pressure_sensor_fetch_pressure(&pressure, &temperature);
 

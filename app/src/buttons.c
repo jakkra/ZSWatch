@@ -44,6 +44,10 @@ void buttonsInit(buttonHandlerCallback_t handler)
     int ret;
     callback = handler;
 
+#ifdef CONFIG_BOARD_NATIVE_POSIX
+    return;
+#endif
+
     k_sem_init(&btnSem, 0, 1);
 
     for (int i = 0; i < NUM_BUTTONS; i++) {
@@ -72,6 +76,9 @@ int button_read(buttonId_t button)
         buttons[button].fake_pressed = false;
         return 1;
     }
+#ifdef CONFIG_BOARD_NATIVE_POSIX
+    return 0;
+#endif
     return gpio_pin_get_dt(&buttons[button].btn);
 }
 

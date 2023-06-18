@@ -3,14 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include <string.h>
 #include <zephyr/kernel.h>
+#include "ram_retention_storage.h"
+#ifndef CONFIG_BOARD_NATIVE_POSIX
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
 #include <hal/nrf_power.h>
-#include "ram_retention_storage.h"
 
 /* nRF52 RAM (really, RAM AHB slaves) are partitioned as:
  * * Up to 8 blocks of two 4 KiBy byte "small" sections
@@ -176,3 +176,16 @@ void retained_update(void)
 
     retained.crc = sys_cpu_to_le32(crc);
 }
+
+#else
+struct retained_data retained;
+bool retained_validate()
+{
+    return 0;
+}
+
+void retained_update(void)
+{
+
+}
+#endif
