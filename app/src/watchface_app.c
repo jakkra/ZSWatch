@@ -206,7 +206,6 @@ static void update_ui_from_event(struct k_work *item)
                     last_data_update.data.weather.wind,
                     last_data_update.data.weather.wind_direction);
             watchface_set_weather(last_data_update.data.weather.temperature_c, last_data_update.data.weather.weather_code);
-            memcpy(&last_weather_data, &last_data_update.data.weather, sizeof(last_data_update.data.weather));
         } else if (last_data_update.type == BLE_COMM_DATA_TYPE_SET_TIME) {
             k_work_reschedule(&date_work.work, K_NO_WAIT);
         }
@@ -216,11 +215,12 @@ static void update_ui_from_event(struct k_work *item)
 
 static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
 {
+    const struct ble_data_event *event = zbus_chan_const_msg(chan);
+    // TODO getting this callback again before workqueue has ran will
+    // cause previous to be lost.
+    memcpy(&last_data_update, &event->data, sizeof(ble_comm_cb_data_t));
+    memcpy(&last_weather_data, &last_data_update.data.weather, sizeof(last_data_update.data.weather));
     if (running && !is_suspended) {
-        const struct ble_data_event *event = zbus_chan_const_msg(chan);
-        // TODO getting this callback again before workqueue has ran will
-        // cause previous to be lost.
-        memcpy(&last_data_update, &event->data, sizeof(ble_comm_cb_data_t));
         k_work_submit(&update_ui_work);
     }
 }
@@ -237,18 +237,20 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
 
 static void zbus_chg_state_data_callback(const struct zbus_channel *chan)
 {
+    const struct chg_state_event *event = zbus_chan_const_msg(chan);
+    memcpy(&last_chg_evt, event, sizeof(struct chg_state_event));
+
     if (running && !is_suspended) {
-        const struct chg_state_event *event = zbus_chan_const_msg(chan);
-        memcpy(&last_chg_evt, event, sizeof(struct chg_state_event));
         // TODO Show some nice animation or similar
     }
 }
 
 static void zbus_battery_sample_data_callback(const struct zbus_channel *chan)
 {
+    const struct battery_sample_event *event = zbus_chan_const_msg(chan);
+    memcpy(&last_batt_evt, event, sizeof(struct battery_sample_event));
+
     if (running && !is_suspended) {
-        const struct battery_sample_event *event = zbus_chan_const_msg(chan);
-        memcpy(&last_batt_evt, event, sizeof(struct battery_sample_event));
         watchface_set_battery_percent(event->percent, event->mV);
     }
 }
