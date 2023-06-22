@@ -1,14 +1,10 @@
 <div align="center">
   <h1>ZSWatch</h1>
-  
-<img src=".github/in_use.jpg"/>
-<sub>
-  ZSWatch v1
-</sub>
-</div>
-<br/>
 
-<img src=".github/v2_overview.jpg"/>
+[![License](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![discord](https://img.shields.io/badge/chat-discord-blue?logo=discord&logoColor=white)](https://discord.gg/8XfNBmDfbY)
+
+<img src=".github/in_use.jpg"/>
 <sub>
   ZSWatch v2
 </sub>
@@ -16,8 +12,20 @@
 <br/>
 <br/>
 
+
 Smartwatch built from scratch, both hardware and software. Built on the [Zephyr™ Project](https://www.zephyrproject.org/) RTOS, hence the name **ZSWatch** - *Zephyr Smartwatch*.
 <br/>
+
+<kbd><img title="Overview" src=".github/many_in_row.jpg"/></kbd><br/>
+
+<kbd><img title="Overview" src=".github/v2_overview.jpg"/></kbd><br/>
+
+**Synced remote control over BLE**
+
+[https://user-images.githubusercontent.com/64562059/234390129-321d4f35-cb4b-45e8-89d9-20ae292f34fc.mp4](https://github.com/jakkra/ZSWatch/assets/4318648/8d0f40c2-d519-4db1-8634-b43caa502cbe)
+
+<br/>
+
 
 ## Building or getting one
 I have received quite some requests regarding building or getting the ZSWatch, I am very close to finish with v2. If you want to get notified when I'm done with v2 then simply press the `Watch` button (next to Fork and Star) -> `Custom -> Releases` and you will see in your feed when it's released.
@@ -27,29 +35,28 @@ I have received quite some requests regarding building or getting the ZSWatch, I
 
 # Table of content ZSWatch
 - [Building or getting one](#building-or-getting-one)
-- [Hardware features in ZSWatch v2](#hardware-features-in-zswatch-v2)
-- [Progress on v2](#progress-on-v2)
-- [Charger/Dock](#charger-dock)
-- [Enclosure/Casing](#enclosure-casing)
+- [Hardware features](#hardware-features)
+- [Charger/Dock](#chargerdock)
+- [Enclosure/Casing](#enclosurecasing)
 - [Software Features](#software-features)
   * [Larger not yet implemented SW Features and TODOs](#larger-not-yet-implemented-sw-features-and-todos)
 - [Android phone communication](#android-phone-communication)
+  * [Pairing](#pairing)
 - [PCB](#pcb)
-- [ZSWatch v1 in action](#zswatch-v1-in-action)
+- [ZSWatch v1 in action (Note old, not updated for latest HW and SW).](#zswatch-v1-in-action-note-old-not-updated-for-latest-hw-and-sw)
 - [Environment, Compiling and running the code](#environment-compiling-and-running-the-code)
   * [Setting up the environment](#setting-up-the-environment)
   * [Compiling](#compiling)
   * [Running and developing the ZSWatch SW without the actual ZSWatch HW](#running-and-developing-the-zswatch-sw-without-the-actual-zswatch-hw)
 - [Writing apps for the Application Manager](#writing-apps-for-the-application-manager)
-- [Dock](#dock)
 - [Licence GPL-3.0](#licence-gpl-30)
 
-## Hardware features in ZSWatch v2
-- nRF5340 BLE chip (u-blox NORA-B10 module) compared to v1.
-  - 2x CPU frequenzy.
-  - 4x RAM (Will allow double buffered of data to the screen and larger framebuffers to decrease lag/tearing).
-  - 2x Flash.
-  - 6x faster display communication (8-> 30 MHz), should improve lag/tearing.
+## Hardware features
+- nRF5340 BLE chip (u-blox NORA-B10 module).
+  - 128 MHz Dual core.
+  - 512 KB RAM (Will allow double buffered of data to the screen and larger framebuffers to decrease lag/tearing).
+  - 1 MB Flash.
+  - 30 MHz SPI for display.
 - **Touch screen** with [240x240 round disply](https://www.buydisplay.com/240x240-round-ips-tft-lcd-display-1-28-inch-capactive-touch-circle-screen)
 - IMU [Bosch BMI270](https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmi270-ds000.pdf), with this one it's possible to do many fancy things such as navigation using gestures and the typical smartwatch wakeup by moving the arm so the display is viewable.
 - Bosch [BME688](https://www.bosch-sensortec.com/products/environmental-sensors/gas-sensors/bme688/) Environmental sensor with AI.
@@ -58,28 +65,15 @@ I have received quite some requests regarding building or getting the ZSWatch, I
 - Analog Devices [MAX30101](https://www.analog.com/en/products/max30101.html) Heart-Rate Monitor and Pulse Oximeter Sensor.
 - Option to not mount some sensors to save BOM cost.
 
-## Progress on v2
-[Schematic for v2](schematic/ZSWatch-v2-kicad.pdf) is uploaded and should be final.
-<br/>
-
-You can follow the progress here [https://github.com/users/jakkra/projects/1/views/5](https://github.com/users/jakkra/projects/1/views/5)
-<p float="left">
-<img src=".github/v2_finished.png" width="50%" object-fit="cover"/>
-<img src=".github/v2_render_wip.PNG" width="40%" object-fit="cover"/>
-</p>
-<p float="left">
-<img src=".github/v2_render_wip_back.png" width="49%" object-fit="cover"/>
-<img src=".github/layer1_and_4_v2.PNG" width="41%" object-fit="cover"/>
-</p>
-
 ## Charger/Dock
 PCB done, casing to be designed. Idea is that watch will sit on top.
+Built int debugger. Will be an option without debugger also (requires licence).
 <p float="left">
 <img src=".github/dock.jpg" width="65%"/>
 </p>
 
 ## Enclosure/Casing
-3D printed casing with 3D printed buttons. Does it's job, but for revision v2 of the watch I'll probably do something CNC'd for nicer looks.
+3D printed casing with 3D printed buttons. Does it's job, but would like to do something else, maybe CNC. Buttons are not 100% perfect right now.
 
 ## Software Features
 - Bluetooth LE communications with [GadgetBridge](https://codeberg.org/Freeyourgadget/Gadgetbridge) Android app.
@@ -99,6 +93,9 @@ PCB done, casing to be designed. Idea is that watch will sit on top.
    - [Compass app](app/src/applications/compass/)
    - etc.
 - Step counting
+- Gestures
+- And much more
+...
 
 ### Larger not yet implemented SW Features and TODOs
 There are almost endless of posiblities for features that could be implemented, see [here for full progress](https://github.com/users/jakkra/projects/1) for my current ideas and progress.
@@ -112,23 +109,26 @@ Fortunately there is a great Android app called [GadgetBridge](https://codeberg.
 - You should now be paired.
 
 ## PCB
-A 4 layer board which measures 36mm in diameter designed in KiCad.
+A 4 layer board which measures 38mm in diameter designed in KiCad.
 
 <p float="left">
-<img src=".github/pcb.jpg" width="49%" object-fit="cover"/>
-<img src=".github/parts.jpg" width="49%" object-fit="cover"/>
+<img src=".github/pcb_features.png" width="90%" object-fit="cover"/>
 </p>
 <p float="left">
-<img src=".github/inside.jpg" width="49%" object-fit="cover"/>
-<img src=".github/back.jpg" width="49%" object-fit="cover"/>
+<img src=".github/v2_render_wip_back.png" width="49%" object-fit="cover"/>
+<img src=".github/layer1_and_4_v2.PNG" width="41%" object-fit="cover"/>
 </p>
 
-## ZSWatch v1 in action
+## ZSWatch v1 in action (Note old, not updated for latest HW and SW).
 |*Music control*|*Accelerometer for step count and tap detection*|
 |---|---|
 |  <img src=".github/music.gif" object-fit="cover" /> |  <img src=".github/accel.gif" object-fit="cover" /> |
 |*Notifications from phone (Gmail here)*|*Settings*|
 |  <img src=".github/notifications.gif" object-fit="cover" />    |  <img src=".github/settings.gif" object-fit="cover"/> |
+
+
+https://github.com/jakkra/ZSWatch/assets/4318648/8d8ec724-8145-4a30-b241-e69a8c2853bf
+
 
 ## Environment, Compiling and running the code
 ### Setting up the environment
@@ -172,6 +172,13 @@ VScode:
 - Done, press `Build Configuration`.
 
 ### Running and developing the ZSWatch SW without the actual ZSWatch HW
+Two options, either using a nRF5340 dev kit or running on Linux using Zephyr native posix port.
+#### Native Posix
+TODO add more info.
+
+https://github.com/jakkra/ZSWatch/assets/4318648/3b3e4831-a217-45a9-8b90-7b48cea7647e
+
+#### nRF5340 dev kit
 This is possible, what you need is a [nRF5340-DK](https://www.digikey.se/en/products/detail/nordic-semiconductor-asa/NRF5340-DK/13544603) (or EVK-NORA-B1) and a breakout of the screen I use [https://www.waveshare.com/1.28inch-touch-lcd.htm](https://www.waveshare.com/1.28inch-touch-lcd.htm).
 <br>
 You may also add _any_ of the sensors on the ZSWatch, Sparkfun for example have them all:<br>
