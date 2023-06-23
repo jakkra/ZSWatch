@@ -20,7 +20,7 @@ UART_TX_CHAR_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 
 
 def handle_disconnect(device: BleakClient):
-    print("ZSWatch disconnected", device.address)
+    print("______ZSWatch disconnected", device.address)
     pass
 
 
@@ -43,7 +43,10 @@ async def list_uart_devices(timeout=5.0):
 async def send_nus_commands(clients, command_list):
     def handle_rx(_: int, data: bytearray):
         print(client, "received:", data)
-
+    
+    # Remove clients that are not connected using filter
+    clients = list(filter(lambda item: item.is_connected, clients))
+    print(clients)
     try:
         for client in clients:
             await client.start_notify(UART_TX_CHAR_UUID, handle_rx)
@@ -68,7 +71,6 @@ async def connect_to_device(address):
                     addr, timeout=30.0, disconnected_callback=handle_disconnect
                 )
                 await client.connect()
-                print("Connected", addr)
                 connected.append(client)
             except Exception as e:
                 print(e)
@@ -80,8 +82,12 @@ async def connect_to_device(address):
                     address, timeout=10.0, disconnected_callback=handle_disconnect
                 )
                 await client.connect()
-                print("Connected", address)
-                return client
+                await asyncio.sleep(2)
+                print("ASDF", client.is_connected)
+                if client.is_connected:
+                    return client
+                else:
+                    print("Got quick disconnect", address)
             except Exception as e:
                 print(e)
     return None

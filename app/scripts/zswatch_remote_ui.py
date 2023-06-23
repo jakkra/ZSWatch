@@ -2,6 +2,7 @@ import tkinter as tk
 import time, sys, argparse
 import _thread
 import threading
+import time
 from enum import Enum
 
 from zswatch_ble_control import (
@@ -97,19 +98,22 @@ class UIController:
 
             self.is_enabled = not self.is_enabled
             if self.is_enabled:
-                # Send command to ZSWatch
+                notify = "GB({t:\"notify\",id:15,src:\"Gmail\",title:\"jakob@mail.se\",sender:\"Jakob\",body:\"This is cool!\"})"
+                print(self.clients)
+                zsw_send_nus_commands(self.clients, [(notify, 0)])
                 pass
             else:
                 # Send command to ZSWatch
                 pass
 
-    def do_something(self, event=None):
+    def reset_watch_state(self, event=None):
         if event != None:
-            self.simulate_button_press(self.do_something_btn)
-            self.window.after(100, self.simulate_button_idle, self.do_something_btn)
-            self.do_something_btn.invoke()
+            self.simulate_button_press(self.reset_state_btn)
+            self.window.after(100, self.simulate_button_idle, self.reset_state_btn)
+            self.reset_state_btn.invoke()
         else:
             # Send command to ZSWatch
+            zsw_send_nus_commands(self.clients, [("Control:4", 1)])
             pass
 
     def create_ui(self):
@@ -134,11 +138,11 @@ class UIController:
         self.enable_button.grid(row=2, column=2)
         self.enable_button.config(bg="green", fg="white")
 
-        self.do_something_btn = tk.Button(
-            self.window, text="TODO", height=1, command=self.do_something
+        self.reset_state_btn = tk.Button(
+            self.window, text="State Reset", height=1, command=self.reset_watch_state
         )
-        self.do_something_btn.grid(row=2, column=5)
-        self.do_something_btn.config(bg="#1887AB", fg="white")
+        self.reset_state_btn.grid(row=2, column=5)
+        self.reset_state_btn.config(bg="#1887AB", fg="white")
 
         self.rotation_amount = tk.StringVar(self.window)
         self.rotation_amount.set(NOT_USED[0])  # default value
@@ -194,6 +198,9 @@ if __name__ == "__main__":
         addresses = list(addresses.keys())
 
     clients = zsw_connect_nus(addresses)
+    print("Send reset state command to all devices")
+    weather = "GB({t:\"weather\",temp:296,hum:55,code:802,txt:\"slightly cloudy\",wind:2.0,wdir:14,loc:\"MALMO\"})"
+    zsw_send_nus_commands(clients, [("Control:4", 1), ("GB(setTime({}))".format(int(time.time())), 0), (weather, 1),])
     print("Connected to {0} devices".format(len(clients)), clients)
 
     ui = UIController(clients)
