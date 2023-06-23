@@ -211,12 +211,12 @@ static void gc9a01_set_frame(const struct device *dev, struct gc9a01_frame frame
 
 static int gc9a01_blanking_off(const struct device *dev)
 {
-    return gc9a01_write_cmd(dev, GC9A01A_DISPOFF, NULL, 0);
+    return gc9a01_write_cmd(dev, GC9A01A_DISPON, NULL, 0);
 }
 
 static int gc9a01_blanking_on(const struct device *dev)
 {
-    return gc9a01_write_cmd(dev, GC9A01A_DISPON, NULL, 0);
+    return gc9a01_write_cmd(dev, GC9A01A_DISPOFF, NULL, 0);
 }
 
 static int gc9a01_write(const struct device *dev, const uint16_t x, const uint16_t y,
@@ -343,11 +343,6 @@ static int gc9a01_init(const struct device *dev)
 {
     const struct gc9a01_config *config = dev->config;
     LOG_DBG("");
-
-    if (!spi_is_ready(&config->bus)) {
-        LOG_ERR("SPI bus %s not ready", config->bus.bus->name);
-        return -ENODEV;
-    }
 
     if (!device_is_ready(config->reset_gpio.port)) {
         LOG_ERR("Reset GPIO device not ready");
