@@ -586,7 +586,7 @@ static void parse_remote_control(char *data, int len)
 
     button = atoi(data);
     printk("Pressed: %d, len: %d\n", button, len);
-    if (button < 0 || button > 3) {
+    if (button < 0) {
         return;
     }
 

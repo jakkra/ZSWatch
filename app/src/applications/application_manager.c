@@ -294,6 +294,16 @@ void application_manager_app_close_request(application_t *app)
     application_manager_exit_app();
 }
 
+void application_manager_set_index(int index) 
+{
+    if (index >= 0 && index < num_apps) {
+        last_index = index;
+    }
+    if (grid) {
+        lv_group_focus_obj(lv_obj_get_child(grid, last_index));
+    }
+}
+
 static int application_manager_init(const struct device *arg)
 {
     memset(apps, 0, sizeof(apps));

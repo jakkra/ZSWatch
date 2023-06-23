@@ -24,3 +24,5 @@ void application_manager_add_application(application_t *app);
 void application_manager_app_close_request(application_t *app);
 
 void application_manager_exit_app(void);
+
+void application_manager_set_index(int index);

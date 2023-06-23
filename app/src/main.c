@@ -182,7 +182,6 @@ static void enable_bluetoth(void)
 #ifdef CONFIG_SETTINGS
     settings_load();
 #endif
-
     __ASSERT_NO_MSG(ble_comm_init(ble_data_cb) == 0);
     __ASSERT_NO_MSG(bleAoaInit());
 }
@@ -482,7 +481,24 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
         case BLE_COMM_DATA_TYPE_WEATHER:
             break;
         case BLE_COMM_DATA_TYPE_REMOTE_CONTROL:
-            button_set_fake_press((buttonId_t)event->data.data.remote_control.button, true);
+            if (event->data.data.remote_control.button == BUTTON_END) {
+                zsw_power_manager_reset_idle_timout();
+                if (watch_state == APPLICATION_MANAGER_STATE) {
+                    application_manager_delete();
+                    application_manager_set_index(0);
+                    buttons_allocated = false;
+                    watch_state = WATCHFACE_STATE;
+                    watchface_app_start(input_group);
+                } else if (watch_state == NOTIFCATION_STATE) {
+                    notifications_page_close();
+                    buttons_allocated = false;
+                    watch_state = WATCHFACE_STATE;
+                    watchface_app_start(input_group);
+                }
+            } else {
+                button_set_fake_press((buttonId_t)event->data.data.remote_control.button, true);
+            }
+
             break;
         default:
             break;
