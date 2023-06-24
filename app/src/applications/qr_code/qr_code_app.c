@@ -7,7 +7,6 @@
 // Functions needed for all applications
 static void qr_code_app_start(lv_obj_t *root, lv_group_t *group);
 static void qr_code_app_stop(void);
-static void on_incrementation(void);
 
 LV_IMG_DECLARE(qr_code_icon);
 

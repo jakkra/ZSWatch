@@ -7,6 +7,9 @@
 
 LOG_MODULE_REGISTER(accel, LOG_LEVEL_DBG);
 
+#define USE_ANYMOTION   0
+#define USE_GYRO        0
+
 /*! Earth's gravity in m/s^2 */
 #define GRAVITY_EARTH  (9.80665f)
 
@@ -25,9 +28,13 @@ static void send_accel_event(accelerometer_evt_t *data);
 static int8_t configure_axis_remapping(struct bmi2_dev *bmi2_dev);
 static int8_t configure_enable_all_bmi270(struct bmi2_dev *bmi2_dev);
 static void configue_accel(struct bmi2_sens_config *config);
-static void configue_gyro(struct bmi2_sens_config *config);
 static void configure_step_counter(struct bmi2_sens_config *config);
+#if USE_GYRO
+static void configue_gyro(struct bmi2_sens_config *config);
+#endif
+#if USE_ANYMOTION
 static void configure_anymotion(struct bmi2_sens_config *config);
+#endif
 static void configure_gesture_detect(struct bmi2_sens_config *config);
 static void configure_wrist_wakeup(struct bmi2_sens_config *config);
 
@@ -38,11 +45,15 @@ static void bmi270_int2_work_cb(struct k_work *work);
 // List of the features used on the BMI270.
 static bmi270_feature_config_set_t bmi270_enabled_features[] = {
     { .sensor_id = BMI2_ACCEL, .cfg_func = configue_accel},
+#if USE_GYRO
     // Gyro not used for now, disable to keep power consumption down
-    //{ .sensor_id = BMI2_GYRO, .cfg_func = configue_gyro},
+    { .sensor_id = BMI2_GYRO, .cfg_func = configue_gyro},
+#endif
     { .sensor_id = BMI2_STEP_COUNTER, .cfg_func = configure_step_counter},
     { .sensor_id = BMI2_SIG_MOTION, .cfg_func = NULL, .isr_disable = true},
-    //{ .sensor_id = BMI2_ANY_MOTION, .cfg_func = configure_anymotion},
+#if USE_ANYMOTION
+    { .sensor_id = BMI2_ANY_MOTION, .cfg_func = configure_anymotion},
+#endif
     { .sensor_id = BMI2_STEP_ACTIVITY, .cfg_func = NULL, .isr_disable = true},
     { .sensor_id = BMI2_WRIST_GESTURE, .cfg_func = configure_gesture_detect, .isr_disable = false},
     { .sensor_id = BMI2_WRIST_WEAR_WAKE_UP, .cfg_func = configure_wrist_wakeup},
@@ -330,6 +341,7 @@ static void configue_accel(struct bmi2_sens_config *config)
     config->cfg.acc.filter_perf = BMI2_POWER_OPT_MODE;
 }
 
+#if USE_GYRO
 static void configue_gyro(struct bmi2_sens_config *config)
 {
     /* The user can change the following configuration parameters according to their requirement. */
@@ -357,12 +369,14 @@ static void configue_gyro(struct bmi2_sens_config *config)
         */
     config->cfg.gyr.filter_perf = BMI2_PERF_OPT_MODE;
 }
+#endif
 
 static void configure_step_counter(struct bmi2_sens_config *config)
 {
     config->cfg.step_counter.watermark_level = 1;
 }
 
+#if USE_ANYMOTION
 static void configure_anymotion(struct bmi2_sens_config *config)
 {
     /* 1LSB equals 20ms. Default is 100ms, setting to 80ms. */
@@ -371,6 +385,7 @@ static void configure_anymotion(struct bmi2_sens_config *config)
     /* 1LSB equals to 0.48mg. Default is 83mg, setting to 50mg. */
     config->cfg.any_motion.threshold = 0x68;
 }
+#endif
 
 static void configure_gesture_detect(struct bmi2_sens_config *config)
 {
