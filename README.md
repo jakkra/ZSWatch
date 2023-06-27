@@ -174,7 +174,28 @@ VScode:
 ### Running and developing the ZSWatch SW without the actual ZSWatch HW
 Two options, either using a nRF5340 dev kit or running on Linux using Zephyr native posix port.
 #### Native Posix
-TODO add more info.
+- Follow the steps here [https://docs.zephyrproject.org/latest/connectivity/bluetooth/bluetooth-tools.html#using-a-zephyr-based-ble-controller](https://docs.zephyrproject.org/latest/connectivity/bluetooth/bluetooth-tools.html#using-a-zephyr-based-ble-controller) to get the BLE Controller up and running. Verify it's working by following: [https://docs.zephyrproject.org/latest/connectivity/bluetooth/bluetooth-tools.html#using-zephyr-based-controllers-with-bluez](https://docs.zephyrproject.org/latest/connectivity/bluetooth/bluetooth-tools.html#using-zephyr-based-controllers-with-bluez), use this also to find the number assigned to your HCI dongle which is input later as the `--bt-dev=hciX`
+- Compile the zephyr/samples/bluetooth/hci_usb with following additions to prj.conf:
+```
+CONFIG_BT_EXT_ADV=y
+CONFIG_BT_PER_ADV=y
+CONFIG_BT_PER_ADV_SYNC=y
+CONFIG_BT_PER_ADV_SYNC_MAX=2
+```
+- Follow the steps [https://docs.zephyrproject.org/latest/boards/posix/native_posix/doc/index.html#peripherals](https://docs.zephyrproject.org/latest/boards/posix/native_posix/doc/index.html#peripherals) for Display Driver.
+
+- Finally to build and run do following from the `app` folder:
+```
+west build -b native_posix
+sudo btmgmt --index <index_x_from_above> power off
+sudo ./build/zephyr/zephyr.exe --bt-dev=hciX
+```
+Or if you want to be able to debug:
+```
+sudo gdb -ex=r --args build/zephyr/zephyr.exe --bt-dev=hciX
+```
+
+If you want to scale up the SDL window (4x) apply the patch in `app/zephyr_patches/sdl_upscale.patch`
 
 https://github.com/jakkra/ZSWatch/assets/4318648/3b3e4831-a217-45a9-8b90-7b48cea7647e
 
