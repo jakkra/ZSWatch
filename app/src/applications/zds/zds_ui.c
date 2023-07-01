@@ -2,10 +2,12 @@
 #include <lvgl.h>
 
 static void on_button_pressed(lv_event_t *e);
+static void set_img_rotation(void * obj, int32_t v);
 
 static lv_obj_t *root_page = NULL;
 static lv_obj_t *img;
-static uint32_t current_rotation = 0;
+static bool is_rotating = false;
+static lv_anim_t rotate_anim;
 
 void zds_ui_show(lv_obj_t *root)
 {
@@ -55,12 +57,28 @@ void zds_ui_remove(void)
 
 void zds_ui_reset_rotation(void)
 {
-    current_rotation = 0;
-    lv_img_set_angle(img, current_rotation);
+    on_button_pressed(NULL);
 }
 
 static void on_button_pressed(lv_event_t *e)
 {
-    current_rotation = (current_rotation + 100) % 3600;
-    lv_img_set_angle(img, current_rotation);
+    is_rotating = !is_rotating;
+
+    if (is_rotating) {
+        lv_anim_init(&rotate_anim);
+        lv_anim_set_var(&rotate_anim, img);
+        lv_anim_set_exec_cb(&rotate_anim, set_img_rotation);
+        lv_anim_set_time(&rotate_anim, 2000);
+        lv_anim_set_repeat_count(&rotate_anim, LV_ANIM_REPEAT_INFINITE);
+        lv_anim_set_repeat_delay(&rotate_anim, 0);
+        lv_anim_set_values(&rotate_anim, 0, 3600);
+        lv_anim_start(&rotate_anim);
+    } else {
+        lv_anim_del(img, set_img_rotation);
+    }
+}
+
+static void set_img_rotation(void * obj, int32_t v)
+{
+    lv_img_set_angle(obj, v);
 }
