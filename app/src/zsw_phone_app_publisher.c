@@ -101,7 +101,7 @@ static void handle_delayed_send_status(struct k_work *item)
     }
 }
 
-static int zsw_phone_app_publisher_init(const struct device *arg)
+static int zsw_phone_app_publisher_init(void)
 {
     return 0;
 }

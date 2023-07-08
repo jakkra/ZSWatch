@@ -47,7 +47,7 @@ static void timer_callback(lv_timer_t *timer)
     compass_ui_set_heading(heading);
 }
 
-static int compass_app_add(const struct device *arg)
+static int compass_app_add(void)
 {
     application_manager_add_application(&app);
     return 0;

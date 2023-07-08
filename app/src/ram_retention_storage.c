@@ -107,9 +107,9 @@ static int ram_range_retain(const void *ptr,
             section %= sections_per_block;
         }
 
-        uint32_t section_mask =
-            (VMC_RAM_POWERSET_S0RETENTION_On
-             << (section + VMC_RAM_POWERSET_S0RETENTION_Pos));
+        //uint32_t section_mask =
+        //    (VMC_RAM_POWERSET_S0RETENTION_On
+        //     << (section + VMC_RAM_POWERSET_S0RETENTION_Pos));
 
         // TODO, RAM retention works differently on nRF5340
         //if (enable) {

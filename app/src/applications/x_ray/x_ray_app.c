@@ -32,7 +32,7 @@ static void x_ray_app_stop(void)
     x_ray_ui_remove();
 }
 
-static int x_ray_app_add(const struct device *arg)
+static int x_ray_app_add(void)
 {
     application_manager_add_application(&app);
 

@@ -40,10 +40,10 @@ int zsw_periodic_chan_add_obs(const struct zbus_channel *chan, const struct zbus
 
 int zsw_periodic_chan_rm_obs(const struct zbus_channel *chan, const struct zbus_observer *obs)
 {
-    const struct k_work_delayable *work = NULL;
+    struct k_work_delayable *work = NULL;
     int ret = zbus_chan_rm_obs(chan, obs, K_MSEC(100));
     if (ret == 0 && sys_slist_is_empty(chan->runtime_observers)) {
-        work = (const struct k_work_delayable*)zbus_chan_user_data(chan);
+        work = (struct k_work_delayable*)zbus_chan_user_data(chan);
         __ASSERT(k_work_delayable_is_pending(work), "Periodic slow work is not pending");
         ret = k_work_cancel_delayable(work);
     }
@@ -76,7 +76,7 @@ static void handle_fast_timeout(struct k_work *item)
     zbus_chan_pub(&periodic_event_fast_chan, &evt, K_MSEC(250));
 }
 
-static int zsw_timer_init(const struct device *arg)
+static int zsw_timer_init(void)
 {
     struct k_work_delayable *work = NULL;
     zbus_chan_claim(&periodic_event_slow_chan, K_FOREVER);

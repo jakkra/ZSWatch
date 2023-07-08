@@ -96,6 +96,7 @@ static void enter_active(void)
     LOG_DBG("Enter active");
     is_active = true;
     last_wakeup_time = k_uptime_get_32();
+
     display_control_power_on(true);
 
     struct activity_state_event evt = {
@@ -136,7 +137,7 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
     }
 }
 
-static int zsw_power_manager_init(const struct device *arg)
+static int zsw_power_manager_init(void)
 {
     last_wakeup_time = k_uptime_get_32();
     k_work_schedule(&idle_work, K_SECONDS(IDLE_TIMEOUT_SECONDS));

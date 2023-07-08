@@ -108,7 +108,7 @@ static void on_ref_set(void)
     pressure_sensor_fetch_pressure(&relative_pressure, &temperature);
 }
 
-static int sensors_summary_app_add(const struct device *arg)
+static int sensors_summary_app_add(void)
 {
     application_manager_add_application(&app);
     return 0;

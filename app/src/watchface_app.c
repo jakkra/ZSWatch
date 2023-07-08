@@ -95,7 +95,7 @@ static bool running;
 static bool is_connected;
 static bool is_suspended;
 
-static int watchface_app_init(const struct device *arg)
+static int watchface_app_init(void)
 {
     k_work_init_delayable(&general_work_item.work, general_work);
     k_work_init_delayable(&clock_work.work, general_work);

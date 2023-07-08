@@ -126,7 +126,7 @@ static void timer_callback(lv_timer_t *timer)
     }
 }
 
-static int music_control_app_add(const struct device *arg)
+static int music_control_app_add(void)
 {
     application_manager_add_application(&app);
     running = false;

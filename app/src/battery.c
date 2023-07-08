@@ -126,7 +126,7 @@ static int divider_setup(void)
     return rc;
 }
 
-static int battery_setup(const struct device *arg)
+static int battery_setup(void)
 {
     int rc = divider_setup();
 

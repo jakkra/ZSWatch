@@ -304,7 +304,7 @@ void application_manager_set_index(int index)
     }
 }
 
-static int application_manager_init(const struct device *arg)
+static int application_manager_init(void)
 {
     memset(apps, 0, sizeof(apps));
     num_apps = 0;

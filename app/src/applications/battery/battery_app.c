@@ -105,7 +105,7 @@ static int get_num_samples(void)
     return num_samples;
 }
 
-static int battery_app_add(const struct device *arg)
+static int battery_app_add(void)
 {
     application_manager_add_application(&app);
     memset(battery_samples, 0, sizeof(battery_samples));

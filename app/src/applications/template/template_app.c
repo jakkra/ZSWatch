@@ -48,7 +48,7 @@ static void on_incrementation(void)
     template_ui_set_button_counter_value(btn_counter);
 }
 
-static int template_app_add(const struct device *arg)
+static int template_app_add(void)
 {
     application_manager_add_application(&app);
 

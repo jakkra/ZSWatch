@@ -39,6 +39,9 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/task_wdt/task_wdt.h>
+#include <zephyr/arch/cpu.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/fatal.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
 
@@ -96,6 +99,7 @@ ZBUS_LISTENER_DEFINE(main_ble_comm_lis, zbus_ble_comm_data_callback);
 static void run_init_work(struct k_work *item)
 {
     lv_indev_t *touch_indev;
+
     load_retention_ram();
     heart_rate_sensor_init();
     notifications_page_init(on_notification_page_close, on_notification_page_notification_close);
@@ -146,7 +150,7 @@ void run_wdt_work(struct k_work *item)
     k_work_schedule(&wdt_work, K_MSEC(TASK_WDT_FEED_INTERVAL_MS));
 }
 
-void main(void)
+int main(void)
 {
 #ifdef CONFIG_TASK_WDT
     const struct device *hw_wdt_dev = DEVICE_DT_GET(DT_ALIAS(watchdog0));
@@ -523,3 +527,20 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
             break;
     }
 }
+
+#if defined(CONFIG_WATCHDOG) && !defined(CONFIG_RESET_ON_FATAL_ERROR)
+extern void sys_arch_reboot(int type);
+
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
+{
+    ARG_UNUSED(esf);
+    ARG_UNUSED(reason);
+
+    LOG_PANIC();
+
+    LOG_ERR("Resetting system");
+    sys_arch_reboot(0);
+
+    CODE_UNREACHABLE;
+}
+#endif

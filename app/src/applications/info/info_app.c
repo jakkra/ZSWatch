@@ -65,7 +65,7 @@ static void timer_callback(lv_timer_t *timer)
     info_ui_set_time_to_inactive_sec(zsw_power_manager_get_ms_to_inactive() / 1000);
 }
 
-static int info_app_add(const struct device *arg)
+static int info_app_add(void)
 {
     application_manager_add_application(&app);
     return 0;

@@ -1,6 +1,7 @@
 #include "clock.h"
 #include <inttypes.h>
 #include <sys/time.h>
+#include <time.h>
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -98,7 +98,7 @@ static void charger_status_chg_detected_isr(const struct device *dev, struct gpi
     chg_state = CHG_STATE_CHARGE_DETECTED;
 }
 
-static int charger_init(const struct device *arg)
+static int charger_init(void)
 {
     if (!device_is_ready(is_charging_pin.port)) {
         LOG_WRN("Charger status not supported on this board");

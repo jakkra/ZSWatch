@@ -51,10 +51,8 @@ static void enable_cpunet(void)
 #endif /* !CONFIG_TRUSTED_EXECUTION_SECURE */
 }
 
-static int setup(const struct device *dev)
+static int setup(void)
 {
-	ARG_UNUSED(dev);
-
 #if !defined(CONFIG_TRUSTED_EXECUTION_SECURE)
 	if (IS_ENABLED(CONFIG_SENSOR)) {
 		/* Initialization chain of ZSWatch board requires some delays before on board

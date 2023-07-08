@@ -35,7 +35,7 @@ static void zds_app_stop(void)
     zds_ui_remove();
 }
 
-static int zds_app_add(const struct device *arg)
+static int zds_app_add(void)
 {
     application_manager_add_application(&app);
 

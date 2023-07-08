@@ -136,8 +136,8 @@ Two options, either set up toolchain and everything by following [Zephyr Getting
 Everything works with both Zephyr and with nRF Connect (Nordic Semi. Zephyr fork). If you are new to Zephyr I suggest installing using Nordic Toolchain manager together with the nRF Connect VSCode plugin as I think that is a bit easier.
 
 *Tested with both*
-- Zephyr 3.3.0
-- nRF Connect SDK 2.3.0
+- Zephyr 3.4.0
+- nRF Connect SDK 2.4.0
 
 ### Compiling
 
@@ -149,7 +149,7 @@ Building [with command line](https://developer.nordicsemi.com/nRF_Connect_SDK/do
 
 Compiling [from VSCode nRF Connect plugin](https://nrfconnect.github.io/vscode-nrf-connect/get_started/build_app_ncs.html):
 - Press "Add folder as Application". 
-- Choose `zswatch_nrf5340_cpuapp` as the board and nRF Connect SDK 2.3.0.
+- Choose `zswatch_nrf5340_cpuapp` as the board and nRF Connect SDK 2.4.0.
 - Press Create Application
 
 __NOTE__

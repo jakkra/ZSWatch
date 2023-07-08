@@ -206,7 +206,7 @@ static void on_reset_steps_changed(lv_setting_value_t value, bool final)
     }
 }
 
-static int settings_app_add(const struct device *arg)
+static int settings_app_add(void)
 {
     application_manager_add_application(&app);
 

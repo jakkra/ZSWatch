@@ -223,10 +223,8 @@ static void connected(struct bt_conn *conn, uint8_t err)
     bt_conn_get_info(conn, &info);
     LOG_INF("Interval: %d, latency: %d, timeout: %d", info.le.interval, info.le.latency, info.le.timeout);
 
-    // Needs https://github.com/zephyrproject-rtos/zephyr/issues/56197
-    /*
     struct bt_le_conn_param param = {
-        .interval_min = 300,
+        .interval_min = 400,
         .interval_max = 500,
         .latency = 0,
         .timeout = 500,
@@ -236,7 +234,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
     if (err) {
         LOG_ERR("bt_conn_le_param_update failed");
     }
-    */
+
     if (pairing_enabled) {
         int rc = bt_conn_set_security(conn, BT_SECURITY_L2);
         if (rc != 0) {

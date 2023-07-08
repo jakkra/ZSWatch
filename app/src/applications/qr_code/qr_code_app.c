@@ -32,7 +32,7 @@ static void qr_code_app_stop(void)
     qr_code_ui_remove();
 }
 
-static int qr_code_app_add(const struct device *arg)
+static int qr_code_app_add(void)
 {
     application_manager_add_application(&app);
 

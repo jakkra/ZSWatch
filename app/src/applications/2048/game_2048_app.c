@@ -27,7 +27,7 @@ static void game_2048_app_stop(void)
     game_2048_ui_remove();
 }
 
-static int game_2048_app_add(const struct device *arg)
+static int game_2048_app_add(void)
 {
     application_manager_add_application(&app);
 

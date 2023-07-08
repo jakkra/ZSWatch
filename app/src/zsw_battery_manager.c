@@ -84,7 +84,7 @@ static void handle_battery_sample_timeout(struct k_work *item)
     k_work_schedule(&battery_sample_work, K_MINUTES(BATTERY_SAMPLE_INTETRVAL_MINUTES));
 }
 
-static int zsw_battery_manager_init(const struct device *arg)
+static int zsw_battery_manager_init(void)
 {
     k_work_schedule(&battery_sample_work, K_SECONDS(1));
     return 0;

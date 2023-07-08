@@ -52,7 +52,7 @@ static void on_close_accel(void)
     application_manager_app_close_request(&app);
 }
 
-static int accel_app_add(const struct device *arg)
+static int accel_app_add(void)
 {
     application_manager_add_application(&app);
 
