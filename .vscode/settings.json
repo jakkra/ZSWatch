@@ -1,0 +1,8 @@
+{
+    "nrf-connect.boardRoots": [
+        "${workspaceFolder}/app"
+    ],
+    "nrf-connect.applications": [
+        "${workspaceFolder}/app"
+    ],
+}
