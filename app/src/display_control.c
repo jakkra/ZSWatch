@@ -16,8 +16,8 @@ static void lvgl_render(struct k_work *item);
 
 static const struct pwm_dt_spec display_blk = PWM_DT_SPEC_GET_OR(DT_ALIAS(display_blk), {});
 static const struct device *const reg_dev = DEVICE_DT_GET_OR_NULL(DT_PATH(regulator_3v3_ctrl));
-static const struct device *display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
-static const struct device *touch_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_keyboard_scan));
+static const struct device *display_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_display));
+static const struct device *touch_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_keyboard_scan));
 
 K_WORK_DELAYABLE_DEFINE(lvgl_work, lvgl_render);
 

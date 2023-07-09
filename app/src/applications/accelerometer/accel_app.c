@@ -44,7 +44,6 @@ static void zbus_fetch_accel_data_callback(const struct zbus_channel *chan)
     if (res == 0) {
         accel_ui_set_values(x, y, z);
     }
-    __ASSERT_NO_MSG(0 <= res);
 }
 
 static void on_close_accel(void)
