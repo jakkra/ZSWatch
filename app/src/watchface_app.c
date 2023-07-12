@@ -120,6 +120,19 @@ void watchface_app_stop(void)
     watchface_remove();
 }
 
+static void refreash_ui(void)
+{
+    uint32_t steps;
+    watchface_set_ble_connected(is_connected);
+    watchface_set_battery_percent(last_batt_evt.percent, last_batt_evt.mV);
+    if (strlen(last_weather_data.report_text) > 0) {
+        watchface_set_weather(last_weather_data.temperature_c, last_weather_data.weather_code);
+    }
+    if (accelerometer_fetch_num_steps(&steps) == 0) {
+        watchface_set_step(steps);
+    }
+}
+
 void general_work(struct k_work *item)
 {
     delayed_work_item_t *the_work = CONTAINER_OF(item, delayed_work_item_t, work);
@@ -130,14 +143,7 @@ void general_work(struct k_work *item)
             running = true;
             is_suspended = false;
             watchface_show();
-            watchface_set_ble_connected(is_connected);
-            watchface_set_battery_percent(last_batt_evt.percent, last_batt_evt.mV);
-            if (strlen(last_weather_data.report_text) > 0) {
-                watchface_set_weather(last_weather_data.temperature_c, last_weather_data.weather_code);
-            }
-            if (accelerometer_fetch_num_steps(&steps) == 0) {
-                watchface_set_step(steps);
-            }
+            refreash_ui();
 
             __ASSERT(0 <= k_work_schedule(&clock_work.work, K_NO_WAIT), "FAIL clock_work");
             __ASSERT(0 <= k_work_schedule(&date_work.work, K_SECONDS(1)), "FAIL clock_work");
@@ -266,6 +272,7 @@ static void zbus_activity_event_callback(const struct zbus_channel *chan)
         } else if (event->state == ZSW_ACTIVITY_STATE_ACTIVE) {
             is_suspended = false;
             watchface_ui_invalidate_cached();
+            refreash_ui();
             __ASSERT(0 <= k_work_schedule(&clock_work.work, K_NO_WAIT), "FAIL clock_work");
             __ASSERT(0 <= k_work_schedule(&date_work.work, K_SECONDS(1)), "FAIL clock_work");
         }
