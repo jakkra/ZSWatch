@@ -27,6 +27,7 @@
 #include <ble_comm.h>
 #include <zsw_charger.h>
 #include <zsw_battery_manager.h>
+#include <zephyr/bluetooth/services/bas.h>
 
 LOG_MODULE_REGISTER(zsw_phone_app_publisher, LOG_LEVEL_DBG);
 
@@ -63,6 +64,7 @@ static void send_battery_state_update(int mV, int percent, bool is_charging)
 static void zbus_battery_sample_data_callback(const struct zbus_channel *chan)
 {
     struct battery_sample_event *event = zbus_chan_msg(chan);
+    bt_bas_set_battery_level(event->percent);
     send_battery_state_update(event->mV, event->percent, zsw_charger_is_charging());
 }
 
