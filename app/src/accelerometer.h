@@ -54,6 +54,8 @@ int accelerometer_init(void);
 
 int accelerometer_fetch_xyz(int16_t *x, int16_t *y, int16_t *z);
 
+int accelerometer_fetch_gyro(int16_t *x, int16_t *y, int16_t *z);
+
 int accelerometer_fetch_temperature(struct sensor_value *temperature);
 
 int accelerometer_fetch_num_steps(uint32_t *num_steps);

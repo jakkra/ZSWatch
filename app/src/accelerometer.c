@@ -8,7 +8,7 @@
 LOG_MODULE_REGISTER(accel, LOG_LEVEL_DBG);
 
 #define USE_ANYMOTION   0
-#define USE_GYRO        0
+#define USE_GYRO        1
 
 /*! Earth's gravity in m/s^2 */
 #define GRAVITY_EARTH  (9.80665f)
@@ -124,6 +124,28 @@ int accelerometer_fetch_xyz(int16_t *x, int16_t *y, int16_t *z)
         *x = sensor_data.acc.x;
         *y = sensor_data.acc.y;
         *z = sensor_data.acc.z;
+    }
+
+    return rslt == BMI2_OK ? 0 : -EIO;
+}
+
+int accelerometer_fetch_gyro(int16_t *x, int16_t *y, int16_t *z)
+{
+    int8_t rslt;
+    struct bmi2_sens_data sensor_data = { { 0 } };
+
+    if (!bmi270_initialized) {
+        return -EIO;
+    }
+
+    /* Get accel and gyro data for x, y and z axis. */
+    rslt = bmi2_get_sensor_data(&sensor_data, &bmi2_dev);
+    bmi2_error_codes_print_result(rslt);
+
+    if (rslt == BMI2_OK) {
+        *x = sensor_data.gyr.x;
+        *y = sensor_data.gyr.y;
+        *z = sensor_data.gyr.z;
     }
 
     return rslt == BMI2_OK ? 0 : -EIO;
@@ -346,7 +368,7 @@ static void configue_gyro(struct bmi2_sens_config *config)
 {
     /* The user can change the following configuration parameters according to their requirement. */
     /* Set Output Data Rate */
-    config->cfg.gyr.odr = BMI2_GYR_ODR_200HZ;
+    config->cfg.gyr.odr = BMI2_GYR_ODR_25HZ;
 
     /* Gyroscope Angular Rate Measurement Range.By default the range is 2000dps. */
     config->cfg.gyr.range = BMI2_GYR_RANGE_2000;
@@ -367,7 +389,7 @@ static void configue_gyro(struct bmi2_sens_config *config)
         *  0 -> Ultra low power mode
         *  1 -> High performance mode(Default)
         */
-    config->cfg.gyr.filter_perf = BMI2_PERF_OPT_MODE;
+    config->cfg.gyr.filter_perf = BMI2_POWER_OPT_MODE;
 }
 #endif
 
