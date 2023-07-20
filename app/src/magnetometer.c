@@ -21,6 +21,9 @@ static double xyz_to_rotation(double x, double y, double z);
 static void lis2mdl_trigger_handler(const struct device *dev, const struct sensor_trigger *trig);
 
 static double last_heading = 0;
+static double last_x;
+static double last_y;
+static double last_z;
 
 void magnetometer_init(void)
 {
@@ -58,16 +61,23 @@ void magnetometer_set_enable(bool enabled)
     int rc;
     if (enabled) {
         rc = pm_device_action_run(magnetometer, PM_DEVICE_ACTION_RESUME);
-        __ASSERT(rc == 0, "Failed to resume LIS2MDL: %d\n", rc);
+        __ASSERT(rc == 0 || rc == -EALREADY, "Failed to resume LIS2MDL: %d\n", rc);
     } else {
         rc = pm_device_action_run(magnetometer, PM_DEVICE_ACTION_SUSPEND);
-        __ASSERT(rc == 0, "Failed to suspend LIS2MDL: %d\n", rc);
+        __ASSERT(rc == 0 || rc == -EALREADY, "Failed to suspend LIS2MDL: %d\n", rc);
     }
 }
 
 double magnetometer_get_heading(void)
 {
     return last_heading;
+}
+
+void magnetometer_get_all(float* x, float* y, float* z)
+{
+    *x = last_x;
+    *y = last_y;
+    *z = last_z;
 }
 
 static void lis2mdl_trigger_handler(const struct device *dev,
@@ -84,6 +94,10 @@ static void lis2mdl_trigger_handler(const struct device *dev,
             sensor_value_to_double(&magn[0]),
             sensor_value_to_double(&magn[1]),
             sensor_value_to_double(&magn[2]));
+
+    last_x = sensor_value_to_double(&magn[0]);
+    last_y = sensor_value_to_double(&magn[1]);
+    last_z = sensor_value_to_double(&magn[2]);
 
     LOG_DBG("LIS2MDL: Temperature: %.1f C\n",
             sensor_value_to_double(&die_temp2));

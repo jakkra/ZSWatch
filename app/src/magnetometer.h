@@ -5,5 +5,6 @@
 void magnetometer_init(void);
 void magnetometer_set_enable(bool enabled);
 double magnetometer_get_heading(void);
+void magnetometer_get_all(float* x, float* y, float* z);
 
 #endif
