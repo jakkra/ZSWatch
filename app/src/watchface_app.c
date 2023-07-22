@@ -12,7 +12,7 @@
 #include <lvgl.h>
 #include <clock.h>
 #include <heart_rate_sensor.h>
-#include <accelerometer.h>
+#include <zsw_accelerometer.h>
 #include <vibration_motor.h>
 #include <ram_retention_storage.h>
 #include <events/ble_data_event.h>
@@ -128,7 +128,7 @@ static void refreash_ui(void)
     if (strlen(last_weather_data.report_text) > 0) {
         watchface_set_weather(last_weather_data.temperature_c, last_weather_data.weather_code);
     }
-    if (accelerometer_fetch_num_steps(&steps) == 0) {
+    if (zsw_accelerometer_fetch_num_steps(&steps) == 0) {
         watchface_set_step(steps);
     }
 }
@@ -160,7 +160,7 @@ void general_work(struct k_work *item)
             check_notifications();
 
             // Realtime update of steps
-            if (accelerometer_fetch_num_steps(&steps) == 0) {
+            if (zsw_accelerometer_fetch_num_steps(&steps) == 0) {
                 watchface_set_step(steps);
             }
             __ASSERT(0 <= k_work_schedule(&clock_work.work, K_SECONDS(1)), "FAIL clock_work");

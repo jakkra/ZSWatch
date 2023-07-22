@@ -4,7 +4,7 @@
 #include <zephyr/init.h>
 #include <ble_aoa.h>
 #include <display_control.h>
-#include <accelerometer.h>
+#include <zsw_accelerometer.h>
 #include <ble_comm.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -28,7 +28,6 @@ static application_t app = {
     .start_func = settings_app_start,
     .stop_func = settings_app_stop
 };
-
 
 static lv_settings_item_t general_page_items[] = {
     {
@@ -139,7 +138,6 @@ static lv_settings_page_t settings_menu[] = {
     },
 };
 
-
 static void settings_app_start(lv_obj_t *root, lv_group_t *group)
 {
     printk("settings_app_start\n");
@@ -202,7 +200,7 @@ static void on_reset_steps_changed(lv_setting_value_t value, bool final)
 {
     if (final && value.item.sw) {
         //watchface_set_step(0);
-        accelerometer_reset_step_count();
+        zsw_accelerometer_reset_step_count();
     }
 }
 

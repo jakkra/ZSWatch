@@ -1,5 +1,22 @@
-#ifndef PRESSURE_SENSOR_H_
-#define PRESSURE_SENSOR_H_
+/*
+ * This file is part of ZSWatch project <https://github.com/jakkra/ZSWatch/>.
+ * Copyright (c) 2023 Jakob Krantz.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#ifndef ZSW_PRESSURE_SENSOR_H_
+#define ZSW_PRESSURE_SENSOR_H_
 
 #include <zephyr/drivers/sensor.h>
 #include <bmp5_defs.h>
@@ -45,10 +62,12 @@ typedef enum bmp5_odr_t {
     PRESSURE_SENSOR_ODR_DEFAULT
 } bmp5_odr_t;
 
-int pressure_sensor_init(void);
+int zsw_pressure_sensor_init(void);
 
-int pressure_sensor_set_odr(uint8_t bmp5_odr);
+int zsw_pressure_sensor_set_odr(uint8_t bmp5_odr);
 
-int pressure_sensor_fetch_pressure(float *pressure, float *temperature);
+int zsw_pressure_sensor_fetch_pressure(float *pressure);
+
+int zsw_pressure_sensor_fetch_temperature(float *temperature);
 
 #endif

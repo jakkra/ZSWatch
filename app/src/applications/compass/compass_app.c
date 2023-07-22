@@ -3,7 +3,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
-#include <magnetometer.h>
+#include <zsw_magnetometer.h>
 
 LOG_MODULE_REGISTER(compass_app, LOG_LEVEL_DBG);
 
@@ -31,19 +31,19 @@ static void compass_app_start(lv_obj_t *root, lv_group_t *group)
 {
     compass_ui_show(root);
     refresh_timer = lv_timer_create(timer_callback, SENSOR_REFRESH_INTERVAL_MS,  NULL);
-    magnetometer_set_enable(true);
+    zsw_magnetometer_set_enable(true);
 }
 
 static void compass_app_stop(void)
 {
     lv_timer_del(refresh_timer);
     compass_ui_remove();
-    magnetometer_set_enable(false);
+    zsw_magnetometer_set_enable(false);
 }
 
 static void timer_callback(lv_timer_t *timer)
 {
-    double heading = magnetometer_get_heading();
+    double heading = zsw_magnetometer_get_heading();
     compass_ui_set_heading(heading);
 }
 

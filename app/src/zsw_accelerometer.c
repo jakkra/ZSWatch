@@ -1,4 +1,4 @@
-#include <accelerometer.h>
+#include <zsw_accelerometer.h>
 #include <bmi270_port.h>
 #include <bmi270.h>
 #include <zephyr/logging/log.h>
@@ -70,7 +70,7 @@ static K_WORK_DEFINE(int2_work, bmi270_int2_work_cb);
 static struct gpio_callback gpio_int1_cb;
 static struct gpio_callback gpio_int2_cb;
 
-int accelerometer_init(void)
+int zsw_accelerometer_init(void)
 {
     int8_t rslt;
 
@@ -107,7 +107,7 @@ int accelerometer_init(void)
     return 0;
 }
 
-int accelerometer_fetch_xyz(int16_t *x, int16_t *y, int16_t *z)
+int zsw_accelerometer_fetch_xyz(int16_t *x, int16_t *y, int16_t *z)
 {
     int8_t rslt;
     struct bmi2_sens_data sensor_data = { { 0 } };
@@ -129,7 +129,7 @@ int accelerometer_fetch_xyz(int16_t *x, int16_t *y, int16_t *z)
     return rslt == BMI2_OK ? 0 : -EIO;
 }
 
-int accelerometer_fetch_gyro(int16_t *x, int16_t *y, int16_t *z)
+int zsw_accelerometer_fetch_gyro(int16_t *x, int16_t *y, int16_t *z)
 {
     int8_t rslt;
     struct bmi2_sens_data sensor_data = { { 0 } };
@@ -151,7 +151,7 @@ int accelerometer_fetch_gyro(int16_t *x, int16_t *y, int16_t *z)
     return rslt == BMI2_OK ? 0 : -EIO;
 }
 
-int accelerometer_fetch_num_steps(uint32_t *num_steps)
+int zsw_accelerometer_fetch_num_steps(uint32_t *num_steps)
 {
     int8_t rslt;
     struct bmi2_feat_sensor_data sensor_data = { 0 };
@@ -168,12 +168,12 @@ int accelerometer_fetch_num_steps(uint32_t *num_steps)
     return rslt == BMI2_OK ? 0 : -EIO;
 }
 
-int accelerometer_fetch_temperature(struct sensor_value *temperature)
+int zsw_accelerometer_fetch_temperature(struct sensor_value *temperature)
 {
     return -ENOENT;
 }
 
-int accelerometer_reset_step_count(void)
+int zsw_accelerometer_reset_step_count(void)
 {
     return -ENOENT;
 }

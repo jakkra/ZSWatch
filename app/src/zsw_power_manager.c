@@ -121,7 +121,7 @@ static void handle_idle_timeout(struct k_work *item)
 static void zbus_accel_data_callback(const struct zbus_channel *chan)
 {
     bool should_wakeup = false;
-    const struct accel_event *event = zbus_chan_const_msg(chan);
+const struct accel_event *event = zbus_chan_const_msg(chan);
 
     switch (event->data.type) {
         case ACCELEROMETER_EVT_TYPE_WRIST_WAKEUP: {

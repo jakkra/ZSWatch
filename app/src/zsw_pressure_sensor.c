@@ -1,4 +1,21 @@
-#include <pressure_sensor.h>
+/*
+ * This file is part of ZSWatch project <https://github.com/jakkra/ZSWatch/>.
+ * Copyright (c) 2023 Jakob Krantz.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <zsw_pressure_sensor.h>
 #include <bmp5_port.h>
 #include <bmp5.h>
 #include <zephyr/logging/log.h>
@@ -21,7 +38,7 @@ static const struct gpio_dt_spec int_gpio = GPIO_DT_SPEC_GET_OR(DT_NODELABEL(bmp
 static K_WORK_DEFINE(int_work, bmp581_work_cb);
 static struct gpio_callback gpio_cb;
 
-int pressure_sensor_init(void)
+int zsw_pressure_sensor_init(void)
 {
     int8_t rslt;
 
@@ -58,7 +75,7 @@ int pressure_sensor_init(void)
     return rslt == BMP5_OK ? 0 : -EIO;
 }
 
-int pressure_sensor_set_odr(uint8_t bmp5_odr)
+int zsw_pressure_sensor_set_odr(uint8_t bmp5_odr)
 {
     /* Get default odr */
     uint8_t rslt = bmp5_get_osr_odr_press_config(&osr_odr_press_cfg, &bmp5_dev);
@@ -81,7 +98,7 @@ int pressure_sensor_set_odr(uint8_t bmp5_odr)
     return rslt == BMP5_OK ? 0 : -EIO;
 }
 
-int pressure_sensor_fetch_pressure(float *pressure, float *temperature)
+int zsw_pressure_sensor_fetch_pressure(float *pressure)
 {
     int8_t rslt = 0;
     struct bmp5_sensor_data sensor_data;
@@ -91,6 +108,20 @@ int pressure_sensor_fetch_pressure(float *pressure, float *temperature)
 
     if (rslt == BMP5_OK) {
         *pressure = sensor_data.pressure;
+    }
+
+    return rslt == BMP5_OK ? 0 : -EIO;
+}
+
+int zsw_pressure_sensor_fetch_temperature(float *temperature)
+{
+    int8_t rslt = 0;
+    struct bmp5_sensor_data sensor_data;
+
+    rslt = bmp5_get_sensor_data(&sensor_data, &osr_odr_press_cfg, &bmp5_dev);
+    bmp5_error_codes_print_result("bmp5_get_sensor_data", rslt);
+
+    if (rslt == BMP5_OK) {
         *temperature = sensor_data.temperature;
     }
 

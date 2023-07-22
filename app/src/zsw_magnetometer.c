@@ -1,4 +1,4 @@
-#include <magnetometer.h>
+#include <zsw_magnetometer.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
@@ -25,11 +25,11 @@ static double last_x;
 static double last_y;
 static double last_z;
 
-void magnetometer_init(void)
+int zsw_magnetometer_init(void)
 {
     if (!device_is_ready(magnetometer)) {
         LOG_ERR("Device magnetometer is not ready\n");
-        return;
+        return -ENODEV;
     }
 
     struct sensor_trigger trig;
@@ -41,7 +41,7 @@ void magnetometer_init(void)
     if (sensor_attr_set(magnetometer, SENSOR_CHAN_ALL,
                         SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
         LOG_ERR("Cannot set sampling frequency for LIS2MDL\n");
-        return;
+        return -EFAULT;
     }
 
     trig.type = SENSOR_TRIG_DATA_READY;
@@ -51,12 +51,14 @@ void magnetometer_init(void)
     // TODO handle power save, enable/disable etc. to save power
     int rc = pm_device_action_run(magnetometer, PM_DEVICE_ACTION_SUSPEND);
     __ASSERT(rc == 0, "Failed to suspend LIS2MDL: %d\n", rc);
+
+    return 0;
 }
 
-void magnetometer_set_enable(bool enabled)
+int zsw_magnetometer_set_enable(bool enabled)
 {
     if (!device_is_ready(magnetometer)) {
-        return;
+        return -ENODEV;
     }
     int rc;
     if (enabled) {
@@ -66,18 +68,24 @@ void magnetometer_set_enable(bool enabled)
         rc = pm_device_action_run(magnetometer, PM_DEVICE_ACTION_SUSPEND);
         __ASSERT(rc == 0 || rc == -EALREADY, "Failed to suspend LIS2MDL: %d\n", rc);
     }
+    return 0;
 }
 
-double magnetometer_get_heading(void)
+double zsw_magnetometer_get_heading(void)
 {
     return last_heading;
 }
 
-void magnetometer_get_all(float* x, float* y, float* z)
+int zsw_magnetometer_get_all(float *x, float *y, float *z)
 {
+    if (!device_is_ready(magnetometer)) {
+        return -ENODEV;
+    }
     *x = last_x;
     *y = last_y;
     *z = last_z;
+
+    return 0;
 }
 
 static void lis2mdl_trigger_handler(const struct device *dev,

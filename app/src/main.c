@@ -19,7 +19,7 @@
 #include <heart_rate_sensor.h>
 #include <sys/time.h>
 #include <ram_retention_storage.h>
-#include <accelerometer.h>
+#include <zsw_accelerometer.h>
 #include <ble_comm.h>
 #include <ble_aoa.h>
 #include <lv_notifcation.h>
@@ -30,8 +30,8 @@
 #include <applications/application_manager.h>
 #include <events/ble_data_event.h>
 #include <events/accel_event.h>
-#include <magnetometer.h>
-#include <pressure_sensor.h>
+#include <zsw_magnetometer.h>
+#include <zsw_pressure_sensor.h>
 #include <zephyr/zbus/zbus.h>
 #include <zsw_cpu_freq.h>
 #include <zsw_charger.h>
@@ -105,9 +105,9 @@ static void run_init_work(struct k_work *item)
     notifications_page_init(on_notification_page_close, on_notification_page_notification_close);
     notification_manager_init();
     enable_bluetoth();
-    accelerometer_init();
-    magnetometer_init();
-    pressure_sensor_init();
+    zsw_accelerometer_init();
+    zsw_magnetometer_init();
+    zsw_pressure_sensor_init();
     clock_init(retained.current_time_seconds);
     buttonsInit(&onButtonPressCb);
     vibration_motor_init();
@@ -155,12 +155,12 @@ int main(void)
 #ifdef CONFIG_TASK_WDT
     const struct device *hw_wdt_dev = DEVICE_DT_GET(DT_ALIAS(watchdog0));
     if (!device_is_ready(hw_wdt_dev)) {
-		printk("Hardware watchdog %s is not ready; ignoring it.\n",
-		       hw_wdt_dev->name);
-		hw_wdt_dev = NULL;
-	}
+        printk("Hardware watchdog %s is not ready; ignoring it.\n",
+               hw_wdt_dev->name);
+        hw_wdt_dev = NULL;
+    }
 
-	task_wdt_init(hw_wdt_dev);
+    task_wdt_init(hw_wdt_dev);
     kernal_wdt_id = task_wdt_add(TASK_WDT_FEED_INTERVAL_MS * 2, NULL, NULL);
 
     k_work_schedule(&wdt_work, K_NO_WAIT);
@@ -170,6 +170,8 @@ int main(void)
     // this RAM forever, instead re-use the system workqueue for init
     // it has the required amount of stack.
     k_work_submit(&init_work);
+
+    return 0;
 }
 
 static void enable_bluetoth(void)
