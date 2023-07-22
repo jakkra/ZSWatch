@@ -2,6 +2,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -13,6 +14,13 @@
 #include <zsw_popup_window.h>
 
 LOG_MODULE_REGISTER(ble_comm, LOG_LEVEL_DBG);
+
+#define BLE_COMM_SHORT_INT_MIN  40
+#define BLE_COMM_SHORT_INT_MAX  50
+#define BLE_COMM_LONG_INT_MIN   400
+#define BLE_COMM_LONG_INT_MAX   500
+
+#define BLE_COMM_CONN_INT_UPDATE_TIMEOUT_MS    5000
 
 ZBUS_CHAN_DECLARE(ble_comm_data_chan);
 
@@ -32,6 +40,7 @@ static void connected(struct bt_conn *conn, uint8_t err);
 static void disconnected(struct bt_conn *conn, uint8_t reason);
 static void param_updated(struct bt_conn *conn, uint16_t interval, uint16_t latency, uint16_t timeout);
 static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint16_t len);
+static void update_conn_interval_handler(struct k_work *item);
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
     .connected    = connected,
@@ -52,6 +61,8 @@ static const struct bt_data ad_nus[] = {
     BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
     BT_DATA_BYTES(BT_DATA_UUID128_ALL, BLE_UUID_TRANSPORT_VAL),
 };
+
+K_WORK_DELAYABLE_DEFINE(conn_interval_work, update_conn_interval_handler);
 
 static struct bt_conn *current_conn;
 static uint32_t max_send_len;
@@ -181,6 +192,57 @@ void ble_comm_set_pairable(bool pairable)
     pairing_enabled = pairable;
 }
 
+int ble_comm_short_connection_interval(void)
+{
+    int err;
+    struct bt_le_conn_param param = {
+        .interval_min = BLE_COMM_SHORT_INT_MIN,
+        .interval_max = BLE_COMM_SHORT_INT_MAX,
+        .latency = 0,
+        .timeout = 500,
+    };
+
+    // If someone explicitly requested short connection interval,
+    // don't change it back.
+    k_work_cancel_delayable(&conn_interval_work);
+
+    LOG_DBG("Set short conection interval");
+
+
+    err = bt_conn_le_param_update(current_conn, &param);
+    if (err && err != -EALREADY) {
+        LOG_WRN("bt_conn_le_param_update failed: %d", err);
+    }
+
+    return err;
+}
+
+int ble_comm_long_connection_interval(void)
+{
+    int err;
+    struct bt_le_conn_param param = {
+        .interval_min = BLE_COMM_LONG_INT_MIN,
+        .interval_max = BLE_COMM_LONG_INT_MAX,
+        .latency = 0,
+        .timeout = 500,
+    };
+
+    LOG_DBG("Set long conection interval");
+
+    err = bt_conn_le_param_update(current_conn, &param);
+    if (err && err != -EALREADY) {
+        LOG_WRN("bt_conn_le_param_update failed %d", err);
+    }
+
+    return err;
+}
+
+static void update_conn_interval_handler(struct k_work *item)
+{
+    LOG_DBG("Change to long connection interval");
+    ble_comm_long_connection_interval();
+}
+
 static void mtu_exchange_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchange_params *params)
 {
     if (!err) {
@@ -223,17 +285,11 @@ static void connected(struct bt_conn *conn, uint8_t err)
     bt_conn_get_info(conn, &info);
     LOG_INF("Interval: %d, latency: %d, timeout: %d", info.le.interval, info.le.latency, info.le.timeout);
 
-    struct bt_le_conn_param param = {
-        .interval_min = 400,
-        .interval_max = 500,
-        .latency = 0,
-        .timeout = 500,
-    };
-
-    err = bt_conn_le_param_update(conn, &param);
-    if (err) {
-        LOG_ERR("bt_conn_le_param_update failed");
-    }
+    // Right after a new connection we want short connection interval
+    // to let the peer discover services etc. quickly.
+    // After some time assume the peer is done and change to longer intervals
+    // to save power.
+    k_work_schedule(&conn_interval_work, K_MSEC(BLE_COMM_CONN_INT_UPDATE_TIMEOUT_MS));
 
     if (pairing_enabled) {
         int rc = bt_conn_set_security(conn, BT_SECURITY_L2);
@@ -253,7 +309,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
     LOG_INF("Disconnected: %s (reason %u)", addr, reason);
 
     if (current_conn) {
+        k_work_cancel_delayable(&conn_interval_work);
         bt_conn_unref(current_conn);
+        current_conn = NULL;
     }
 }
 

@@ -26,6 +26,7 @@
 #include <zephyr/zbus/zbus.h>
 #include <events/periodic_event.h>
 #include <zsw_periodic_event.h>
+#include <ble_comm.h>
 
 LOG_MODULE_REGISTER(zsw_gatt_sensor_server, LOG_LEVEL_WRN);
 
@@ -160,10 +161,12 @@ static void on_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
     // TODO handle notifications per connection per service.
     if (!notif_enabled && (value == BT_GATT_CCC_NOTIFY)) {
         notif_enabled = true;
+        ble_comm_short_connection_interval();
         zsw_periodic_chan_add_obs(&periodic_event_fast_chan, &azsw_gatt_sensor_server_lis);
     } else if (notif_enabled && (value != BT_GATT_CCC_NOTIFY)) {
         // If any char get notify off, then stop sending at all.
         // TODO Keep track of which ones have notify on.
+        ble_comm_long_connection_interval();
         zsw_periodic_chan_rm_obs(&periodic_event_fast_chan, &azsw_gatt_sensor_server_lis);
         notif_enabled = false;
     }
