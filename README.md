@@ -46,6 +46,7 @@ I have received quite some requests regarding building or getting the ZSWatch, I
 - [ZSWatch v1 in action (Note old, not updated for latest HW and SW).](#zswatch-v1-in-action-note-old-not-updated-for-latest-hw-and-sw)
 - [Environment, Compiling and running the code](GETTING_STARTED.md)
 - [Writing apps for the Application Manager](#writing-apps-for-the-application-manager)
+- [Other tools](#other-tools)
 - [Licence GPL-3.0](#licence-gpl-30)
 
 ## Hardware features
@@ -144,6 +145,10 @@ When user for example presses a close button in the application:
 - `application_manager.c` will now draw the app picker again.
 
 The application manager can also at any time close a running application by calling it's `application_stop_fn`.
+
+## Other tools
+- Visit https://jakkra.github.io/ZSWatch-Web-Dashboard to connect and view sensor data in a browser that supports Web Bluetooth [(Source code)](https://github.com/jakkra/ZSWatch-Web-Dashboard 
+)
 
 ## Licence GPL-3.0
 Main difference from MIT is now that if anyone want to build something more with this, then they need to also open source their changes back to the project, which I thinks is fair. This is so everyone can benefit from those improvements. If you think this is wrong for some reason feel free to contact me, I'm open to change the LICENCE.
