@@ -20,10 +20,20 @@ static const struct device *const magnetometer = DEVICE_DT_GET_OR_NULL(DT_NODELA
 static double xyz_to_rotation(double x, double y, double z);
 static void lis2mdl_trigger_handler(const struct device *dev, const struct sensor_trigger *trig);
 
-static double last_heading = 0;
+static double last_heading;
 static double last_x;
 static double last_y;
 static double last_z;
+static double max_x;
+static double max_y;
+static double max_z;
+static double min_x;
+static double min_y;
+static double min_z;
+static bool is_calibrating;
+static float offset_x;
+static float offset_y;
+static float offset_z;
 
 int zsw_magnetometer_init(void)
 {
@@ -71,6 +81,37 @@ int zsw_magnetometer_set_enable(bool enabled)
     return 0;
 }
 
+int zsw_magnetometer_start_calibration(void)
+{
+    if (!device_is_ready(magnetometer)) {
+        return -ENODEV;
+    }
+
+    max_x = -100000;
+    max_y = -100000;
+    max_z = -100000;
+    min_x = 100000;
+    min_y = 100000;
+    min_z = 100000;
+    is_calibrating = true;
+
+    return 0;
+}
+
+int zsw_magnetometer_stop_calibration(void)
+{
+    if (!device_is_ready(magnetometer)) {
+        return -ENODEV;
+    }
+
+    is_calibrating = false;
+    offset_x = (max_x + min_x) / 2;
+    offset_y = (max_y + min_y) / 2;
+    offset_z = (max_z + min_z) / 2;
+
+    return 0;
+}
+
 double zsw_magnetometer_get_heading(void)
 {
     return last_heading;
@@ -81,6 +122,7 @@ int zsw_magnetometer_get_all(float *x, float *y, float *z)
     if (!device_is_ready(magnetometer)) {
         return -ENODEV;
     }
+
     *x = last_x;
     *y = last_y;
     *z = last_z;
@@ -110,9 +152,23 @@ static void lis2mdl_trigger_handler(const struct device *dev,
     LOG_DBG("LIS2MDL: Temperature: %.1f C\n",
             sensor_value_to_double(&die_temp2));
 
-    last_heading = xyz_to_rotation(sensor_value_to_double(&magn[0]),
-                                   sensor_value_to_double(&magn[1]),
-                                   sensor_value_to_double(&magn[2]));
+    if (is_calibrating) {
+        if (last_x < min_x) min_x = last_x;
+        if (last_x > max_x) max_x = last_x;
+
+        if (last_y < min_y) min_y = last_y;
+        if (last_y > max_y) max_y = last_y;
+
+        if (last_z < min_z) min_z = last_z;
+        if (last_z > max_z) max_z = last_z;
+    }
+
+    last_x = last_x - offset_x;
+    last_y = last_y - offset_y;
+    last_z = last_z - offset_z;
+
+    last_heading = xyz_to_rotation(last_x, last_y, last_z);
+
 
     LOG_DBG("Rotation: %f", last_heading);
 }

@@ -162,6 +162,7 @@
         compatible = "st,lis2mdl";
         reg = <0x1e>;
         irq-gpios = <&gpio0 24 0>;
+        cancel-offset;
     };
 
     max30101@57 {
