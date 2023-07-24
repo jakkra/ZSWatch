@@ -12,7 +12,7 @@
 #include <lvgl.h>
 #include <clock.h>
 #include <heart_rate_sensor.h>
-#include <zsw_accelerometer.h>
+#include <zsw_imu.h>
 #include <vibration_motor.h>
 #include <ram_retention_storage.h>
 #include <events/ble_data_event.h>
@@ -128,7 +128,7 @@ static void refreash_ui(void)
     if (strlen(last_weather_data.report_text) > 0) {
         watchface_set_weather(last_weather_data.temperature_c, last_weather_data.weather_code);
     }
-    if (zsw_accelerometer_fetch_num_steps(&steps) == 0) {
+    if (zsw_imu_fetch_num_steps(&steps) == 0) {
         watchface_set_step(steps);
     }
 }
@@ -160,7 +160,7 @@ void general_work(struct k_work *item)
             check_notifications();
 
             // Realtime update of steps
-            if (zsw_accelerometer_fetch_num_steps(&steps) == 0) {
+            if (zsw_imu_fetch_num_steps(&steps) == 0) {
                 watchface_set_step(steps);
             }
             __ASSERT(0 <= k_work_schedule(&clock_work.work, K_SECONDS(1)), "FAIL clock_work");
@@ -235,7 +235,7 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
 {
     if (running && !is_suspended) {
         const struct accel_event *event = zbus_chan_const_msg(chan);
-        if (event->data.type == ACCELEROMETER_EVT_TYPE_STEP) {
+        if (event->data.type == ZSW_IMU_EVT_TYPE_STEP) {
             watchface_set_step(event->data.data.step.count);
         }
     }

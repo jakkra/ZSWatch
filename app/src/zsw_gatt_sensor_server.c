@@ -20,7 +20,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/logging/log.h>
-#include <zsw_accelerometer.h>
+#include <zsw_imu.h>
 #include <zsw_env_sensor.h>
 #include <zsw_magnetometer.h>
 #include <zephyr/zbus/zbus.h>
@@ -127,7 +127,7 @@ static ssize_t on_read(struct bt_conn *conn, const struct bt_gatt_attr *attr, vo
         f_ptr[0] = temperature;
         write_len = sizeof(float);
     } else if (bt_gatt_attr_get_handle(attr) == bt_gatt_attr_get_handle(&accel_service.attrs[2])) {
-        zsw_accelerometer_fetch_xyz(&x, &y, &z);
+        zsw_imu_fetch_accel(&x, &y, &z);
         f_ptr[0] = x;
         f_ptr[1] = y;
         f_ptr[2] = z;
@@ -144,7 +144,7 @@ static ssize_t on_read(struct bt_conn *conn, const struct bt_gatt_attr *attr, vo
         zsw_magnetometer_set_enable(false);
         write_len = 3 * sizeof(float);
     } else if (bt_gatt_attr_get_handle(attr) == bt_gatt_attr_get_handle(&gyro_service.attrs[2])) {
-        zsw_accelerometer_fetch_gyro(&x, &y, &z);
+        zsw_imu_fetch_gyro(&x, &y, &z);
         f_ptr[0] = x;
         f_ptr[1] = y;
         f_ptr[2] = z;
@@ -208,7 +208,7 @@ static void zbus_periodic_fast_callback(const struct zbus_channel *chan)
         bt_gatt_notify(NULL, &pressure_service.attrs[1], &buf, write_len);
     }
 
-    if (zsw_accelerometer_fetch_xyz(&x, &y, &z) == 0) {
+    if (zsw_imu_fetch_accel(&x, &y, &z) == 0) {
         f_ptr[0] = x;
         f_ptr[1] = y;
         f_ptr[2] = z;
@@ -216,7 +216,7 @@ static void zbus_periodic_fast_callback(const struct zbus_channel *chan)
         bt_gatt_notify(NULL, &accel_service.attrs[1], &buf, write_len);
     }
 
-    if (zsw_accelerometer_fetch_gyro(&x, &y, &z) == 0) {
+    if (zsw_imu_fetch_gyro(&x, &y, &z) == 0) {
         f_ptr[0] = x;
         f_ptr[1] = y;
         f_ptr[2] = z;

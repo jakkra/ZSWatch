@@ -124,7 +124,7 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
 const struct accel_event *event = zbus_chan_const_msg(chan);
 
     switch (event->data.type) {
-        case ACCELEROMETER_EVT_TYPE_WRIST_WAKEUP: {
+        case ZSW_IMU_EVT_TYPE_WRIST_WAKEUP: {
             should_wakeup = true;
         }
         default:

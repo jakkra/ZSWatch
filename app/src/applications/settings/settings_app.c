@@ -4,7 +4,7 @@
 #include <zephyr/init.h>
 #include <ble_aoa.h>
 #include <display_control.h>
-#include <zsw_accelerometer.h>
+#include <zsw_imu.h>
 #include <ble_comm.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -200,7 +200,7 @@ static void on_reset_steps_changed(lv_setting_value_t value, bool final)
 {
     if (final && value.item.sw) {
         //watchface_set_step(0);
-        zsw_accelerometer_reset_step_count();
+        zsw_imu_reset_step_count();
     }
 }
 

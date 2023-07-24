@@ -1,4 +1,4 @@
-#include <zsw_accelerometer.h>
+#include <zsw_imu.h>
 #include <bmi270_port.h>
 #include <bmi270.h>
 #include <zephyr/logging/log.h>
@@ -23,7 +23,7 @@ typedef struct bmi270_feature_config_set_t {
     bool                    isr_disable;
 } bmi270_feature_config_set_t;
 
-static void send_accel_event(accelerometer_evt_t *data);
+static void send_accel_event(zsw_imu_evt_t *data);
 
 static int8_t configure_axis_remapping(struct bmi2_dev *bmi2_dev);
 static int8_t configure_enable_all_bmi270(struct bmi2_dev *bmi2_dev);
@@ -70,7 +70,7 @@ static K_WORK_DEFINE(int2_work, bmi270_int2_work_cb);
 static struct gpio_callback gpio_int1_cb;
 static struct gpio_callback gpio_int2_cb;
 
-int zsw_accelerometer_init(void)
+int zsw_imu_init(void)
 {
     int8_t rslt;
 
@@ -107,7 +107,7 @@ int zsw_accelerometer_init(void)
     return 0;
 }
 
-int zsw_accelerometer_fetch_xyz(int16_t *x, int16_t *y, int16_t *z)
+int zsw_imu_fetch_accel(int16_t *x, int16_t *y, int16_t *z)
 {
     int8_t rslt;
     struct bmi2_sens_data sensor_data = { { 0 } };
@@ -129,7 +129,7 @@ int zsw_accelerometer_fetch_xyz(int16_t *x, int16_t *y, int16_t *z)
     return rslt == BMI2_OK ? 0 : -EIO;
 }
 
-int zsw_accelerometer_fetch_gyro(int16_t *x, int16_t *y, int16_t *z)
+int zsw_imu_fetch_gyro(int16_t *x, int16_t *y, int16_t *z)
 {
     int8_t rslt;
     struct bmi2_sens_data sensor_data = { { 0 } };
@@ -151,7 +151,7 @@ int zsw_accelerometer_fetch_gyro(int16_t *x, int16_t *y, int16_t *z)
     return rslt == BMI2_OK ? 0 : -EIO;
 }
 
-int zsw_accelerometer_fetch_num_steps(uint32_t *num_steps)
+int zsw_imu_fetch_num_steps(uint32_t *num_steps)
 {
     int8_t rslt;
     struct bmi2_feat_sensor_data sensor_data = { 0 };
@@ -168,17 +168,17 @@ int zsw_accelerometer_fetch_num_steps(uint32_t *num_steps)
     return rslt == BMI2_OK ? 0 : -EIO;
 }
 
-int zsw_accelerometer_fetch_temperature(struct sensor_value *temperature)
+int zsw_imu_fetch_temperature(struct sensor_value *temperature)
 {
     return -ENOENT;
 }
 
-int zsw_accelerometer_reset_step_count(void)
+int zsw_imu_reset_step_count(void)
 {
     return -ENOENT;
 }
 
-static void send_accel_event(accelerometer_evt_t *data)
+static void send_accel_event(zsw_imu_evt_t *data)
 {
     zbus_chan_pub(&accel_data_chan, data, K_MSEC(250));
 }
@@ -236,7 +236,7 @@ static void bmi270_int2_work_cb(struct k_work *work)
 {
     int8_t rslt;
     uint16_t int_status;
-    accelerometer_evt_t evt;
+    zsw_imu_evt_t evt;
     struct bmi2_feat_sensor_data sensor_data = { 0 };
 
     rslt = bmi2_get_int_status(&int_status, &bmi2_dev);
@@ -248,7 +248,7 @@ static void bmi270_int2_work_cb(struct k_work *work)
 
     if (int_status & BMI270_SIG_MOT_STATUS_MASK) {
         LOG_DBG("INT: BMI270_SIG_MOT_STATUS_MASK\n");
-        evt.type = ACCELEROMETER_EVT_TYPE_SIGNIFICANT_MOTION;
+        evt.type = ZSW_IMU_EVT_TYPE_SIGNIFICANT_MOTION;
         send_accel_event(&evt);
     }
     if (int_status & BMI270_STEP_CNT_STATUS_MASK) {
@@ -256,7 +256,7 @@ static void bmi270_int2_work_cb(struct k_work *work)
         sensor_data.type = BMI2_STEP_COUNTER;
         rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
         bmi2_error_codes_print_result(rslt);
-        evt.type = ACCELEROMETER_EVT_TYPE_STEP;
+        evt.type = ZSW_IMU_EVT_TYPE_STEP;
         evt.data.step.count = (long unsigned int)sensor_data.sens_data.step_counter_output;
         send_accel_event(&evt);
         LOG_DBG("No of steps counted  = %lu", (long unsigned int)evt.data.step.count );
@@ -266,15 +266,15 @@ static void bmi270_int2_work_cb(struct k_work *work)
         sensor_data.type = BMI2_STEP_ACTIVITY;
         rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
         bmi2_error_codes_print_result(rslt);
-        evt.type = ACCELEROMETER_EVT_TYPE_STEP_ACTIVITY;
-        evt.data.step_activity = (accelerometer_data_step_activity_t)sensor_data.sens_data.activity_output;
+        evt.type = ZSW_IMU_EVT_TYPE_STEP_ACTIVITY;
+        evt.data.step_activity = (zsw_imu_data_step_activity_t)sensor_data.sens_data.activity_output;
         const char *activity_output[4] = { "BMI2_STILL", "BMI2_WALK", "BMI2_RUN", "BMI2_UNKNOWN" };
         LOG_DBG("Step activity: %s", activity_output[sensor_data.sens_data.activity_output]);
         send_accel_event(&evt);
     }
     if (int_status & BMI270_WRIST_WAKE_UP_STATUS_MASK) {
         LOG_DBG("INT: BMI270_WRIST_WAKE_UP_STATUS_MASK\n");
-        evt.type = ACCELEROMETER_EVT_TYPE_WRIST_WAKEUP;
+        evt.type = ZSW_IMU_EVT_TYPE_WRIST_WAKEUP;
         send_accel_event(&evt);
     }
     if (int_status & BMI270_WRIST_GEST_STATUS_MASK) {
@@ -282,8 +282,8 @@ static void bmi270_int2_work_cb(struct k_work *work)
         sensor_data.type = BMI2_WRIST_GESTURE;
         rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
         bmi2_error_codes_print_result(rslt);
-        evt.type = ACCELEROMETER_EVT_TYPE_GESTURE;
-        evt.data.gesture = (accelerometer_data_step_gesture_t)sensor_data.sens_data.wrist_gesture_output;
+        evt.type = ZSW_IMU_EVT_TYPE_GESTURE;
+        evt.data.gesture = (zsw_imu_data_step_gesture_t)sensor_data.sens_data.wrist_gesture_output;
         const char *gesture_output[6] = { "unknown_gesture", "push_arm_down", "pivot_up", "wrist_shake_jiggle", "flick_in", "flick_out" };
         LOG_DBG("Gesture detected: %s", gesture_output[sensor_data.sens_data.wrist_gesture_output]);
         send_accel_event(&evt);

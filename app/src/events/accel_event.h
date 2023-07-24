@@ -1,5 +1,5 @@
-#include <zsw_accelerometer.h>
+#include <zsw_imu.h>
 
 struct accel_event {
-    accelerometer_evt_t data;
+    zsw_imu_evt_t data;
 };

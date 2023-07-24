@@ -19,7 +19,7 @@
 #include <heart_rate_sensor.h>
 #include <sys/time.h>
 #include <ram_retention_storage.h>
-#include <zsw_accelerometer.h>
+#include <zsw_imu.h>
 #include <ble_comm.h>
 #include <ble_aoa.h>
 #include <lv_notifcation.h>
@@ -105,7 +105,7 @@ static void run_init_work(struct k_work *item)
     notifications_page_init(on_notification_page_close, on_notification_page_notification_close);
     notification_manager_init();
     enable_bluetoth();
-    zsw_accelerometer_init();
+    zsw_imu_init();
     zsw_magnetometer_init();
     zsw_pressure_sensor_init();
     clock_init(retained.current_time_seconds);

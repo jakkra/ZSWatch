@@ -2,7 +2,7 @@
 #include <application_manager.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <zsw_accelerometer.h>
+#include <zsw_imu.h>
 #include <events/periodic_event.h>
 #include <zsw_periodic_event.h>
 
@@ -40,7 +40,7 @@ static void zbus_fetch_accel_data_callback(const struct zbus_channel *chan)
     int16_t x;
     int16_t y;
     int16_t z;
-    int res = zsw_accelerometer_fetch_xyz(&x, &y, &z);
+    int res = zsw_imu_fetch_accel(&x, &y, &z);
     if (res == 0) {
         accel_ui_set_values(x, y, z);
     }

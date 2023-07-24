@@ -45,7 +45,7 @@ static int zds_app_add(void)
 static void zbus_accel_data_callback(const struct zbus_channel *chan)
 {
     const struct accel_event *event = zbus_chan_const_msg(chan);
-    if (event->data.data.gesture == ACCELEROMETER_EVT_GESTURE_WRIST_SHAKE) {
+    if (event->data.data.gesture == ZSW_IMU_EVT_GESTURE_WRIST_SHAKE) {
         zds_ui_reset_rotation();
     }
 }
