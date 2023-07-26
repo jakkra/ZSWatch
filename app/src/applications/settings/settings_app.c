@@ -65,13 +65,13 @@ static lv_settings_item_t general_page_items[] = {
         }
     },
     {
-        .type = LV_SETTINGS_TYPE_SWITCH,
+        .type = LV_SETTINGS_TYPE_BTN,
         .icon = LV_SYMBOL_REFRESH,
         .change_callback = on_reset_steps_changed,
         .item = {
-            .sw = {
+            .btn = {
                 .name = "Reset step counter",
-                .inital_val = false
+                .text = LV_SYMBOL_REFRESH
             }
         }
     },
@@ -90,13 +90,13 @@ static lv_settings_item_t bluetooth_page_items[] = {
         }
     },
     {
-        .type = LV_SETTINGS_TYPE_SWITCH,
+        .type = LV_SETTINGS_TYPE_BTN,
         .icon = LV_SYMBOL_BACKSPACE,
         .change_callback = on_clear_bonded_changed,
         .item = {
-            .sw = {
+            .btn = {
                 .name = "Delete all bonded peers",
-                .inital_val = false
+                .text = LV_SYMBOL_TRASH
             }
         }
     },
@@ -187,7 +187,7 @@ static void on_pairing_enable_changed(lv_setting_value_t value, bool final)
 
 static void on_clear_bonded_changed(lv_setting_value_t value, bool final)
 {
-    if (final && value.item.sw) {
+    if (final) {
         int err = bt_unpair(BT_ID_DEFAULT, NULL);
         if (err) {
             printk("Cannot unpair for default ID");
@@ -198,8 +198,7 @@ static void on_clear_bonded_changed(lv_setting_value_t value, bool final)
 
 static void on_reset_steps_changed(lv_setting_value_t value, bool final)
 {
-    if (final && value.item.sw) {
-        //watchface_set_step(0);
+    if (final) {
         zsw_imu_reset_step_count();
     }
 }

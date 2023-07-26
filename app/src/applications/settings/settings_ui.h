@@ -1,7 +1,6 @@
 #ifndef LV_SETTINGS_H
 #define LV_SETTINGS_H
 
-
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE
 #include "lvgl.h"
 #else
@@ -30,11 +29,21 @@ typedef struct lv_setting_value {
 
 } lv_setting_value_t;
 
+/*
+* Final means the user made the change and unfocused the element.
+* For example in a switch, while dragging the "dot" final will be false,
+* but when the user release the switch, final will be true.
+*/
 typedef void(*lv_settings_changed_cb_t)(lv_setting_value_t value, bool final);
 
 typedef struct {
     const char *name;
 } lv_settings_label_t;
+
+typedef struct {
+    const char *name;
+    const char *text;
+} lv_settings_button_t;
 
 typedef struct {
     const char *name;
@@ -52,6 +61,7 @@ typedef struct lv_settings_item {
     lv_settings_type_t type;
     union {
         lv_settings_label_t     label;
+        lv_settings_button_t    btn;
         lv_settings_switch_t    sw;
         lv_settings_slider_t    slider;
     } item;

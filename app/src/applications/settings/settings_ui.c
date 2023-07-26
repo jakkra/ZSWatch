@@ -74,6 +74,20 @@ static lv_obj_t *create_switch(lv_obj_t *parent, const char *icon, const char *t
     return sw;
 }
 
+static lv_obj_t *create_button(lv_obj_t *parent, const char *icon, const char *txt, const char *btn_txt)
+{
+    lv_obj_t *obj = create_text(parent, icon, txt, LV_MENU_ITEM_BUILDER_VARIANT_1);
+    lv_obj_t *btn = lv_btn_create(obj);
+    lv_obj_t *label = lv_label_create(btn);
+    lv_label_set_text(label, btn_txt);
+    lv_obj_set_style_pad_right(label, 5, LV_PART_MAIN);
+    lv_obj_set_style_pad_left(label, 5, LV_PART_MAIN);
+    lv_obj_set_style_radius(btn, 20, 0);
+    lv_obj_center(label);
+
+    return btn;
+}
+
 static lv_obj_t *create_slider(lv_obj_t *parent, const char *icon, const char *txt, int32_t min, int32_t max,
                                int32_t val)
 {
@@ -120,6 +134,20 @@ static void switch_event_cb(lv_event_t *e)
 
     if ((callback != NULL) && ((code == LV_EVENT_VALUE_CHANGED) || (code == LV_EVENT_RELEASED))) {
         callback(settings_value, code == LV_EVENT_RELEASED);
+    }
+}
+
+static void btn_event_cb(lv_event_t *e)
+{
+    lv_settings_changed_cb_t callback;
+    lv_setting_value_t settings_value;
+    lv_event_code_t code = lv_event_get_code(e);
+
+    settings_value.type = LV_SETTINGS_TYPE_BTN;
+    callback = (lv_settings_changed_cb_t)lv_event_get_user_data(e);
+
+    if ((callback != NULL) && (code == LV_EVENT_CLICKED)) {
+        callback(settings_value, true);
     }
 }
 
@@ -177,6 +205,10 @@ void lv_settings_create(lv_settings_page_t *pages, uint8_t num_pages, const char
                     obj = create_slider(cont, item->icon, item->item.slider.name, item->item.slider.min_val, item->item.slider.max_val,
                                         item->item.slider.inital_val);
                     lv_obj_add_event_cb(obj, slider_event_cb, LV_EVENT_ALL, item->change_callback);
+                    break;
+                case LV_SETTINGS_TYPE_BTN:
+                    obj = create_button(cont, item->icon, item->item.btn.name, item->item.btn.text);
+                    lv_obj_add_event_cb(obj, btn_event_cb, LV_EVENT_CLICKED, item->change_callback);
                     break;
                 default:
                     printf("Unsupported settings type %d\n", item->type);
