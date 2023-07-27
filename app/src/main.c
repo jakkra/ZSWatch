@@ -447,6 +447,7 @@ static void screen_gesture_event(lv_event_t *e)
             application_manager_exit_app();
 #endif
         }
+        lv_indev_wait_release(lv_indev_get_act());
     }
 }
 
