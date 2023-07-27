@@ -2,7 +2,7 @@
 #include <lvgl.h>
 
 static void on_button_pressed(lv_event_t *e);
-static void set_img_rotation(void * obj, int32_t v);
+static void set_img_rotation(void *obj, int32_t v);
 
 static lv_obj_t *root_page = NULL;
 static lv_obj_t *img;
@@ -78,7 +78,7 @@ static void on_button_pressed(lv_event_t *e)
     }
 }
 
-static void set_img_rotation(void * obj, int32_t v)
+static void set_img_rotation(void *obj, int32_t v)
 {
     lv_img_set_angle(obj, v);
 }

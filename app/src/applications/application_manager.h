@@ -7,7 +7,6 @@ typedef void(*application_stop_fn)(void);
 
 typedef void(*on_application_manager_cb_fn)(void);
 
-
 typedef struct application_t {
     application_start_fn    start_func;
     application_stop_fn     stop_func;

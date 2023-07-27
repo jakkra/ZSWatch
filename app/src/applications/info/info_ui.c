@@ -1,7 +1,7 @@
 #include <info/info_ui.h>
 #include <lvgl.h>
 
-static void seconds_to_time_chunks(uint32_t time_seconds, int* days, int* hours, int* minutes, int* seconds);
+static void seconds_to_time_chunks(uint32_t time_seconds, int *days, int *hours, int *minutes, int *seconds);
 
 static lv_obj_t *root_page = NULL;
 
@@ -20,7 +20,7 @@ static void create_ui(lv_obj_t *parent)
     lv_obj_set_style_text_decor(title_label, LV_TEXT_DECOR_UNDERLINE, LV_PART_MAIN);
     lv_obj_align_to(title_label, parent, LV_ALIGN_TOP_MID, 0, 0);
 
-    lv_obj_t * note_label = lv_label_create(parent);
+    lv_obj_t *note_label = lv_label_create(parent);
     lv_label_set_text(note_label, "(Since power loss)");
     lv_obj_align_to(note_label, title_label, LV_ALIGN_BOTTOM_MID, 0, 20);
 
@@ -30,7 +30,7 @@ static void create_ui(lv_obj_t *parent)
     lv_obj_set_x(resets_label, 15);
     lv_obj_set_y(resets_label, -45);
     lv_obj_set_align(resets_label, LV_ALIGN_LEFT_MID);
-    
+
     uptime_label = lv_label_create(parent);
     lv_obj_set_width(uptime_label, LV_SIZE_CONTENT);
     lv_obj_set_height(uptime_label, LV_SIZE_CONTENT);
@@ -94,7 +94,7 @@ void info_ui_set_uptime_sec(uint32_t uptime_seconds)
     int hours;
     int minutes;
     int seconds;
-    
+
     seconds_to_time_chunks(uptime_seconds, &days, &hours, &minutes, &seconds);
     snprintf(buf, sizeof(buf), "Uptime: %02d:%02d:%02d:%02d", days, hours, minutes, seconds);
     lv_label_set_text(uptime_label, buf);
@@ -114,7 +114,7 @@ void info_ui_set_total_uptime_sec(uint32_t uptime_seconds)
     int hours;
     int minutes;
     int seconds;
-    
+
     seconds_to_time_chunks(uptime_seconds, &days, &hours, &minutes, &seconds);
     snprintf(buf, sizeof(buf), "Total uptime: %02d:%02d:%02d:%02d", days, hours, minutes, seconds);
     lv_label_set_text(runtime_label, buf);
@@ -127,7 +127,7 @@ void info_ui_set_wakeup_time_sec(uint64_t total_wake_time, uint32_t percent_used
     int hours;
     int minutes;
     int seconds;
-    
+
     seconds_to_time_chunks(total_wake_time, &days, &hours, &minutes, &seconds);
     snprintf(buf, sizeof(buf), "Screen on: %02d:%02d:%02d:%02d (%d%%)", days, hours, minutes, seconds, percent_used);
     lv_label_set_text(wake_time_label, buf);
@@ -141,22 +141,22 @@ void info_ui_set_time_to_inactive_sec(uint32_t time_left_seconds)
     lv_label_set_text(inactive_time_label, buf);
 }
 
-void info_ui_set_mac_addr(char* mac_str)
+void info_ui_set_mac_addr(char *mac_str)
 {
     lv_label_set_text(mac_addr_label, mac_str);
 }
 
-static void seconds_to_time_chunks(uint32_t time_seconds, int* days, int* hours, int* minutes, int* seconds)
+static void seconds_to_time_chunks(uint32_t time_seconds, int *days, int *hours, int *minutes, int *seconds)
 {
     int n = time_seconds;
     *days = n / (24 * 3600);
-  
+
     n = n % (24 * 3600);
     *hours = n / 3600;
-  
+
     n %= 3600;
     *minutes = n / 60 ;
-  
+
     n %= 60;
     *seconds = n;
 }

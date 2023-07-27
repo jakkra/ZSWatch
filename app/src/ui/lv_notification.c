@@ -3,7 +3,6 @@
 static void on_notifcation_closed(lv_event_t *e);
 void close_not_timer(lv_timer_t *timer);
 
-
 static lv_obj_t *mbox;
 static lv_obj_t *img_icon;
 static on_close_not_cb_t on_close_cb;

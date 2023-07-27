@@ -7,7 +7,6 @@
 #ifndef LV_LIB_100ASK_CONF_INTERNAL_H
 #define LV_LIB_100ASK_CONF_INTERNAL_H
 
-
 /*LV_100ASK_PINYIN_IME*/
 #ifndef LV_USE_100ASK_PINYIN_IME
 #  ifdef CONFIG_LV_USE_100ASK_PINYIN_IME
@@ -82,7 +81,6 @@
 #  endif
 #endif
 
-
 /*LV_100ASK_SKETCHPAD*/
 #ifndef LV_USE_100ASK_SKETCHPAD
 #  ifdef CONFIG_LV_USE_100ASK_SKETCHPAD
@@ -116,7 +114,6 @@
 #  endif
 #endif
 
-
 /*LV_100ASK_CALC*/
 #ifndef LV_USE_100ASK_CALC
 #  ifdef CONFIG_LV_USE_100ASK_CALC
@@ -149,7 +146,6 @@
 #    define LV_100ASK_CALC_SIMPLE_TEST          0
 #  endif
 #endif
-
 
 /*LV_100ASK_MEMORY_GAME*/
 #ifndef LV_USE_100ASK_MEMORY_GAME
@@ -200,7 +196,6 @@
 #    define LV_100ASK_2048_MATRIX_SIZE          4
 #  endif
 #endif
-
 
 #ifndef LV_100ASK_2048_SIMPLE_TEST
 #  ifdef CONFIG_LV_100ASK_2048_SIMPLE_TEST
@@ -276,15 +271,14 @@
 #  endif
 #endif
 
-
 #if LV_USE_100ASK_FILE_EXPLORER
-    #ifndef LV_100ASK_NES_SIMPLE_TEST
-        #ifdef CONFIG_LV_100ASK_NES_SIMPLE_TEST
-            #define LV_100ASK_NES_SIMPLE_TEST CONFIG_LV_100ASK_NES_SIMPLE_TEST
-        #else
-            #define LV_100ASK_NES_SIMPLE_TEST          0
-        #endif
-    #endif
+#ifndef LV_100ASK_NES_SIMPLE_TEST
+#ifdef CONFIG_LV_100ASK_NES_SIMPLE_TEST
+#define LV_100ASK_NES_SIMPLE_TEST CONFIG_LV_100ASK_NES_SIMPLE_TEST
+#else
+#define LV_100ASK_NES_SIMPLE_TEST          0
+#endif
+#endif
 #endif
 
 #endif /*LV_LIB_100ASK_CONF_INTERNAL_H*/

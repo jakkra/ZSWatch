@@ -13,9 +13,7 @@ static lv_obj_t *acc_x_label;
 static lv_obj_t *acc_y_label;
 static lv_obj_t *acc_z_label;
 
-
 static on_close_cb_t close_callback;
-
 
 void accel_ui_show(lv_obj_t *root, on_close_cb_t close_cb)
 {

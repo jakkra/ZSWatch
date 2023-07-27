@@ -208,7 +208,6 @@ int ble_comm_short_connection_interval(void)
 
     LOG_DBG("Set short conection interval");
 
-
     err = bt_conn_le_param_update(current_conn, &param);
     if (err && err != -EALREADY) {
         LOG_WRN("bt_conn_le_param_update failed: %d", err);

@@ -16,7 +16,6 @@ Inspiration:
 https://github.com/MikroElektronika/HEXIWEAR/blob/master/SW/FTF/HEXIWEAR_OLED_sensors_RTOS/Sources/apps/heartRate/src/heartRate_driver.c
 */
 
-
 static const struct device *const hr_dev = DEVICE_DT_GET_ANY(maxim_max30101);
 
 int heart_rate_sensor_init(void)

@@ -113,7 +113,6 @@ static void add_clock(lv_obj_t *parent)
     lv_meter_set_scale_ticks(clock_meter, scale_min, 61, 1, 10, lv_palette_main(LV_PALETTE_BLUE_GREY));
     lv_meter_set_scale_range(clock_meter, scale_min, 0, 60, 360, 270);
 
-
     lv_obj_add_event_cb(clock_meter, tick_draw_event_cb, LV_EVENT_DRAW_PART_BEGIN, NULL);
     lv_obj_remove_style(clock_meter, NULL, LV_PART_INDICATOR);
 

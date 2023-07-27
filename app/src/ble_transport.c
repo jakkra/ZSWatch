@@ -4,7 +4,6 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/logging/log.h>
 
-
 LOG_MODULE_REGISTER(ble_transport, LOG_LEVEL_DBG);
 
 static struct ble_transport_cb *callbacks;

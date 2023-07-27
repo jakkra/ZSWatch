@@ -294,7 +294,7 @@ void application_manager_app_close_request(application_t *app)
     application_manager_exit_app();
 }
 
-void application_manager_set_index(int index) 
+void application_manager_set_index(int index)
 {
     if (index >= 0 && index < num_apps) {
         last_index = index;

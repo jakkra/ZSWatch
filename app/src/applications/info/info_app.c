@@ -47,7 +47,7 @@ static void info_app_start(lv_obj_t *root, lv_group_t *group)
     bt_id_get(&local_addr, &addr_count);
     bt_addr_le_to_str(&local_addr, addr, sizeof(addr));
     info_ui_set_mac_addr(addr);
-    
+
     refresh_timer = lv_timer_create(timer_callback, INFO_REFRESH_INTERVAL_MS,  NULL);
 }
 

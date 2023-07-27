@@ -7,11 +7,9 @@
 #include <ble_comm.h>
 #include <zephyr/zbus/zbus.h>
 
-
 // Functions needed for all applications
 static void music_control_app_start(lv_obj_t *root, lv_group_t *group);
 static void music_control_app_stop(void);
-
 
 static void timer_callback(lv_timer_t *timer);
 static void on_music_ui_evt_music(music_control_ui_evt_type_t evt_type);

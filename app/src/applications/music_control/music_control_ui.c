@@ -106,10 +106,8 @@ static void create_buttons(lv_obj_t *parent)
     // To get correct order when navigating the music control buttons they need to be removed and
     // re-add in the order we want.
 
-
     lv_group_focus_obj(play_pause_button);
 }
-
 
 void music_control_ui_show(lv_obj_t *root, on_music_control_ui_event_cb_t evt_cb)
 {

@@ -153,14 +153,26 @@ static void lis2mdl_trigger_handler(const struct device *dev,
             sensor_value_to_double(&die_temp2));
 
     if (is_calibrating) {
-        if (last_x < min_x) min_x = last_x;
-        if (last_x > max_x) max_x = last_x;
+        if (last_x < min_x) {
+            min_x = last_x;
+        }
+        if (last_x > max_x) {
+            max_x = last_x;
+        }
 
-        if (last_y < min_y) min_y = last_y;
-        if (last_y > max_y) max_y = last_y;
+        if (last_y < min_y) {
+            min_y = last_y;
+        }
+        if (last_y > max_y) {
+            max_y = last_y;
+        }
 
-        if (last_z < min_z) min_z = last_z;
-        if (last_z > max_z) max_z = last_z;
+        if (last_z < min_z) {
+            min_z = last_z;
+        }
+        if (last_z > max_z) {
+            max_z = last_z;
+        }
     }
 
     last_x = last_x - offset_x;
@@ -168,7 +180,6 @@ static void lis2mdl_trigger_handler(const struct device *dev,
     last_z = last_z - offset_z;
 
     last_heading = xyz_to_rotation(last_x, last_y, last_z);
-
 
     LOG_DBG("Rotation: %f", last_heading);
 }

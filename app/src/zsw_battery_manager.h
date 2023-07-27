@@ -22,6 +22,4 @@
 */
 int zsw_battery_manager_sample_battery(int *mV, int *percent);
 
-
 #endif // __ZSW_BATTERY_MANAGER_H_
-

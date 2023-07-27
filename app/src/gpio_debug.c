@@ -44,8 +44,6 @@ static struct gpio_dt_spec watch_gpios[] = {
 
 static uint8_t pinDefaultState[ARRAY_SIZE(watch_gpios)];
 
-
-
 void gpio_debug_init(void)
 {
     int ret;

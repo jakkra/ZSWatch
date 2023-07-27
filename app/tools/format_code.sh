@@ -8,4 +8,5 @@ astyle \
 --exclude=src/images \
 --exclude=src/ext_drivers \
 --exclude=drivers/kscan \
+--exclude=src/applications/2048/2048_lib \
 $1 $2 $3 # addtional args such as --dry-run etc.

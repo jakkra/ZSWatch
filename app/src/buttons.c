@@ -31,13 +31,11 @@ static buttons_t buttons[NUM_BUTTONS] = {
     [BUTTON_BOTTOM_LEFT] = { .btn = GPIO_DT_SPEC_GET_OR(DT_ALIAS(sw_bottom_left), gpios, {0}) }
 };
 
-
 static buttonHandlerCallback_t callback;
 static struct k_sem btnSem;
 static uint8_t pressed_button_id;
 
 K_THREAD_DEFINE(buttonThreadId, STACKSIZE, handleButtonThread, NULL, NULL, NULL, PRIORITY, 0, K_TICKS_FOREVER);
-
 
 void buttonsInit(buttonHandlerCallback_t handler)
 {

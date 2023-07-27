@@ -11,7 +11,6 @@ LOG_MODULE_REGISTER(zsw_charger, LOG_LEVEL_ERR);
 
 ZBUS_CHAN_DECLARE(chg_state_data_chan);
 
-
 #define CHECK_CHG_INTERVAL_MS  2500
 
 typedef enum {

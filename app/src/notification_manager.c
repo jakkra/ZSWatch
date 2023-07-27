@@ -4,7 +4,6 @@
 #define NOTIFICATION_INVALID_ID             0xFFFFFFFF
 #define NOTIFICATION_INVALID_INDEX          0xFFFFFFFF
 
-
 static uint32_t find_free_notification_idx(void);
 static uint32_t find_notification_idx(uint32_t id);
 static uint32_t find_oldest_notification_idx(void);
