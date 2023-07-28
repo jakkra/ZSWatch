@@ -24,11 +24,14 @@ Smartwatch built from scratch, both hardware and software. Built on the [Zephyrâ
 
 [https://user-images.githubusercontent.com/64562059/234390129-321d4f35-cb4b-45e8-89d9-20ae292f34fc.mp4](https://github.com/jakkra/ZSWatch/assets/4318648/8d0f40c2-d519-4db1-8634-b43caa502cbe)
 
-<br/>
+<p align="center" >
+  <a href="https://www.youtube.com/watch?v=MmCzV0jV9hs"><img width="55%" src=".github/presentation.png" ></a>
+</p>
+<p align="center">Watch my presentation at Zephyr Developer Summit 2023</p>
 
 
 ## Building or getting one
-I have received quite some requests regarding building or getting the ZSWatch, I am very close to finish with v2. If you want to get notified when I'm done with v2 then simply press the `Watch` button (next to Fork and Star) -> `Custom -> Releases` and you will see in your feed when it's released.
+I have received quite some requests regarding building or getting the ZSWatch, the hardware is done and you can now build it yourself. However I may do some smaller changes before I call it done and officially "release" it. If you want to get notified when I'm "releasing" it, then simply press the `Watch` button (next to Fork and Star) -> `Custom -> Releases` and you will see in your feed when it's released.
 <br/>
 **Or** you can fill in your **[mail here (Google form)](https://forms.gle/G48Sm5zDe9aCaYtT9)** and I'll send a reminder when it's ready (or if I decide to make a few kits, who knows).
 <br/>
@@ -52,10 +55,10 @@ I have received quite some requests regarding building or getting the ZSWatch, I
 ## Hardware features
 - nRF5340 BLE chip (u-blox NORA-B10 module).
   - 128 MHz Dual core.
-  - 512 KB RAM (Will allow double buffered of data to the screen and larger framebuffers to decrease lag/tearing).
+  - 512 KB RAM.
   - 1 MB Flash.
   - 30 MHz SPI for display.
-- **Touch screen** with [240x240 round disply](https://www.buydisplay.com/240x240-round-ips-tft-lcd-display-1-28-inch-capactive-touch-circle-screen)
+- [240x240 round display](https://www.buydisplay.com/240x240-round-ips-tft-lcd-display-1-28-inch-capactive-touch-circle-screen) with touch screen.
 - IMU [Bosch BMI270](https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmi270-ds000.pdf), with this one it's possible to do many fancy things such as navigation using gestures and the typical smartwatch wakeup by moving the arm so the display is viewable.
 - Bosch [BME688](https://www.bosch-sensortec.com/products/environmental-sensors/gas-sensors/bme688/) Environmental sensor with AI.
 - Bosch [BMP581](https://www.bosch-sensortec.com/products/environmental-sensors/pressure-sensors/bmp581/) High performance pressure sensor accuracy in units of ~20cm's.
@@ -65,7 +68,7 @@ I have received quite some requests regarding building or getting the ZSWatch, I
 
 ## Charger/Dock
 PCB done, casing to be designed. Idea is that watch will sit on top.
-Built in debugger. Will be an option without debugger also (requires licence).
+Built in debugger. Will be an option without debugger also  (requires licence).
 <p float="left">
 <img src=".github/dock.jpg" width="65%"/>
 </p>
@@ -131,7 +134,9 @@ https://github.com/jakkra/ZSWatch/assets/4318648/8d8ec724-8145-4a30-b241-e69a8c2
 See [GETTING_STARTED.md](GETTING_STARTED.md)
 
 ## Writing apps for the Application Manager
-Check out [the sample application](app/src/applications/1template/) for the general app design. The main idea is each app have an `<app_name>_app.c` file which registers the app, chooses icon and drives the logic for the app. Then there should be one or more files named for example `<app_name>_ui.c` containing pure LVGL code with no dependencies to Zephyr or the watch software. The idea is that this UI code should be runnable in a LVGL simulator to speed up development of UI, however right now that's not set up yet. The `<app_name>_app.c` will do all logic and call functions in `<app_name>_ui.c` to update the UI accordingly. 
+I recommend watching [this part](https://youtu.be/MmCzV0jV9hs?t=1398) of my presentation at Zephyr Developer Summit where I build a sample app.
+
+Check out [the sample application](app/src/applications/template/) for the general app design. The main idea is each app have an `<app_name>_app.c` file which registers the app, chooses icon and drives the logic for the app. Then there should be one or more files named for example `<app_name>_ui.c` containing pure LVGL code with no dependencies to Zephyr or the watch software. The idea is that this UI code should be runnable in a LVGL simulator to speed up development of UI, however right now that's not set up yet. The `<app_name>_app.c` will do all logic and call functions in `<app_name>_ui.c` to update the UI accordingly. 
 
 Each application needs to have a way to close itself, for example a button, and then through callback tell the `application_manager.c` to close the app:
 
