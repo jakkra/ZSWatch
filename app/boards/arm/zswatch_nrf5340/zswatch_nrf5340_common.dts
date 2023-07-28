@@ -16,6 +16,7 @@
         zephyr,ieee802154 = &ieee802154;
         zephyr,display = &gc9a01;
         zephyr,keyboard-scan = &cst816s;
+        nordic,pm-ext-flash = &at25sl128a;
     };
 
     buttons {
@@ -197,6 +198,30 @@
 	};
 };
 
+&spi3  {
+    status = "okay";
+    compatible = "nordic,nrf-spim";
+    pinctrl-0 = <&spi3_default>;
+    pinctrl-1 = <&spi3_sleep>;
+    pinctrl-names = "default", "sleep";
+    cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+    at25sl128a: at25sl128a@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		status = "okay";
+		spi-max-frequency = <10000000>;
+		jedec-id = [ 1f 42 18];
+		size = <DT_SIZE_M(16*8)>;
+		has-dpd;
+        // CS High to Power-Down Mode (tDP) - 3 us
+        // Rev. S Table 26. AC Electrical Characteristic
+		t-enter-dpd = <3000>;
+        // CS High to Standby Mode without Electronic Signature Read (tRES1) 3 us
+        // Rev. S Table 26. AC Electrical Characteristic
+		t-exit-dpd = <3000>;
+	};
+
+};
 &spi4  {
     status = "okay";
     compatible = "nordic,nrf-spim";
