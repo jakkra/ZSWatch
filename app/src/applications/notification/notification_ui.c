@@ -1,20 +1,17 @@
-#include <notifications_page.h>
+#include <notification/notification_ui.h>
 #include <lvgl.h>
 
-static void close_button_pressed(lv_event_t *e);
 static void not_button_pressed(lv_event_t *e);
 static void scroll_event_cb(lv_event_t *e);
 static void build_notification_entry(lv_obj_t *parent, not_mngr_notification_t *not, lv_group_t *input_group);
 
-static on_notification_page_closed_cb_t closed_callback;
 static on_notification_remove_cb_t not_removed_callback;
 
 static lv_obj_t *main_page;
 static lv_group_t *group;
 
-void notifications_page_init(on_notification_page_closed_cb_t closed_cb, on_notification_remove_cb_t not_removed_cb)
+void notifications_page_init(on_notification_remove_cb_t not_removed_cb)
 {
-    closed_callback = closed_cb;
     not_removed_callback = not_removed_cb;
 }
 
@@ -39,17 +36,6 @@ void notifications_page_create(not_mngr_notification_t *notifications, uint8_t n
     for (int i = 0; i < num_notifications; i++) {
         build_notification_entry(main_page, &notifications[i], input_group);
     }
-
-    lv_obj_t *float_btn = lv_btn_create(main_page);
-    lv_obj_set_size(float_btn, 50, 50);
-    lv_obj_add_flag(float_btn, LV_OBJ_FLAG_FLOATING);
-    lv_obj_align(float_btn, LV_ALIGN_BOTTOM_RIGHT, 0, -lv_obj_get_style_pad_right(main_page, LV_PART_MAIN));
-    lv_obj_add_event_cb(float_btn, close_button_pressed, LV_EVENT_PRESSED, main_page);
-    lv_obj_set_style_radius(float_btn, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_bg_img_src(float_btn, LV_SYMBOL_CLOSE, 0);
-    lv_obj_set_style_text_font(float_btn, lv_theme_get_font_large(float_btn), 0);
-
-    lv_group_focus_obj(float_btn);
 
     /* Update the notifications position manually firt time */
     lv_event_send(main_page, LV_EVENT_SCROLL, NULL);
@@ -110,12 +96,6 @@ static void not_button_pressed(lv_event_t *e)
 {
     lv_obj_del(lv_event_get_target(e));
     not_removed_callback((uint32_t)lv_event_get_user_data(e));
-}
-
-static void close_button_pressed(lv_event_t *e)
-{
-    lv_obj_del(main_page);
-    closed_callback();
 }
 
 static void scroll_event_cb(lv_event_t *e)

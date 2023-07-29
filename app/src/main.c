@@ -24,7 +24,6 @@
 #include <ble_aoa.h>
 #include <lv_notifcation.h>
 #include <notification_manager.h>
-#include <notifications_page.h>
 #include <vibration_motor.h>
 #include <display_control.h>
 #include <applications/application_manager.h>
@@ -60,7 +59,6 @@ static void run_init_work(struct k_work *item);
 
 static void run_wdt_work(struct k_work *item);
 static void enable_bluetoth(void);
-static void open_notifications_page(void *unused);
 static bool load_retention_ram(void);
 static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
 static void click_feedback(struct _lv_indev_drv_t *drv, uint8_t e);
@@ -69,8 +67,6 @@ static void ble_data_cb(ble_comm_cb_data_t *cb);
 static void open_notification_popup(void *data);
 static void async_turn_off_buttons_allocation(void *unused);
 static void on_popup_notifcation_closed(uint32_t id);
-static void on_notification_page_close(void);
-static void on_notification_page_notification_close(uint32_t not_id);
 static void zbus_ble_comm_data_callback(const struct zbus_channel *chan);
 
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
@@ -102,7 +98,6 @@ static void run_init_work(struct k_work *item)
 
     load_retention_ram();
     heart_rate_sensor_init();
-    notifications_page_init(on_notification_page_close, on_notification_page_notification_close);
     notification_manager_init();
     enable_bluetoth();
     zsw_imu_init();
@@ -234,17 +229,6 @@ static void open_notification_popup(void *data)
     }
 }
 
-static void open_notifications_page(void *unused)
-{
-    not_mngr_notification_t notifications[NOTIFICATION_MANAGER_MAX_STORED];
-    int num_unread = 0;
-    watchface_app_stop();
-    buttons_allocated = true;
-    watch_state = NOTIFCATION_LIST_STATE;
-    notification_manager_get_all(notifications, &num_unread);
-    notifications_page_create(notifications, num_unread, input_group);
-}
-
 static void open_application_manager_page(void *unused)
 {
     watchface_app_stop();
@@ -290,19 +274,6 @@ static void on_popup_notifcation_closed(uint32_t id)
     // TODO send to phone that the notification was read.
     notification_manager_remove(id);
     lv_async_call(async_turn_off_buttons_allocation, NULL);
-}
-
-static void on_notification_page_close(void)
-{
-    lv_async_call(async_turn_off_buttons_allocation, NULL);
-    watch_state = WATCHFACE_STATE;
-    watchface_app_start(input_group);
-}
-
-static void on_notification_page_notification_close(uint32_t not_id)
-{
-    // TODO send to phone that the notification was read.
-    notification_manager_remove(not_id);
 }
 
 static void on_close_application_manager(void)
@@ -354,9 +325,6 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
         if (id == BUTTON_TOP_LEFT) {
             LOG_DBG("Close Watchface, open App Manager");
             lv_async_call(open_application_manager_page, NULL);
-        } else if (id == BUTTON_BOTTOM_RIGHT) {
-            LOG_DBG("CloseWatchface, open Notifications page");
-            lv_async_call(open_notifications_page, NULL);
         } else {
             LOG_WRN("Unhandled button %d, type: %d, watch_state: %d", id, type, watch_state);
         }
@@ -430,13 +398,13 @@ static void screen_gesture_event(lv_event_t *e)
                     application_manager_show(on_close_application_manager, lv_scr_act(), input_group, NULL);
                     break;
                 case LV_DIR_TOP:
-                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "Music");
+                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "Settings");
                     break;
                 case LV_DIR_RIGHT:
-                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "QR Code");
+                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "Music");
                     break;
                 case LV_DIR_LEFT:
-                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "Sensors");
+                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "Notification");
                     break;
                 default:
                     break;
@@ -512,11 +480,6 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
                 if (watch_state == APPLICATION_MANAGER_STATE) {
                     application_manager_delete();
                     application_manager_set_index(0);
-                    buttons_allocated = false;
-                    watch_state = WATCHFACE_STATE;
-                    watchface_app_start(input_group);
-                } else if (watch_state == NOTIFCATION_STATE) {
-                    notifications_page_close();
                     buttons_allocated = false;
                     watch_state = WATCHFACE_STATE;
                     watchface_app_start(input_group);
