@@ -15,6 +15,7 @@ static void async_app_close(lv_timer_t *timer);
 
 static application_t *apps[MAX_APPS];
 static uint8_t num_apps;
+static uint8_t num_visible_apps;
 static uint8_t current_app;
 static lv_obj_t *root_obj;
 static lv_group_t *group_obj;
@@ -37,7 +38,7 @@ static void row_focused(lv_event_t *e)
     int app_id = (int)lv_event_get_user_data(e);
     if (row && lv_obj_get_child_cnt(row) > 0) {
         // Don't show close button as last focused row
-        if (app_id != num_apps) {
+        if (apps[app_id]->private_list_index != num_visible_apps - 1) {
             last_index = app_id;
         }
         lv_obj_t *title_label = lv_obj_get_user_data(row);
@@ -218,21 +219,25 @@ static void draw_application_picker(void)
 
     for (int i = 0; i < num_apps; i++) {
         LOG_DBG("Apps[%d]: %s", i, apps[i]->name);
-        entry = create_application_list_entry(grid, apps[i]->icon, apps[i]->name, i);
-        lv_obj_add_event_cb(entry, app_clicked, LV_EVENT_CLICKED, (void *)i);
+        if (!apps[i]->hidden) {
+            entry = create_application_list_entry(grid, apps[i]->icon, apps[i]->name, i);
+            lv_obj_add_event_cb(entry, app_clicked, LV_EVENT_CLICKED, (void *)i);
+        }
     }
 
+    LOG_ERR("%d, %d, %d", num_apps, num_visible_apps, 0);
+
     LV_IMG_DECLARE(close_icon);
-    entry = create_application_list_entry(grid, &close_icon, "Close", num_apps);
+    entry = create_application_list_entry(grid, &close_icon, "Close", num_visible_apps);
     lv_obj_add_event_cb(entry, app_manager_close_button_pressed, LV_EVENT_CLICKED, NULL);
 
-    lv_group_focus_obj(lv_obj_get_child(grid, last_index));
+    lv_group_focus_obj(lv_obj_get_child(grid, apps[last_index]->private_list_index));
 
     /* Update the notifications position manually firt time */
     lv_event_send(grid, LV_EVENT_SCROLL, NULL);
 
     /* Be sure the fist notification is in the middle */
-    lv_obj_scroll_to_view(lv_obj_get_child(grid, last_index), LV_ANIM_OFF);
+    lv_obj_scroll_to_view(lv_obj_get_child(grid, apps[last_index]->private_list_index), LV_ANIM_OFF);
 }
 
 int application_manager_show(on_application_manager_cb_fn close_cb, lv_obj_t *root, lv_group_t *group, char *app_name)
@@ -252,7 +257,9 @@ int application_manager_show(on_application_manager_cb_fn close_cb, lv_obj_t *ro
             if (strcmp(apps[i]->name, app_name) == 0) {
                 app_launch_only = true;
                 current_app = i;
-                last_index = i;
+                if (!apps[i]->hidden) {
+                    last_index = i;
+                }
                 lv_timer_t *timer = lv_timer_create(async_app_start, 1,  NULL);
                 lv_timer_set_repeat_count(timer, 1);
             }
@@ -280,6 +287,10 @@ void application_manager_add_application(application_t *app)
     __ASSERT_NO_MSG(num_apps < MAX_APPS);
     apps[num_apps] = app;
     num_apps++;
+    if (!app->hidden) {
+        app->private_list_index = num_visible_apps;
+        num_visible_apps++;
+    }
 }
 
 void application_manager_exit_app(void)
@@ -296,11 +307,16 @@ void application_manager_app_close_request(application_t *app)
 
 void application_manager_set_index(int index)
 {
-    if (index >= 0 && index < num_apps) {
-        last_index = index;
+    __ASSERT_NO_MSG(index >= 0 && index < num_apps);
+
+    for (int i = 0; i < num_apps; i++) {
+        if (!apps[i]->hidden) {
+            last_index = i;
+        }
     }
+
     if (grid) {
-        lv_group_focus_obj(lv_obj_get_child(grid, last_index));
+        lv_group_focus_obj(lv_obj_get_child(grid, apps[last_index]->private_list_index));
     }
 }
 

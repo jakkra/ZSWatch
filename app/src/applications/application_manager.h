@@ -12,6 +12,8 @@ typedef struct application_t {
     application_stop_fn     stop_func;
     char                   *name;
     const lv_img_dsc_t     *icon;
+    bool                    hidden;
+    uint8_t                 private_list_index;
 } application_t;
 
 int application_manager_show(on_application_manager_cb_fn close_cb, lv_obj_t *root, lv_group_t *group, char *app_name);
