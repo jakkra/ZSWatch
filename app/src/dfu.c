@@ -26,13 +26,9 @@ static int32_t img_mgmt_event(uint32_t evt_no,
 		//return MGMT_ERR_EACCESSDENIED;
 		break;
 	case MGMT_EVT_OP_IMG_MGMT_DFU_STARTED:
-		ble_comm_short_connection_interval();
-		break;
 	case MGMT_EVT_OP_IMG_MGMT_DFU_STOPPED:
 	case MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED:
 	case MGMT_EVT_OP_IMG_MGMT_DFU_PENDING:
-		ble_comm_long_connection_interval();
-		break;
 	default:
 		break;
 	}
@@ -44,7 +40,7 @@ static int32_t img_mgmt_event(uint32_t evt_no,
  * @brief Callback struct for img mgmt
  *
  */
-static struct mgmt_callback img_mgmt_cb = {.node = NULL,
+static struct mgmt_callback img_mgmt_cb = {.node = {NULL},
 						.callback = img_mgmt_event,
 						/** Process all img events **/
 						.event_id = MGMT_EVT_OP_IMG_MGMT_ALL};

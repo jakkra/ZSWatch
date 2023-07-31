@@ -220,10 +220,10 @@ int ble_comm_long_connection_interval(void)
 {
     int err;
     struct bt_le_conn_param param = {
-        .interval_min = BLE_COMM_LONG_INT_MIN,
-        .interval_max = BLE_COMM_LONG_INT_MAX,
-        .latency = 0,
-        .timeout = 500,
+        .interval_min = CONFIG_BT_PERIPHERAL_PREF_MIN_INT,
+        .interval_max = CONFIG_BT_PERIPHERAL_PREF_MAX_INT,
+        .latency = CONFIG_BT_PERIPHERAL_PREF_LATENCY,
+        .timeout = CONFIG_BT_PERIPHERAL_PREF_TIMEOUT,
     };
 
     LOG_DBG("Set long conection interval");
