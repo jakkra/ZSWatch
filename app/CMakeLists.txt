@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.20.0)
 
-set(PM_STATIC_YML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/partition.yml)
+if(NOT ${BOARD} STREQUAL "native_posix")
+	set(PM_STATIC_YML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/partition.yml)
+	set(OVERLAY_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/boards/dfu.conf)
+endif()
+
 set(mcuboot_DTC_OVERLAY_FILE ${CMAKE_CURRENT_SOURCE_DIR}/overlays/mcuboot.overlay)
 set(BOARD_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
