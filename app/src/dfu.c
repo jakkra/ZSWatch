@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
-#include "ble_comm.h"
+#include <zephyr/init.h>
 
 static int32_t img_mgmt_event(uint32_t evt_no,
 					int32_t rc,
@@ -35,7 +35,6 @@ static int32_t img_mgmt_event(uint32_t evt_no,
 	return MGMT_ERR_EOK;
 }
 
-
 /**
  * @brief Callback struct for img mgmt
  *
@@ -45,7 +44,11 @@ static struct mgmt_callback img_mgmt_cb = {.node = {NULL},
 						/** Process all img events **/
 						.event_id = MGMT_EVT_OP_IMG_MGMT_ALL};
 
-void dfu_init()
+static int dfu_init(void)
 {
 	mgmt_callback_register(&img_mgmt_cb);
+
+	return 0;
 }
+
+SYS_INIT(dfu_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
