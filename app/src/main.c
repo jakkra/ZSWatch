@@ -41,6 +41,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/fatal.h>
+#include "dfu.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
 
