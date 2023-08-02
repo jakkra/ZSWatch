@@ -1,10 +1,14 @@
 cmake_minimum_required(VERSION 3.20.0)
 
-if(${BOARD} STREQUAL "zswatch_nrf5340_cpuapp@2") # TODO Match regex matching any revision > 1
-    set(DFU_BUILD true)
-    set(PM_STATIC_YML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/partition.yml)
-    set(OVERLAY_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/boards/dfu.conf)
-    set(mcuboot_DTC_OVERLAY_FILE ${CMAKE_CURRENT_SOURCE_DIR}/overlays/mcuboot.overlay)
+string(REGEX MATCH "zswatch_nrf5340_cpuapp(_ns)?@([0-9]+)$" ZSWATCH_BOARD "${BOARD}")
+if(ZSWATCH_BOARD )
+    set(ZSWATCH_REV ${CMAKE_MATCH_2})
+    if(${ZSWATCH_REV} GREATER_EQUAL 2)
+        set(DFU_BUILD true)
+        set(PM_STATIC_YML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/partition.yml)
+        set(OVERLAY_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/boards/dfu.conf)
+        set(mcuboot_DTC_OVERLAY_FILE ${CMAKE_CURRENT_SOURCE_DIR}/overlays/mcuboot.overlay)       
+    endif()
 endif()
 
 set(BOARD_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
