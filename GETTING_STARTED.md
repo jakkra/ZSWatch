@@ -42,11 +42,12 @@ After setting up the environment using one of the two above options you can comp
 
 Building [with command line](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/getting_started/programming.html#building-on-the-command-line):
 
-`west build --board zswatch_nrf5340_cpuapp -- -DOVERLAY_CONFIG="{debug/release}.conf`
+`west build --board zswatch_nrf5340_cpuapp@1 -- -DOVERLAY_CONFIG="{debug/release}.conf`
 
 Compiling [from VSCode nRF Connect plugin](https://nrfconnect.github.io/vscode-nrf-connect/get_started/build_app_ncs.html):
 - Press "Add folder as Application". 
 - Choose `zswatch_nrf5340_cpuapp` as the board and nRF Connect SDK 2.4.0.
+- Set revision to 1 or 2 depending on what version of ZSWatch is used. If your watch is built before Aug. 1 2023 it's revision 1. Revision 2 adds external flash.
 - Press "Add fragment", here choose either debug (for develping) or release (for daily use).
 - Press Create Application
 
@@ -59,13 +60,14 @@ If you are building with Zephyr you need in addition manually compile and flash 
 To build the NET core image:
 Command line: 
 - Navigate to `zephyr/samples/bluetooth/hci_rpmsg`
-- Fill in "this_folder" in this command and run it `west build --board zswatch_nrf5340_cpunet -- -DBOARD_ROOT=this_folder/app  -DOVERLAY_CONFIG=nrf5340_cpunet_df-bt_ll_sw_split.conf`
+- Fill in "this_folder" in this command and run it `west build --board zswatch_nrf5340_cpunet@1 -- -DBOARD_ROOT=this_folder/app  -DOVERLAY_CONFIG=nrf5340_cpunet_df-bt_ll_sw_split.conf`
 - `west flash`
 - This only needs to be done once, unless you do a full erase or recover of the nRF5340, which you typically don't do.
 
 VScode:
 - Add `zephyr/samples/bluetooth/hci_rpmsg` as an application.
 - Select `zswatch_nrf5340_cpunet` as board (VSCode should pick this one up automatically if you added the ZSWatch application earlier).
+- Set revision to 1 or 2 depending on what version of ZSWatch is used. If your watch is built before Aug. 1 2023 it's revision 1. Revision 2 adds external flash.
 - Press `Add Fragment` and select the `nrf5340_cpunet_df-bt_ll_sw_split.conf`
 - Done, press `Build Configuration`.
 
