@@ -73,6 +73,7 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan);
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
 static void screen_gesture_event(lv_event_t *e);
 
+static void open_application_manager_page(void *app_name);
 static void on_close_application_manager(void);
 
 K_WORK_DELAYABLE_DEFINE(wdt_work, run_wdt_work);
@@ -230,12 +231,12 @@ static void open_notification_popup(void *data)
     }
 }
 
-static void open_application_manager_page(void *unused)
+static void open_application_manager_page(void *app_name)
 {
     watchface_app_stop();
     buttons_allocated = true;
     watch_state = APPLICATION_MANAGER_STATE;
-    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, NULL);
+    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, (char*)app_name);
 }
 
 static void play_press_vibration(void)
@@ -386,37 +387,31 @@ static void screen_gesture_event(lv_event_t *e)
     lv_event_code_t event = lv_event_get_code(e);
     if (event == LV_EVENT_GESTURE) {
         lv_dir_t  dir = lv_indev_get_gesture_dir(lv_indev_get_act());
-#ifdef __ZEPHYR__
-        LOG_WRN("EVENT_GESTURE dir: %d\n", dir);
-#endif
-        if (watch_state == WATCHFACE_STATE) {
-            watchface_app_stop();
-            buttons_allocated = true;
-            watch_state = APPLICATION_MANAGER_STATE;
 
+        if (watch_state == WATCHFACE_STATE) {
             switch (dir) {
                 case LV_DIR_BOTTOM:
-                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, NULL);
+                    open_application_manager_page(NULL);
                     break;
                 case LV_DIR_TOP:
-                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "Settings");
+                    open_application_manager_page("Settings");
                     break;
                 case LV_DIR_RIGHT:
-                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "Music");
+                    open_application_manager_page("Music");
                     break;
                 case LV_DIR_LEFT:
-                    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, "Notification");
+                    open_application_manager_page("Notification");
                     break;
                 default:
-                    break;
+                    __ASSERT_NO_MSG(0);
             }
+            lv_indev_wait_release(lv_indev_get_act());
         } else if (watch_state == APPLICATION_MANAGER_STATE && dir == LV_DIR_RIGHT) {
 #ifdef CONFIG_BOARD_NATIVE_POSIX
             // Until there is a better way to go back without access to buttons.
             application_manager_exit_app();
 #endif
         }
-        lv_indev_wait_release(lv_indev_get_act());
     }
 }
 
