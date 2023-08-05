@@ -272,6 +272,7 @@ void watchface_init(void)
 void watchface_show(void)
 {
     //lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x161B22), LV_PART_MAIN);
+    lv_obj_clear_flag(lv_scr_act(), LV_OBJ_FLAG_SCROLLABLE);
     root_page = lv_obj_create(lv_scr_act());
     watchface_ui_invalidate_cached();
 

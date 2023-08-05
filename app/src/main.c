@@ -22,7 +22,7 @@
 #include <zsw_imu.h>
 #include <ble_comm.h>
 #include <ble_aoa.h>
-#include <lv_notifcation.h>
+#include <zsw_popup_notifcation.h>
 #include <notification_manager.h>
 #include <vibration_motor.h>
 #include <display_control.h>
@@ -49,11 +49,8 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
 
 typedef enum ui_state {
     INIT_STATE,
-    SETTINGS_STATE,
     WATCHFACE_STATE,
     APPLICATION_MANAGER_STATE,
-    NOTIFCATION_STATE,
-    NOTIFCATION_LIST_STATE,
 } ui_state_t;
 
 static void run_init_work(struct k_work *item);
@@ -81,6 +78,8 @@ static int kernal_wdt_id;
 
 static bool buttons_allocated = false;
 static lv_group_t *input_group;
+static lv_group_t *temp_group;
+
 static lv_indev_drv_t enc_drv;
 static lv_indev_t *enc_indev;
 static buttonId_t last_pressed;
@@ -121,6 +120,7 @@ static void run_init_work(struct k_work *item)
     enc_indev = lv_indev_drv_register(&enc_drv);
 
     input_group = lv_group_create();
+    temp_group = lv_group_create();
     lv_group_set_default(input_group);
     lv_indev_set_group(enc_indev, input_group);
 
@@ -223,11 +223,11 @@ static void open_notification_popup(void *data)
 {
     not_mngr_notification_t *not = notification_manager_get_newest();
     if (not != NULL) {
+        lv_group_set_default(temp_group);
+        lv_indev_set_group(enc_indev, temp_group);
         play_not_vibration();
-        lv_notification_show(not->title, not->body, not->src, not->id, on_popup_notifcation_closed, 10);
+        zsw_notification_popup_show(not->title, not->body, not->src, not->id, on_popup_notifcation_closed, 10);
         buttons_allocated = true;
-    } else {
-        buttons_allocated = false;
     }
 }
 
@@ -236,7 +236,7 @@ static void open_application_manager_page(void *app_name)
     watchface_app_stop();
     buttons_allocated = true;
     watch_state = APPLICATION_MANAGER_STATE;
-    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, (char*)app_name);
+    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, (char *)app_name);
 }
 
 static void play_press_vibration(void)
@@ -270,12 +270,32 @@ static void play_not_vibration(void)
     vibrator_on = false;
 }
 
-static void on_popup_notifcation_closed(uint32_t id)
+static void close_popup_notification(lv_timer_t *timer)
 {
     // Notification was dismissed, hence consider it read.
     // TODO send to phone that the notification was read.
+    uint32_t id = (uint32_t)timer->user_data;
     notification_manager_remove(id);
-    lv_async_call(async_turn_off_buttons_allocation, NULL);
+
+    lv_group_set_default(input_group);
+    lv_indev_set_group(enc_indev, input_group);
+    if (watch_state == WATCHFACE_STATE) {
+        buttons_allocated = 0;
+    } else {
+        buttons_allocated = 1;
+    }
+}
+
+static void on_popup_notifcation_closed(uint32_t id)
+{
+    lv_timer_t *timer;
+    // Changing back input group directly here causes LVGL
+    // to not remove the notifcation for some reason.
+    // Maybe a bug, or something done wrong.
+    // Anyway doing it after a while instead seems to fix
+    // the problem.
+    timer = lv_timer_create(close_popup_notification, 100,  (void *)id);
+    lv_timer_set_repeat_count(timer, 1);
 }
 
 static void on_close_application_manager(void)
@@ -307,7 +327,9 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
         sys_reboot(SYS_REBOOT_COLD);
     }
 
-    if (id == BUTTON_BOTTOM_RIGHT && watch_state == APPLICATION_MANAGER_STATE) {
+    if (id == BUTTON_BOTTOM_RIGHT && zsw_notification_popup_is_shown()) {
+        zsw_notification_popup_remove();
+    } else if (id == BUTTON_BOTTOM_RIGHT && watch_state == APPLICATION_MANAGER_STATE) {
         application_manager_exit_app();
         return;
     }
@@ -388,7 +410,7 @@ static void screen_gesture_event(lv_event_t *e)
     if (event == LV_EVENT_GESTURE) {
         lv_dir_t  dir = lv_indev_get_gesture_dir(lv_indev_get_act());
 
-        if (watch_state == WATCHFACE_STATE) {
+        if (watch_state == WATCHFACE_STATE && !zsw_notification_popup_is_shown()) {
             switch (dir) {
                 case LV_DIR_BOTTOM:
                     open_application_manager_page(NULL);
@@ -406,6 +428,8 @@ static void screen_gesture_event(lv_event_t *e)
                     __ASSERT_NO_MSG(0);
             }
             lv_indev_wait_release(lv_indev_get_act());
+        } else if (zsw_notification_popup_is_shown()) {
+            zsw_notification_popup_remove();
         } else if (watch_state == APPLICATION_MANAGER_STATE && dir == LV_DIR_RIGHT) {
 #ifdef CONFIG_BOARD_NATIVE_POSIX
             // Until there is a better way to go back without access to buttons.
@@ -434,12 +458,13 @@ static void ble_data_cb(ble_comm_cb_data_t *cb)
             if (!parsed_not) {
                 return;
             }
-            if (buttons_allocated) {
+
+            if (zsw_notification_popup_is_shown()) {
                 return;
             }
+
             zsw_power_manager_reset_idle_timout();
 
-            buttons_allocated = true;
             lv_async_call(open_notification_popup, NULL);
             break;
 

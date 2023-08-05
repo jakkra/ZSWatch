@@ -1,4 +1,4 @@
-#include <lv_notifcation.h>
+#include <zsw_popup_notifcation.h>
 
 static void on_notifcation_closed(lv_event_t *e);
 void close_not_timer(lv_timer_t *timer);
@@ -13,13 +13,12 @@ LV_IMG_DECLARE(messenger);
 LV_IMG_DECLARE(gmail);
 LV_IMG_DECLARE(notification);
 
-void lv_notification_show(char *title, char *body, notification_src_t icon, uint32_t id, on_close_not_cb_t close_cb,
+void zsw_notification_popup_show(char *title, char *body, notification_src_t icon, uint32_t id, on_close_not_cb_t close_cb,
                           uint32_t close_after_seconds)
 {
     active_not_id = id;
     on_close_cb = close_cb;
     mbox = lv_msgbox_create(lv_scr_act(), title, body, NULL, true);
-    lv_obj_set_scrollbar_mode(lv_scr_act(), LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_scrollbar_mode(mbox, LV_SCROLLBAR_MODE_OFF);
     lv_obj_t *close_btn = lv_msgbox_get_close_btn(mbox);
     lv_obj_add_event_cb(close_btn, on_notifcation_closed, LV_EVENT_PRESSED, NULL);
@@ -40,6 +39,7 @@ void lv_notification_show(char *title, char *body, notification_src_t icon, uint
     lv_style_set_text_color(&color_style, lv_color_hex(0xFE4644));
     lv_style_set_bg_color(&color_style, lv_palette_main(LV_PALETTE_BLUE_GREY));
     lv_obj_add_style(close_btn, &color_style, 0);
+    lv_group_focus_obj(close_btn);
 
     lv_obj_t *title_label = lv_msgbox_get_title(mbox);
     lv_obj_align(title_label, LV_ALIGN_CENTER, 65, -100);
@@ -70,15 +70,23 @@ void lv_notification_show(char *title, char *body, notification_src_t icon, uint
     lv_timer_set_repeat_count(auto_close_timer, 1);
 }
 
-void lv_notification_remove(void)
+void zsw_notification_popup_remove(void)
 {
+    lv_timer_del(auto_close_timer);
     if (mbox) {
         lv_msgbox_close(mbox);
+        mbox = NULL;
     }
     if (img_icon) {
         lv_obj_del(img_icon);
+        img_icon = NULL;
     }
-    img_icon = NULL;
+    on_close_cb(active_not_id);
+}
+
+bool zsw_notification_popup_is_shown(void)
+{
+    return mbox != NULL;
 }
 
 static void on_notifcation_closed(lv_event_t *e)
@@ -94,6 +102,6 @@ static void on_notifcation_closed(lv_event_t *e)
 
 void close_not_timer(lv_timer_t *timer)
 {
-    lv_notification_remove();
+    zsw_notification_popup_remove();
     on_close_cb(0);
 }
