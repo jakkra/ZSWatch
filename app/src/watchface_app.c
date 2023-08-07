@@ -52,7 +52,6 @@ ZBUS_LISTENER_DEFINE(watchface_activity_state_event, zbus_activity_event_callbac
 #define WORK_PRIORITY   5
 
 #define RENDER_INTERVAL_LVGL    K_MSEC(100)
-#define ACCEL_INTERVAL          K_MSEC(100)
 #define DATE_UPDATE_INTERVAL    K_MINUTES(1)
 
 typedef enum work_type {
@@ -120,7 +119,7 @@ void watchface_app_stop(void)
     watchface_remove();
 }
 
-static void refreash_ui(void)
+static void refresh_ui(void)
 {
     uint32_t steps;
     watchface_set_ble_connected(is_connected);
@@ -272,7 +271,7 @@ static void zbus_activity_event_callback(const struct zbus_channel *chan)
         } else if (event->state == ZSW_ACTIVITY_STATE_ACTIVE) {
             is_suspended = false;
             watchface_ui_invalidate_cached();
-            refreash_ui();
+            refresh_ui();
             __ASSERT(0 <= k_work_schedule(&clock_work.work, K_NO_WAIT), "FAIL clock_work");
             __ASSERT(0 <= k_work_schedule(&date_work.work, K_SECONDS(1)), "FAIL clock_work");
         }

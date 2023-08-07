@@ -10,7 +10,7 @@
 /**
  * @brief Initialize Device firmware upgrade functionality
  * @details Registers callback to manage image upload
- * 
+ *
  */
 void dfu_init();
 

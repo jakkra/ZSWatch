@@ -13,8 +13,9 @@ LV_IMG_DECLARE(messenger);
 LV_IMG_DECLARE(gmail);
 LV_IMG_DECLARE(notification);
 
-void zsw_notification_popup_show(char *title, char *body, notification_src_t icon, uint32_t id, on_close_not_cb_t close_cb,
-                          uint32_t close_after_seconds)
+void zsw_notification_popup_show(char *title, char *body, notification_src_t icon, uint32_t id,
+                                 on_close_not_cb_t close_cb,
+                                 uint32_t close_after_seconds)
 {
     active_not_id = id;
     on_close_cb = close_cb;
