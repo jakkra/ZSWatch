@@ -10,7 +10,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/logging/log.h>
 #include <lvgl.h>
-#include <clock.h>
+#include <zsw_clock.h>
 #include <heart_rate_sensor.h>
 #include <zsw_imu.h>
 #include <vibration_motor.h>
@@ -142,20 +142,17 @@ void general_work(struct k_work *item)
             running = true;
             is_suspended = false;
             watchface_show();
-            refreash_ui();
+            refresh_ui();
 
             __ASSERT(0 <= k_work_schedule(&clock_work.work, K_NO_WAIT), "FAIL clock_work");
             __ASSERT(0 <= k_work_schedule(&date_work.work, K_SECONDS(1)), "FAIL clock_work");
             break;
         }
         case UPDATE_CLOCK: {
-            struct tm *time = clock_get_time();
+            struct tm *time = zsw_clock_get_time();
             LOG_INF("%d, %d, %d\n", time->tm_hour, time->tm_min, time->tm_sec);
             watchface_set_time(time->tm_hour, time->tm_min, time->tm_sec);
 
-            // TODO move from this file
-            retained.current_time_seconds = clock_get_time_unix();
-            retained_update();
             check_notifications();
 
             // Realtime update of steps
@@ -166,7 +163,7 @@ void general_work(struct k_work *item)
             break;
         }
         case UPDATE_DATE: {
-            struct tm *time = clock_get_time();
+            struct tm *time = zsw_clock_get_time();
             watchface_set_date(time->tm_wday, time->tm_mday);
             __ASSERT(0 <= k_work_schedule(&date_work.work, DATE_UPDATE_INTERVAL), "FAIL date_work");
         }

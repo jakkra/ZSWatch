@@ -3,7 +3,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <events/ble_data_event.h>
-#include <clock.h>
+#include <zsw_clock.h>
 #include <ble_comm.h>
 #include <zephyr/zbus/zbus.h>
 
@@ -116,7 +116,7 @@ static void handle_update_ui(struct k_work *item)
 
 static void timer_callback(lv_timer_t *timer)
 {
-    struct tm *time = clock_get_time();
+    struct tm *time = zsw_clock_get_time();
     music_control_ui_set_time(time->tm_hour, time->tm_min, time->tm_sec);
     if (playing) {
         progress_seconds++;

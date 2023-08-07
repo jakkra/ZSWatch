@@ -13,7 +13,7 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/logging/log.h>
-#include <clock.h>
+#include <zsw_clock.h>
 #include <lvgl.h>
 #include "watchface_app.h"
 #include <heart_rate_sensor.h>
@@ -104,7 +104,7 @@ static void run_init_work(struct k_work *item)
     zsw_imu_init();
     zsw_magnetometer_init();
     zsw_pressure_sensor_init();
-    clock_init(retained.current_time_seconds);
+    zsw_clock_init(retained.current_time_seconds);
     buttonsInit(&onButtonPressCb);
     vibration_motor_init();
     vibration_motor_set_on(false);
