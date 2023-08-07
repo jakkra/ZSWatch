@@ -23,6 +23,19 @@ menu "ZSWatch"
     default y
     help
         "Enabling this option will add apps and features only aimed for demo purposes. This will increase the size of the firmware (flash usage)."
+
+    choice WATCHFACE_TYPE
+        prompt "Select which watchface to use"
+        bool
+        default WATCHFACE_ANALOG
+
+    config WATCHFACE_ANALOG
+        prompt "Use analog watchface"
+
+    config WATCHFACE_DIGITAL
+        prompt "Use digital watchface"
+
+endchoice
 endmenu
 
 rsource "drivers/Kconfig"

@@ -1,5 +1,6 @@
-#include <watchface_ui.h>
+#include "../watchface_ui.h"
 #include <lvgl.h>
+#include "../zsw_ui_utils.h"
 
 #ifdef __ZEPHYR__
 #include <zephyr/logging/log.h>
@@ -7,20 +8,7 @@ LOG_MODULE_REGISTER(watchface_ui, LOG_LEVEL_WRN);
 #endif
 
 #define SMALL_WATCHFACE_CENTER_OFFSET 38
-
 #define USE_SECOND_HAND
-
-const lv_img_dsc_t *get_icon_from_weather_code(int code, lv_color_t *icon_color);
-
-LV_IMG_DECLARE(stormy);
-LV_IMG_DECLARE(snowy);
-LV_IMG_DECLARE(rainy);
-LV_IMG_DECLARE(snowy);
-LV_IMG_DECLARE(foggy);
-LV_IMG_DECLARE(sunny);
-LV_IMG_DECLARE(partly_cloudy);
-LV_IMG_DECLARE(cloudy);
-LV_IMG_DECLARE(unknown);
 
 static lv_obj_t *root_page = NULL;
 
@@ -235,6 +223,9 @@ static void add_notification_indicator(lv_obj_t *parent)
 
 static void add_weather_data(lv_obj_t *parent)
 {
+    lv_color_t icon_color;
+    const lv_img_dsc_t *icon;
+
     weather_temperature = lv_label_create(parent);
     lv_label_set_text(weather_temperature, "5");
     lv_obj_set_style_text_color(weather_temperature, lv_color_hex(0xFFFFFF), LV_PART_MAIN);
@@ -248,7 +239,8 @@ static void add_weather_data(lv_obj_t *parent)
     lv_label_set_text_fmt(weather_temperature, "-°C");
     lv_obj_set_style_img_recolor_opa(weather_icon, LV_OPA_COVER, 0);
     lv_obj_set_style_img_recolor(weather_icon, lv_color_white(), 0);
-    lv_img_set_src(weather_icon, &partly_cloudy);
+    icon = zsw_ui_utils_icon_from_weather_code(802, &icon_color);
+    lv_img_set_src(weather_icon, icon);
 }
 
 static void add_date(lv_obj_t *parent)
@@ -408,7 +400,7 @@ void watchface_set_weather(int8_t temperature, int weather_code)
 
     snprintf(buf, sizeof(buf), "%d°", temperature);
     lv_label_set_text(weather_temperature, buf);
-    icon = get_icon_from_weather_code(weather_code, &icon_color);
+    icon = zsw_ui_utils_icon_from_weather_code(weather_code, &icon_color);
     lv_img_set_src(weather_icon, icon);
     lv_obj_clear_flag(weather_temperature, LV_OBJ_FLAG_HIDDEN);
     lv_obj_clear_flag(weather_icon, LV_OBJ_FLAG_HIDDEN);
@@ -436,55 +428,4 @@ void watchface_ui_invalidate_cached(void)
 #ifdef USE_SECOND_HAND
     last_second = -1;
 #endif
-}
-
-const lv_img_dsc_t *get_icon_from_weather_code(int code, lv_color_t *icon_color)
-{
-    int code_group = code / 100;
-
-    *icon_color = lv_color_white();
-
-    switch (code_group) {
-        case 2:
-            *icon_color = lv_color_hex(0xD5DFE7);
-            return &stormy;
-        case 3:
-            *icon_color = lv_color_hex(0xD5DFE7);
-            return &cloudy;
-        case 5:
-            switch (code) {
-                case 511:
-                    *icon_color = lv_color_white();
-                    return &snowy;
-                default:
-                    *icon_color = lv_color_hex(0x5275A2);
-                    return &rainy;
-            }
-        case 6:
-            *icon_color = lv_color_white();
-            return &snowy;
-        case 7:
-            *icon_color = lv_color_hex(0x5275A2);
-            return &foggy;
-        case 8:
-            switch (code) {
-                case 800:
-                    // TODO if day sunny else moon
-                    *icon_color = lv_color_hex(0xFBD92A);
-                    return &sunny;
-                case 801:
-                    *icon_color = lv_color_white();
-                    return &partly_cloudy;
-                case 802:
-                    *icon_color = lv_color_hex(0xD5DFE7);
-                    return &partly_cloudy;
-                default:
-                    *icon_color = lv_color_hex(0xD5DFE7);
-                    return &cloudy;
-            }
-        default: {
-            printf("Unhandled weather code: %d", code);
-            return &unknown;
-        }
-    }
 }

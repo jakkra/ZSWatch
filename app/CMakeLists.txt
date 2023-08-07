@@ -60,6 +60,9 @@ target_sources(app PRIVATE ${img_sources})
 FILE(GLOB ui_sources src/ui/*.c)
 target_sources(app PRIVATE ${ui_sources})
 
+zephyr_sources_ifdef(CONFIG_WATCHFACE_ANALOG src/ui/watchfaces/zsw_watchface_analog_ui.c)
+zephyr_sources_ifdef(CONFIG_WATCHFACE_DIITAL src/ui/watchfaces/zsw_watchface_digital_ui.c)
+
 FILE(GLOB events_sources src/events/*.c)
 target_sources(app PRIVATE ${events_sources})
 
