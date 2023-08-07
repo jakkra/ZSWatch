@@ -64,6 +64,7 @@ I have received quite some requests regarding building or getting the ZSWatch, t
 - Bosch [BMP581](https://www.bosch-sensortec.com/products/environmental-sensors/pressure-sensors/bmp581/) High performance pressure sensor accuracy in units of ~20cm's.
 - ST [LIS2MDLTR](https://www.st.com/resource/en/datasheet/lis2mdl.pdf) Magnetometer.
 - Analog Devices [MAX30101](https://www.analog.com/en/products/max30101.html) Heart-Rate Monitor and Pulse Oximeter Sensor.
+- Renesas [AT25SL128A](https://eu.mouser.com/datasheet/2/698/REN_DS_AT25SL128A_109S_032023_DST_20230329-3076025.pdf) 16 MB external flash.
 - Option to not mount some sensors to save BOM cost.
 
 ## Charger/Dock
