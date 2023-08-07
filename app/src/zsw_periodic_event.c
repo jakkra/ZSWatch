@@ -60,7 +60,7 @@ static void handle_slow_timeout(struct k_work *item)
     k_work_reschedule(work, K_MSEC(1000));
     zbus_chan_finish(&periodic_event_slow_chan);
 
-    zbus_chan_pub(&periodic_event_fast_chan, &evt, K_MSEC(250));
+    zbus_chan_pub(&periodic_event_slow_chan, &evt, K_MSEC(250));
 }
 
 static void handle_fast_timeout(struct k_work *item)
