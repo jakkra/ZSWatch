@@ -15,6 +15,9 @@ jobs:
       image: nordicplayground/nrfconnect-sdk:v${{ matrix.ncs_version }}-branch
       options: --user root
     steps:    
+      - name: Install deps
+        run: |
+          apt-get --no-install-recommends -y install git
       - name: Clone repository
         uses: actions/checkout@v2
         with:
