@@ -57,11 +57,14 @@ endif()
 FILE(GLOB img_sources src/images/*.c)
 target_sources(app PRIVATE ${img_sources})
 
+FILE(GLOB font_sources src/images/fonts/*.c)
+target_sources(app PRIVATE ${font_sources})
+
 FILE(GLOB ui_sources src/ui/*.c)
 target_sources(app PRIVATE ${ui_sources})
 
 zephyr_sources_ifdef(CONFIG_WATCHFACE_ANALOG src/ui/watchfaces/zsw_watchface_analog_ui.c)
-zephyr_sources_ifdef(CONFIG_WATCHFACE_DIITAL src/ui/watchfaces/zsw_watchface_digital_ui.c)
+zephyr_sources_ifdef(CONFIG_WATCHFACE_DIGITAL src/ui/watchfaces/zsw_watchface_digital_ui.c)
 
 FILE(GLOB events_sources src/events/*.c)
 target_sources(app PRIVATE ${events_sources})

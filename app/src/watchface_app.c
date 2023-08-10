@@ -24,6 +24,8 @@
 #include <events/battery_event.h>
 #include <events/activity_event.h>
 #include <zsw_battery_manager.h>
+#include <zsw_pressure_sensor.h>
+#include <zsw_env_sensor.h>
 
 LOG_MODULE_REGISTER(watcface_app, LOG_LEVEL_WRN);
 
@@ -52,12 +54,12 @@ ZBUS_LISTENER_DEFINE(watchface_activity_state_event, zbus_activity_event_callbac
 #define WORK_PRIORITY   5
 
 #define RENDER_INTERVAL_LVGL    K_MSEC(100)
-#define DATE_UPDATE_INTERVAL    K_MINUTES(1)
+#define SLOW_UPDATE_INTERVAL    K_MINUTES(1)
 
 typedef enum work_type {
     UPDATE_CLOCK,
     OPEN_WATCHFACE,
-    UPDATE_DATE
+    UPDATE_SLOW_VALUES
 } work_type_t;
 
 typedef struct delayed_work_item {
@@ -79,7 +81,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 };
 
 static delayed_work_item_t clock_work =     { .type = UPDATE_CLOCK };
-static delayed_work_item_t date_work =      { .type = UPDATE_DATE };
+static delayed_work_item_t date_work =      { .type = UPDATE_SLOW_VALUES };
 
 static delayed_work_item_t general_work_item;
 static struct k_work_sync canel_work_sync;
@@ -162,10 +164,19 @@ void general_work(struct k_work *item)
             __ASSERT(0 <= k_work_schedule(&clock_work.work, K_SECONDS(1)), "FAIL clock_work");
             break;
         }
-        case UPDATE_DATE: {
+        case UPDATE_SLOW_VALUES: {
+            float pressure;
+            float temperature;
+            float humidity;
+
             struct tm *time = zsw_clock_get_time();
             watchface_set_date(time->tm_wday, time->tm_mday);
-            __ASSERT(0 <= k_work_schedule(&date_work.work, DATE_UPDATE_INTERVAL), "FAIL date_work");
+
+            zsw_env_sensor_fetch_all(&temperature, &pressure, &humidity);
+            zsw_pressure_sensor_fetch_pressure(&pressure);
+            watchface_set_watch_env_sensors((int)temperature, (int)humidity, (int)pressure);
+
+            __ASSERT(0 <= k_work_schedule(&date_work.work, SLOW_UPDATE_INTERVAL), "FAIL date_work");
         }
     }
 }

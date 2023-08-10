@@ -43,6 +43,7 @@ I have received quite some requests regarding building or getting the ZSWatch, t
 - [Enclosure/Casing](#enclosurecasing)
 - [Software Features](#software-features)
   * [Larger not yet implemented SW Features and TODOs](#larger-not-yet-implemented-sw-features-and-todos)
+- [Watchfaces](#watchfaces)
 - [Android phone communication](#android-phone-communication)
   * [Pairing](#pairing)
 - [PCB](#pcb)
@@ -101,6 +102,19 @@ Built in debugger. Will be an option without debugger also  (requires licence).
 
 ### Features and progress
 There are almost endless of posiblities for features that could be implemented, see [here for full progress](https://github.com/users/jakkra/projects/1) and my current ideas.
+
+## Watchfaces
+Alternative watch faces can be chosen by selecting the appropriate Kconfig.
+
+`CONFIG_WATCHFACE_ANALOG`
+
+`CONFIG_WATCHFACE_DIGITAL`
+
+`CONFIG_WATCHFACE_MINIMAL`
+
+<p float="center">
+<img src=".github/watchfaces.png" width="65%"/>
+</p>
 
 ## Android phone communication
 Fortunately there is a great Android app called [GadgetBridge](https://codeberg.org/Freeyourgadget) which handles everything needed on the phone side, such as notifications management, music control and so much more... The ZSWatch right now pretends to be one of the supported Smart Watches in Gadgetbridge, following the same API as it does. In future there may be a point adding native support, we'll see.

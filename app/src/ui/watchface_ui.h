@@ -25,6 +25,8 @@ void watchface_set_weather(int8_t temperature, int weather_code);
 
 void watchface_set_date(int day_of_week, int date);
 
+void watchface_set_watch_env_sensors(int temperature, int humidity, int pressure);
+
 void watchface_ui_invalidate_cached(void);
 
 #endif
