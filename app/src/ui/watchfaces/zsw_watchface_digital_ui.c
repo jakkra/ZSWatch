@@ -291,6 +291,7 @@ void watchface_show(void)
     lv_obj_set_style_arc_color(ui_step_arc, lv_color_hex(0x9D3BE0), LV_PART_INDICATOR | LV_STATE_DEFAULT);
     lv_obj_set_style_arc_opa(ui_step_arc, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
     lv_obj_set_style_arc_width(ui_step_arc, 3, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    lv_arc_set_range(ui_step_arc, 0, 10000);
 
     lv_obj_set_style_bg_color(ui_step_arc, lv_color_hex(0xFFFFFF), LV_PART_KNOB | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_step_arc, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
