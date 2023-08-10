@@ -420,6 +420,13 @@ void watchface_set_date(int day_of_week, int date)
     lv_label_set_text(date_label, buf);
 }
 
+void watchface_set_watch_env_sensors(int temperature, int humidity, int pressure)
+{
+    if (!root_page) {
+        return;
+    }
+}
+
 void watchface_ui_invalidate_cached(void)
 {
     last_hour = -1;
