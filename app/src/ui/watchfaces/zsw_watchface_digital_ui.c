@@ -42,6 +42,9 @@ LV_IMG_DECLARE(ui_img_charging_png);    // assets/charging.png
 LV_IMG_DECLARE(ui_img_running_png);    // assets/running.png
 LV_IMG_DECLARE(ui_img_chat_png);    // assets/chat.png
 LV_IMG_DECLARE(ui_img_bluetooth_png);    // assets/bluetooth.png
+#if CONFIG_WATCHFACE_USE_BACKGROUND
+LV_IMG_DECLARE(flower_watchface_bg);
+#endif
 
 LV_FONT_DECLARE(ui_font_aliean_47);
 LV_FONT_DECLARE(ui_font_aliean_25);
@@ -73,7 +76,10 @@ void watchface_show(void)
     lv_obj_align(root_page, LV_ALIGN_CENTER, 0, 0);
 
     ui_digital_watchface = root_page;
-    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x21121c), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x331c2a), LV_PART_MAIN | LV_STATE_DEFAULT);
+#if CONFIG_WATCHFACE_USE_BACKGROUND
+    lv_obj_set_style_bg_img_src(ui_digital_watchface, &flower_watchface_bg, LV_PART_MAIN | LV_STATE_DEFAULT);
+#endif
 
     lv_obj_clear_flag(ui_digital_watchface, LV_OBJ_FLAG_SCROLLABLE);
 

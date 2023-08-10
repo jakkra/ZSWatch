@@ -104,16 +104,17 @@ Built in debugger. Will be an option without debugger also  (requires licence).
 There are almost endless of posiblities for features that could be implemented, see [here for full progress](https://github.com/users/jakkra/projects/1) and my current ideas.
 
 ## Watchfaces
-Alternative watch faces can be chosen by selecting the appropriate Kconfig.
+Alternative watch faces can be chosen by selecting **one** of the appropriate Kconfig.
 
-`CONFIG_WATCHFACE_ANALOG`
+`CONFIG_WATCHFACE_ANALOG=y`<br>
+`CONFIG_WATCHFACE_DIGITAL=y`<br>
+`CONFIG_WATCHFACE_MINIMAL=y`<br>
 
-`CONFIG_WATCHFACE_DIGITAL`
-
-`CONFIG_WATCHFACE_MINIMAL`
+If watchface background image is not wanted<br>
+`CONFIG_WATCHFACE_USE_BACKGROUND=n`
 
 <p float="center">
-<img src=".github/watchfaces.png" width="65%"/>
+<img src=".github/watchfaces.png" width="80%"/>
 </p>
 
 ## Android phone communication

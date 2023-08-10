@@ -35,7 +35,13 @@ menu "ZSWatch"
     config WATCHFACE_DIGITAL
         prompt "Use digital watchface"
 
-endchoice
+    endchoice
+
+    config WATCHFACE_USE_BACKGROUND
+        bool
+    prompt "Select if watchface background image should be used. Not all watchfaces supports this."
+    default y
+
 endmenu
 
 rsource "drivers/Kconfig"
