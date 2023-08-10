@@ -294,7 +294,7 @@ static void on_popup_notifcation_closed(uint32_t id)
     // Maybe a bug, or something done wrong.
     // Anyway doing it after a while instead seems to fix
     // the problem.
-    timer = lv_timer_create(close_popup_notification, 100,  (void *)id);
+    timer = lv_timer_create(close_popup_notification, 500,  (void *)id);
     lv_timer_set_repeat_count(timer, 1);
 }
 
