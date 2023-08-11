@@ -35,6 +35,9 @@ menu "ZSWatch"
     config WATCHFACE_DIGITAL
         prompt "Use digital watchface"
 
+    config WATCHFACE_MINIMAL
+        prompt "Use minimal watchface"
+
     endchoice
 
     config WATCHFACE_USE_BACKGROUND
