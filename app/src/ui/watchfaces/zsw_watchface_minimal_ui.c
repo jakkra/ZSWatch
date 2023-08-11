@@ -55,11 +55,9 @@ void watchface_show(void)
     lv_obj_set_x(ui_hour_img, 0);
     lv_obj_set_y(ui_hour_img, -32);
     lv_obj_set_align(ui_hour_img, LV_ALIGN_CENTER);
-    lv_obj_add_flag(ui_hour_img, LV_OBJ_FLAG_ADV_HITTEST);     /// Flags
     lv_obj_clear_flag(ui_hour_img, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
-    lv_img_set_pivot(ui_hour_img, 15, 80);
-    lv_img_set_angle(ui_hour_img, 9);
-    lv_obj_set_style_img_recolor(ui_hour_img, lv_color_hex(0xCF9C60), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_img_set_pivot(ui_hour_img, 18, 82);
+    lv_obj_set_style_img_recolor(ui_hour_img, lv_color_hex(0x0EA7FF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_img_recolor_opa(ui_hour_img, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_min_img = lv_img_create(ui_minimal_watchface);
@@ -69,10 +67,9 @@ void watchface_show(void)
     lv_obj_set_x(ui_min_img, 0);
     lv_obj_set_y(ui_min_img, -46);
     lv_obj_set_align(ui_min_img, LV_ALIGN_CENTER);
-    lv_obj_add_flag(ui_min_img, LV_OBJ_FLAG_ADV_HITTEST);     /// Flags
     lv_obj_clear_flag(ui_min_img, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
-    lv_img_set_pivot(ui_min_img, 8, 100);
-    lv_obj_set_style_img_recolor(ui_min_img, lv_color_hex(0x2DAFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_img_set_pivot(ui_min_img, 11, 104);
+    lv_obj_set_style_img_recolor(ui_min_img, lv_color_hex(0xF0FFD5), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_img_recolor_opa(ui_min_img, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_day_data_label = lv_label_create(ui_minimal_watchface);
@@ -81,7 +78,7 @@ void watchface_show(void)
     lv_obj_set_x(ui_day_data_label, -10);
     lv_obj_set_y(ui_day_data_label, 0);
     lv_obj_set_align(ui_day_data_label, LV_ALIGN_RIGHT_MID);
-    lv_label_set_text(ui_day_data_label, "");
+    lv_label_set_text(ui_day_data_label, "WED 10");
     lv_obj_set_style_text_color(ui_day_data_label, lv_color_hex(0xCF9C60), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_day_data_label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
@@ -95,6 +92,8 @@ void watchface_show(void)
     lv_obj_add_flag(ui_second_img, LV_OBJ_FLAG_ADV_HITTEST);     /// Flags
     lv_obj_clear_flag(ui_second_img, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
     lv_img_set_pivot(ui_second_img, 4, 108);
+    lv_obj_set_style_img_recolor(ui_second_img, lv_color_hex(0xFF4242), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_img_recolor_opa(ui_second_img, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
 void watchface_remove(void)

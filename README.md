@@ -108,17 +108,18 @@ Alternative watch faces can be chosen by selecting **one** of the appropriate Kc
 
 `CONFIG_WATCHFACE_ANALOG=y`<br>
 `CONFIG_WATCHFACE_DIGITAL=y`<br>
-`CONFIG_WATCHFACE_MINIMAL=y`<br>
+`CONFIG_WATCHFACE_MINIMAL=n`<br>
 
 
 To select watchface background see below config in prj.conf:
-`CONFIG_WATCHFACE_BACKGROUND_SPACE=y`
-`CONFIG_WATCHFACE_BACKGROUND_FLOWER=n`
-`CONFIG_WATCHFACE_BACKGROUND_PLANET=n`
-`CONFIG_WATCHFACE_BACKGROUND_NONE=n`
+
+`CONFIG_WATCHFACE_BACKGROUND_SPACE=y`<br>
+`CONFIG_WATCHFACE_BACKGROUND_FLOWER=n`<br>
+`CONFIG_WATCHFACE_BACKGROUND_PLANET=n`<br>
+`CONFIG_WATCHFACE_BACKGROUND_NONE=n`<br>
 
 <p float="center">
-<img src=".github/watchfaces.png" width="80%"/>
+<img src=".github/watchfaces.png" width="99%"/>
 </p>
 
 ## Android phone communication
