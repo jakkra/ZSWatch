@@ -40,10 +40,19 @@ menu "ZSWatch"
 
     endchoice
 
-    config WATCHFACE_USE_BACKGROUND
-        bool
-    prompt "Select if watchface background image should be used. Not all watchfaces supports this."
-    default y
+    choice WATCHFACE_BACKGROUND_IMG
+        prompt "Select which watchface background imgage to use. Not all watchfaces supports this."
+        def_bool WATCHFACE_BACKGROUND_SPACE
+
+    config WATCHFACE_BACKGROUND_SPACE
+        prompt "Space themed background"
+    config WATCHFACE_BACKGROUND_FLOWER
+        prompt "Flower themed background"
+    config WATCHFACE_BACKGROUND_PLANET
+        prompt "Planet earth themed background"
+    config WATCHFACE_BACKGROUND_NONE
+        prompt "No background"
+    endchoice
 
 endmenu
 

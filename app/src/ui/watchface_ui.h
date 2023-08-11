@@ -2,6 +2,7 @@
 #define __WATCH_UI_H
 #include <inttypes.h>
 #include <stdbool.h>
+#include <lvgl.h>
 
 void watchface_init(void);
 

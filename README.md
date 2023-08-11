@@ -110,8 +110,12 @@ Alternative watch faces can be chosen by selecting **one** of the appropriate Kc
 `CONFIG_WATCHFACE_DIGITAL=y`<br>
 `CONFIG_WATCHFACE_MINIMAL=y`<br>
 
-If watchface background image is not wanted<br>
-`CONFIG_WATCHFACE_USE_BACKGROUND=n`
+
+To select watchface background see below config in prj.conf:
+`CONFIG_WATCHFACE_BACKGROUND_SPACE=y`
+`CONFIG_WATCHFACE_BACKGROUND_FLOWER=n`
+`CONFIG_WATCHFACE_BACKGROUND_PLANET=n`
+`CONFIG_WATCHFACE_BACKGROUND_NONE=n`
 
 <p float="center">
 <img src=".github/watchfaces.png" width="80%"/>

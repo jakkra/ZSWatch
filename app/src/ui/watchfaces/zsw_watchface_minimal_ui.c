@@ -9,10 +9,7 @@ LOG_MODULE_REGISTER(watchface_ui, LOG_LEVEL_WRN);
 
 LV_IMG_DECLARE(hour_minimal);
 LV_IMG_DECLARE(minute_minimal);
-LV_IMG_DECLARE(second_minimal)
-#if CONFIG_WATCHFACE_USE_BACKGROUND
-LV_IMG_DECLARE(flower_watchface_bg);
-#endif
+LV_IMG_DECLARE(second_minimal);
 
 static lv_obj_t *root_page;
 static lv_obj_t *ui_minimal_watchface;
@@ -49,7 +46,7 @@ void watchface_show(void)
 
     ui_minimal_watchface = root_page;
     lv_obj_clear_flag(ui_minimal_watchface, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
-    lv_obj_set_style_bg_img_src(ui_minimal_watchface, &flower_watchface_bg, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_img_src(ui_minimal_watchface, global_watchface_bg_img, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_hour_img = lv_img_create(ui_minimal_watchface);
     lv_img_set_src(ui_hour_img, &hour_minimal);
