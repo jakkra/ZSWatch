@@ -532,9 +532,10 @@ void watchface_set_watch_env_sensors(int temperature, int humidity, int pressure
         return;
     }
 
+    // Compensate for ui_humidity_arc is using REVERSE mode, hence lv_arc_get_max_value is needed
+    lv_arc_set_value(ui_humidity_arc, lv_arc_get_max_value(ui_humidity_arc) - humidity);
+    lv_arc_set_value(ui_pressure_arc, pressure / 100);
     lv_label_set_text_fmt(ui_watch_temperature_label, "%d°", temperature);
-    lv_arc_set_value(ui_humidity_arc, humidity);
-    lv_arc_set_value(ui_pressure_arc, pressure / 10);
 }
 
 void watchface_ui_invalidate_cached(void)
