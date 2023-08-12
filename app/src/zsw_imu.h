@@ -11,7 +11,9 @@ typedef enum zsw_imu_evt_type_t {
     ZSW_IMU_EVT_TYPE_TILT,
     ZSW_IMU_EVT_TYPE_GESTURE,
     ZSW_IMU_EVT_TYPE_SIGNIFICANT_MOTION,
-    ZSW_IMU_EVT_TYPE_WRIST_WAKEUP
+    ZSW_IMU_EVT_TYPE_WRIST_WAKEUP,
+    ZSW_IMU_EVT_TYPE_NO_MOTION,
+    ZSW_IMU_EVT_TYPE_ANY_MOTION
 } zsw_imu_evt_type_t;
 
 typedef enum zsw_imu_data_step_activity_t {
@@ -62,5 +64,6 @@ int zsw_imu_fetch_num_steps(uint32_t *num_steps);
 
 int zsw_imu_reset_step_count(void);
 
+int zsw_imu_any_motion_int_set_enabled(bool enabled);
 
 #endif

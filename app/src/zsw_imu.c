@@ -5,9 +5,9 @@
 #include <events/accel_event.h>
 #include <zephyr/zbus/zbus.h>
 
-LOG_MODULE_REGISTER(accel, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(accel, LOG_LEVEL_INF);
 
-#define USE_ANYMOTION   0
+#define USE_ANYMOTION   1
 #define USE_GYRO        1
 
 /*! Earth's gravity in m/s^2 */
@@ -37,6 +37,7 @@ static void configure_anymotion(struct bmi2_sens_config *config);
 #endif
 static void configure_gesture_detect(struct bmi2_sens_config *config);
 static void configure_wrist_wakeup(struct bmi2_sens_config *config);
+static void configure_no_motion(struct bmi2_sens_config *config);
 
 static int bmi270_init_interrupt(void);
 static void bmi270_int1_work_cb(struct k_work *work);
@@ -52,11 +53,12 @@ static bmi270_feature_config_set_t bmi270_enabled_features[] = {
     { .sensor_id = BMI2_STEP_COUNTER, .cfg_func = configure_step_counter},
     { .sensor_id = BMI2_SIG_MOTION, .cfg_func = NULL, .isr_disable = true},
 #if USE_ANYMOTION
-    { .sensor_id = BMI2_ANY_MOTION, .cfg_func = configure_anymotion},
+    { .sensor_id = BMI2_ANY_MOTION, .cfg_func = configure_anymotion, .isr_disable = true},
 #endif
     { .sensor_id = BMI2_STEP_ACTIVITY, .cfg_func = NULL, .isr_disable = true},
     { .sensor_id = BMI2_WRIST_GESTURE, .cfg_func = configure_gesture_detect, .isr_disable = false},
     { .sensor_id = BMI2_WRIST_WEAR_WAKE_UP, .cfg_func = configure_wrist_wakeup},
+    { .sensor_id = BMI2_NO_MOTION, .cfg_func = configure_no_motion},
 };
 
 static struct bmi2_dev bmi2_dev;
@@ -178,6 +180,24 @@ int zsw_imu_reset_step_count(void)
     return -ENOENT;
 }
 
+int zsw_imu_any_motion_int_set_enabled(bool enabled)
+{
+    int8_t rslt;
+    struct bmi2_sens_int_config cfg;
+
+    if (enabled) {
+        cfg.hw_int_pin = BMI2_INT2;
+    } else {
+        cfg.hw_int_pin = BMI2_INT_NONE;
+    }
+    cfg.type = BMI2_ANY_MOTION;
+
+    rslt = bmi270_map_feat_int(&cfg, 1, &bmi2_dev);
+    bmi2_error_codes_print_result(rslt);
+
+    return rslt == BMI2_OK;
+}
+
 static void send_accel_event(zsw_imu_evt_t *data)
 {
     zbus_chan_pub(&accel_data_chan, data, K_MSEC(250));
@@ -242,17 +262,17 @@ static void bmi270_int2_work_cb(struct k_work *work)
     rslt = bmi2_get_int_status(&int_status, &bmi2_dev);
     bmi2_error_codes_print_result(rslt);
 
-    // For some reason step count ISR is nor firing, for now
-    // just poll it whenever there is another event.
-    int_status |= BMI270_STEP_CNT_STATUS_MASK;
-
     if (int_status & BMI270_SIG_MOT_STATUS_MASK) {
-        LOG_DBG("INT: BMI270_SIG_MOT_STATUS_MASK\n");
+        LOG_INF("INT: BMI270_SIG_MOT_STATUS_MASK\n");
         evt.type = ZSW_IMU_EVT_TYPE_SIGNIFICANT_MOTION;
         send_accel_event(&evt);
     }
-    if (int_status & BMI270_STEP_CNT_STATUS_MASK) {
-        LOG_DBG("INT: BMI270_STEP_CNT_STATUS_MASK\n");
+    // For some reason step count ISR is nor firing, for now
+    // just poll it whenever there is another event.
+    if (true || int_status & BMI270_STEP_CNT_STATUS_MASK) {
+        if (int_status & BMI270_STEP_CNT_STATUS_MASK) {
+            LOG_INF("INT: BMI270_STEP_CNT_STATUS_MASK\n");
+        }
         sensor_data.type = BMI2_STEP_COUNTER;
         rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
         bmi2_error_codes_print_result(rslt);
@@ -262,7 +282,7 @@ static void bmi270_int2_work_cb(struct k_work *work)
         LOG_DBG("No of steps counted  = %lu", (long unsigned int)evt.data.step.count );
     }
     if (int_status & BMI270_STEP_ACT_STATUS_MASK) {
-        LOG_DBG("INT: BMI270_STEP_ACT_STATUS_MASK\n");
+        LOG_INF("INT: BMI270_STEP_ACT_STATUS_MASK\n");
         sensor_data.type = BMI2_STEP_ACTIVITY;
         rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
         bmi2_error_codes_print_result(rslt);
@@ -273,12 +293,12 @@ static void bmi270_int2_work_cb(struct k_work *work)
         send_accel_event(&evt);
     }
     if (int_status & BMI270_WRIST_WAKE_UP_STATUS_MASK) {
-        LOG_DBG("INT: BMI270_WRIST_WAKE_UP_STATUS_MASK\n");
+        LOG_INF("INT: BMI270_WRIST_WAKE_UP_STATUS_MASK\n");
         evt.type = ZSW_IMU_EVT_TYPE_WRIST_WAKEUP;
         send_accel_event(&evt);
     }
     if (int_status & BMI270_WRIST_GEST_STATUS_MASK) {
-        LOG_DBG("INT: BMI270_WRIST_GEST_STATUS_MASK\n");
+        LOG_INF("INT: BMI270_WRIST_GEST_STATUS_MASK\n");
         sensor_data.type = BMI2_WRIST_GESTURE;
         rslt = bmi270_get_feature_data(&sensor_data, 1, &bmi2_dev);
         bmi2_error_codes_print_result(rslt);
@@ -288,11 +308,17 @@ static void bmi270_int2_work_cb(struct k_work *work)
         LOG_DBG("Gesture detected: %s", gesture_output[sensor_data.sens_data.wrist_gesture_output]);
         send_accel_event(&evt);
     }
-    if (int_status & BMI270_NO_MOT_STATUS_MASK) {
-        LOG_DBG("No MO");
+    // After a NO_MOTION INT and the INT status is cleared, then
+    // when any other INT is triggered, also NO_MOTION status bit is set once more.
+    // To workaround that, only care about NO_MOTION
+    // when the INT was only for NO_MOTION.
+    if (int_status == BMI270_NO_MOT_STATUS_MASK) {
+        evt.type = ZSW_IMU_EVT_TYPE_NO_MOTION;
+        send_accel_event(&evt);
     }
     if (int_status & BMI270_ANY_MOT_STATUS_MASK) {
-        LOG_DBG("No any MO");
+        evt.type = ZSW_IMU_EVT_TYPE_ANY_MOTION;
+        send_accel_event(&evt);
     }
 
     setup_int2(true);
@@ -418,6 +444,13 @@ static void configure_wrist_wakeup(struct bmi2_sens_config *config)
 {
     config->cfg.wrist_gest_w.device_position = BMI2_ARM_LEFT;
     // TODO many things to configure here
+}
+
+static void configure_no_motion(struct bmi2_sens_config *config)
+{
+    // 1LSB equals 20ms. Default is 100ms, setting to 80ms.
+    // Max value is 163 seconds, hence below calc. We want max.
+    config->cfg.no_motion.duration = (120 * 1000) / 20;
 }
 
 static bool is_sensor_feature(uint8_t sensor_id)

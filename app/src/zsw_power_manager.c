@@ -126,6 +126,17 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
     switch (event->data.type) {
         case ZSW_IMU_EVT_TYPE_WRIST_WAKEUP: {
             should_wakeup = true;
+            break;
+        }
+        case ZSW_IMU_EVT_TYPE_NO_MOTION: {
+            LOG_ERR("Should power down more");
+            zsw_imu_any_motion_int_set_enabled(true);
+            break;
+        }
+        case ZSW_IMU_EVT_TYPE_ANY_MOTION: {
+            LOG_ERR("Should power UP AGAIN");
+            zsw_imu_any_motion_int_set_enabled(false);
+            break;
         }
         default:
             break;
