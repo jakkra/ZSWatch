@@ -21,7 +21,8 @@
 
 typedef enum zsw_power_manager_state_t {
     ZSW_ACTIVITY_STATE_ACTIVE,
-    ZSW_ACTIVITY_STATE_INACTIVE
+    ZSW_ACTIVITY_STATE_INACTIVE,
+    ZSW_ACTIVITY_STATE_NOT_WORN_STATIONARY,
 } zsw_power_manager_state_t;
 
 /*
@@ -36,6 +37,11 @@ bool zsw_power_manager_reset_idle_timout(void);
 *   Returns the time in seconds until the watch will go into inactive state.
 */
 uint32_t zsw_power_manager_get_ms_to_inactive(void);
+
+/*
+*   Returns the current power manager state, see @zsw_power_manager_state_t
+*/
+zsw_power_manager_state_t zsw_power_manager_get_state(void);
 
 #endif // __ZSW_POWER_MANAGER_H_
 

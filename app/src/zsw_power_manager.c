@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(zsw_power_manager, LOG_LEVEL_INF);
 #define IDLE_TIMEOUT_SECONDS    20
 #endif
 
+static void update_and_publish_state(zsw_power_manager_state_t new_state);
 static void enter_active(void);
 static void enter_inactive(void);
 static void handle_idle_timeout(struct k_work *item);
@@ -50,6 +51,7 @@ static bool is_active = true;
 static bool is_stationary;
 static uint32_t last_wakeup_time;
 static uint32_t last_pwr_off_time;
+static zsw_power_manager_state_t state;
 
 bool zsw_power_manager_reset_idle_timout(void)
 {
@@ -79,6 +81,21 @@ uint32_t zsw_power_manager_get_ms_to_inactive(void)
     }
 }
 
+zsw_power_manager_state_t zsw_power_manager_get_state(void)
+{
+    return state;
+}
+
+static void update_and_publish_state(zsw_power_manager_state_t new_state)
+{
+    state = new_state;
+
+    struct activity_state_event evt = {
+        .state = state,
+    };
+    zbus_chan_pub(&activity_state_data_chan, &evt, K_MSEC(250));
+}
+
 static void enter_inactive(void)
 {
     LOG_INF("Enter inactive");
@@ -91,10 +108,7 @@ static void enter_inactive(void)
     zsw_imu_feature_enable(ZSW_IMU_FEATURE_NO_MOTION, true);
     zsw_imu_feature_disable(ZSW_IMU_FEATURE_ANY_MOTION);
 
-    struct activity_state_event evt = {
-        .state = ZSW_ACTIVITY_STATE_INACTIVE,
-    };
-    zbus_chan_pub(&activity_state_data_chan, &evt, K_MSEC(250));
+    update_and_publish_state(ZSW_ACTIVITY_STATE_INACTIVE);
 }
 
 static void enter_active(void)
@@ -118,10 +132,7 @@ static void enter_active(void)
     zsw_imu_feature_disable(ZSW_IMU_FEATURE_NO_MOTION);
     zsw_imu_feature_disable(ZSW_IMU_FEATURE_ANY_MOTION);
 
-    struct activity_state_event evt = {
-        .state = ZSW_ACTIVITY_STATE_ACTIVE,
-    };
-    zbus_chan_pub(&activity_state_data_chan, &evt, K_MSEC(250));
+    update_and_publish_state(ZSW_ACTIVITY_STATE_ACTIVE);
 
     k_work_schedule(&idle_work, K_SECONDS(IDLE_TIMEOUT_SECONDS));
 }
@@ -158,6 +169,8 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
                 display_control_pwr_ctrl(false);
                 zsw_imu_feature_enable(ZSW_IMU_FEATURE_ANY_MOTION, true);
                 zsw_imu_feature_disable(ZSW_IMU_FEATURE_NO_MOTION);
+
+                update_and_publish_state(ZSW_ACTIVITY_STATE_NOT_WORN_STATIONARY);
             }
             break;
         }
@@ -170,6 +183,8 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
                 retained_update();
                 zsw_imu_feature_enable(ZSW_IMU_FEATURE_NO_MOTION, true);
                 zsw_imu_feature_disable(ZSW_IMU_FEATURE_ANY_MOTION);
+
+                update_and_publish_state(ZSW_ACTIVITY_STATE_INACTIVE);
             }
             break;
         }

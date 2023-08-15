@@ -463,9 +463,10 @@ static void ble_data_cb(ble_comm_cb_data_t *cb)
                 return;
             }
 
-            zsw_power_manager_reset_idle_timout();
-
-            lv_async_call(open_notification_popup, NULL);
+            if (zsw_power_manager_get_state() != ZSW_ACTIVITY_STATE_NOT_WORN_STATIONARY) {
+                zsw_power_manager_reset_idle_timout();
+                lv_async_call(open_notification_popup, NULL);
+            }
             break;
 
         default:
