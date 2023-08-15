@@ -517,11 +517,13 @@ static int8_t configure_enable_all_bmi270(struct bmi2_dev *bmi2_dev)
     // The API needs a list of all those features to do that map.
     struct bmi2_sens_int_config all_features[ARRAY_SIZE(bmi270_enabled_features)];
     uint8_t num_features = 0;
+    uint8_t num_enabled_features = 0;
 
     for (int i = 0; i < ARRAY_SIZE(bmi270_enabled_features); i++) {
         config[i].type = bmi270_enabled_features[i].sensor_id;
         if (!bmi270_enabled_features[i].skip_enable) {
-            all_sensors[i] = bmi270_enabled_features[i].sensor_id;
+            all_sensors[num_enabled_features] = bmi270_enabled_features[i].sensor_id;
+            num_enabled_features++;
         }
         if (is_sensor_feature(bmi270_enabled_features[i].sensor_id)) {
             all_features[num_features].type = bmi270_enabled_features[i].sensor_id;
@@ -553,7 +555,7 @@ static int8_t configure_enable_all_bmi270(struct bmi2_dev *bmi2_dev)
         /* NOTE:
         * Accel and Gyro enable must be done after setting configurations.
         */
-        rslt = bmi270_sensor_enable(all_sensors, ARRAY_SIZE(all_sensors), bmi2_dev);
+        rslt = bmi270_sensor_enable(all_sensors, num_enabled_features, bmi2_dev);
         bmi2_error_codes_print_result(rslt);
     }
 
