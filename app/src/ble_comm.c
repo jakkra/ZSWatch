@@ -21,6 +21,8 @@ LOG_MODULE_REGISTER(ble_comm, LOG_LEVEL_DBG);
 
 #define BLE_COMM_CONN_INT_UPDATE_TIMEOUT_MS    5000
 
+#define MAX_GB_PACKET_LENGTH                   1000
+
 ZBUS_CHAN_DECLARE(ble_comm_data_chan);
 
 typedef enum parse_state {
@@ -65,9 +67,9 @@ K_WORK_DELAYABLE_DEFINE(conn_interval_work, update_conn_interval_handler);
 
 static struct bt_conn *current_conn;
 static uint32_t max_send_len;
-static uint8_t receive_buf[300];
+static uint8_t receive_buf[MAX_GB_PACKET_LENGTH];
 static uint8_t num_parsed_brackets;
-static uint8_t parsed_data_index = 0;
+static uint16_t parsed_data_index = 0;
 static parse_state_t parse_state = WAIT_GB;
 
 static on_data_cb_t data_parsed_cb;
@@ -368,6 +370,11 @@ static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint1
             for (int i = 0; i < len; i++) {
                 receive_buf[parsed_data_index] = data[i];
                 parsed_data_index++;
+                if (parsed_data_index >= MAX_GB_PACKET_LENGTH) {
+                    LOG_ERR("Data from Gadgetbridge does not fit in MAX_GB_PACKET_LENGTH (%d)", MAX_GB_PACKET_LENGTH);
+                    parse_state = WAIT_GB;
+                    break;
+                }
                 if (data[i] == '{') {
                     num_parsed_brackets++;
                 } else if (data[i] == '}') {

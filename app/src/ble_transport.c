@@ -15,8 +15,8 @@ static ssize_t on_receive(struct bt_conn *conn,
                           uint16_t offset,
                           uint8_t flags)
 {
-    LOG_DBG("Received data, handle %d, conn %p",
-            attr->handle, (void *)conn);
+    LOG_DBG("Received data, handle %d, conn %p, len: %d",
+            attr->handle, (void *)conn, len);
 
     if (callbacks->data_receive) {
         callbacks->data_receive(conn, buf, len);
