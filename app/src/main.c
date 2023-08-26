@@ -24,7 +24,7 @@
 #include <ble_aoa.h>
 #include <zsw_popup_notifcation.h>
 #include <notification_manager.h>
-#include <vibration_motor.h>
+#include <zsw_vibration_motor.h>
 #include <display_control.h>
 #include <applications/application_manager.h>
 #include <events/ble_data_event.h>
@@ -60,7 +60,6 @@ static void enable_bluetoth(void);
 static bool load_retention_ram(void);
 static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
 static void click_feedback(struct _lv_indev_drv_t *drv, uint8_t e);
-static void play_not_vibration(void);
 static void ble_data_cb(ble_comm_cb_data_t *cb);
 static void open_notification_popup(void *data);
 static void async_turn_off_buttons_allocation(void *unused);
@@ -84,8 +83,6 @@ static lv_indev_drv_t enc_drv;
 static lv_indev_t *enc_indev;
 static buttonId_t last_pressed;
 
-static bool vibrator_on = false;
-
 static ui_state_t watch_state = INIT_STATE;
 
 K_WORK_DEFINE(init_work, run_init_work);
@@ -106,8 +103,6 @@ static void run_init_work(struct k_work *item)
     zsw_pressure_sensor_init();
     zsw_clock_init(retained.current_time_seconds);
     buttonsInit(&onButtonPressCb);
-    vibration_motor_init();
-    vibration_motor_set_on(false);
     // Not to self, PWM consumes like 250uA...
     // Need to disable also when screen is off.
     display_control_init();
@@ -225,7 +220,7 @@ static void open_notification_popup(void *data)
     if (not != NULL) {
         lv_group_set_default(temp_group);
         lv_indev_set_group(enc_indev, temp_group);
-        play_not_vibration();
+        zsw_vibration_run_pattern(ZSW_VIBRATION_PATTERN_NOTIFICATION);
         zsw_notification_popup_show(not->title, not->body, not->src, not->id, on_popup_notifcation_closed, 10);
         buttons_allocated = true;
     }
@@ -237,37 +232,6 @@ static void open_application_manager_page(void *app_name)
     buttons_allocated = true;
     watch_state = APPLICATION_MANAGER_STATE;
     application_manager_show(on_close_application_manager, lv_scr_act(), input_group, (char *)app_name);
-}
-
-static void play_press_vibration(void)
-{
-    vibrator_on = true;
-    vibration_motor_set_on(true);
-    vibration_motor_set_power(75);
-    k_msleep(100);
-    vibration_motor_set_power(75);
-    vibration_motor_set_on(false);
-    vibration_motor_set_power(0);
-    vibrator_on = false;
-}
-
-static void play_not_vibration(void)
-{
-    vibrator_on = true;
-    vibration_motor_set_power(100);
-    vibration_motor_set_on(true);
-    k_msleep(50);
-    vibration_motor_set_on(false);
-    k_msleep(50);
-    vibration_motor_set_on(true);
-    k_msleep(50);
-    vibration_motor_set_on(false);
-    k_msleep(50);
-    vibration_motor_set_power(0);
-    vibration_motor_set_on(true);
-    k_msleep(50);
-    vibration_motor_set_on(false);
-    vibrator_on = false;
 }
 
 static void close_popup_notification(lv_timer_t *timer)
@@ -345,7 +309,7 @@ static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
     button_read(id);
 
     if (type == BUTTONS_SHORT_PRESS && watch_state == WATCHFACE_STATE) {
-        play_press_vibration();
+        zsw_vibration_run_pattern(ZSW_VIBRATION_PATTERN_CLICK);
         if (id == BUTTON_TOP_LEFT) {
             LOG_DBG("Close Watchface, open App Manager");
             lv_async_call(open_application_manager_page, NULL);
@@ -442,9 +406,7 @@ static void screen_gesture_event(lv_event_t *e)
 void click_feedback(struct _lv_indev_drv_t *drv, uint8_t e)
 {
     if (e == LV_EVENT_CLICKED) {
-        if (!vibrator_on) {
-            play_press_vibration();
-        }
+        zsw_vibration_run_pattern(ZSW_VIBRATION_PATTERN_CLICK);
     }
 }
 
