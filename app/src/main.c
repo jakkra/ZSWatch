@@ -83,6 +83,8 @@ static lv_indev_drv_t enc_drv;
 static lv_indev_t *enc_indev;
 static buttonId_t last_pressed;
 
+static bool pending_not_open;
+
 static ui_state_t watch_state = INIT_STATE;
 
 K_WORK_DEFINE(init_work, run_init_work);
@@ -224,6 +226,7 @@ static void open_notification_popup(void *data)
         zsw_notification_popup_show(not->title, not->body, not->src, not->id, on_popup_notifcation_closed, 10);
         buttons_allocated = true;
     }
+    pending_not_open = false;
 }
 
 static void open_application_manager_page(void *app_name)
@@ -421,9 +424,11 @@ static void ble_data_cb(ble_comm_cb_data_t *cb)
                 return;
             }
 
-            if (zsw_notification_popup_is_shown()) {
+            if (zsw_notification_popup_is_shown() || pending_not_open) {
                 return;
             }
+
+            pending_not_open = true;
 
             if (zsw_power_manager_get_state() != ZSW_ACTIVITY_STATE_NOT_WORN_STATIONARY) {
                 zsw_power_manager_reset_idle_timout();
