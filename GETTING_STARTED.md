@@ -40,7 +40,7 @@ Everything works with both Zephyr and with nRF Connect (Nordic Semi. Zephyr fork
 ## Cloning source code
 Make sure you have enough space and clone the source code:
 ```
-git clone git@github.com:jakkra/ZSWatch.git
+git clone https://github.com/jakkra/ZSWatch.git
 git submodule update --init --recursive
 ```
 
