@@ -55,7 +55,8 @@ To be able to build, flash and debug via VSCode please install [nRF Connect for 
 [Here](https://nrfconnect.github.io/vscode-nrf-connect/get_started/build_app_ncs.html) you can also find a manual on how to deal with the nRF Connect extension.
 Follow the steps below to open and build the ZSWatch application:
 - Press "Open an existing application" under the "WELCOME" field of nRF Connect extension. 
-- Create new build configuration by clicking on "No build configuration" field in "APPLICATIONS" window. 
+- Select the `app` folder in the ZSWatch project root folder.
+- Create new build configuration by clicking on "No build configuration" field in "APPLICATIONS" window.
 - Choose `zswatch_nrf5340_cpuapp` as the board and nRF Connect SDK 2.4.0.
 - Set revision to 1 or 2 depending on what version of ZSWatch is used. If your watch is built before Aug. 1 2023 it's revision 1. Revision 2 adds external flash.
 - Press "Add fragment" under the "Kconfig fragments" field, here choose either debug (for developing) or release (for daily use).
