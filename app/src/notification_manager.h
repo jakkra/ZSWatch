@@ -4,7 +4,7 @@
 #include <ble_comm.h>
 
 #define NOTIFICATION_MGR_MAX_FIELD_LEN  50
-#define NOTIFICATION_MANAGER_MAX_STORED 5
+#define NOTIFICATION_MANAGER_MAX_STORED 20
 
 typedef enum notification_src {
     NOTIFICATION_SRC_MESSENGER,
