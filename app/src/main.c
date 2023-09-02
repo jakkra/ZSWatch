@@ -239,9 +239,12 @@ static void open_application_manager_page(void *app_name)
 
 static void close_popup_notification(lv_timer_t *timer)
 {
+    int msg_len;
+    char buf[100];
+    uint32_t id;
+
+    id = (uint32_t)timer->user_data;
     // Notification was dismissed, hence consider it read.
-    // TODO send to phone that the notification was read.
-    uint32_t id = (uint32_t)timer->user_data;
     notification_manager_remove(id);
 
     lv_group_set_default(input_group);
@@ -251,6 +254,12 @@ static void close_popup_notification(lv_timer_t *timer)
     } else {
         buttons_allocated = 1;
     }
+
+    memset(buf, 0, sizeof(buf));
+
+    // Send to phone notification read => It will be remove on phone too.
+    msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"notify\", \"id\": %d, \"n\": %s} \n", id, "\"DISMISS\"");
+    ble_comm_send(buf, msg_len);
 }
 
 static void on_popup_notifcation_closed(uint32_t id)
