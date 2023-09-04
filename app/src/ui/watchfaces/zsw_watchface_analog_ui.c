@@ -260,9 +260,9 @@ static void add_date(lv_obj_t *parent)
     lv_obj_align_to(day_label, parent, LV_ALIGN_CENTER, SMALL_WATCHFACE_CENTER_OFFSET + 25, -7);
 }
 
-static void watchface_show(void)
+static void watchface_show(watchface_app_evt_listener evt_cb)
 {
-    //lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x161B22), LV_PART_MAIN);
+    ARG_UNUSED(evt_cb);
     lv_obj_clear_flag(lv_scr_act(), LV_OBJ_FLAG_SCROLLABLE);
     root_page = lv_obj_create(lv_scr_act());
     watchface_ui_invalidate_cached();

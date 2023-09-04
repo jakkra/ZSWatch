@@ -8,6 +8,7 @@ LOG_MODULE_REGISTER(watchface_digital, LOG_LEVEL_WRN);
 #endif
 
 static void watchface_ui_invalidate_cached(void);
+static void arc_event_pressed(lv_event_t *e);
 
 static lv_obj_t *root_page = NULL;
 static lv_obj_t *ui_digital_watchface;
@@ -54,8 +55,11 @@ static int last_minute = -1;
 static int last_second = -1;
 static int last_num_not = -1;
 
-static void watchface_show(void)
+static watchface_app_evt_listener ui_evt_cb;
+
+static void watchface_show(watchface_app_evt_listener evt_cb)
 {
+    ui_evt_cb = evt_cb;
     lv_obj_clear_flag(lv_scr_act(), LV_OBJ_FLAG_SCROLLABLE);
     root_page = lv_obj_create(lv_scr_act());
     watchface_ui_invalidate_cached();
@@ -422,6 +426,10 @@ static void watchface_show(void)
                       LV_OBJ_FLAG_SCROLL_CHAIN);
     lv_obj_set_style_img_recolor(ui_weather_icon, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_img_recolor_opa(ui_weather_icon, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // Listeners
+    lv_obj_add_event_cb(ui_battery_arc, arc_event_pressed, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(ui_step_arc, arc_event_pressed, LV_EVENT_CLICKED, NULL);
 }
 
 static void watchface_remove(void)
@@ -543,6 +551,15 @@ static void watchface_ui_invalidate_cached(void)
     last_second = -1;
 }
 
+static void arc_event_pressed(lv_event_t *e)
+{
+    if (lv_event_get_target(e) == ui_battery_arc) {
+        ui_evt_cb(WATCHFACE_APP_EVT_CLICK_BATT);
+    } else if (lv_event_get_target(e) == ui_step_arc) {
+        ui_evt_cb(WATCHFACE_APP_EVT_CLICK_STEP);
+    }
+}
+
 static watchface_ui_api_t ui_api = {
     .show = watchface_show,
     .remove = watchface_remove,
@@ -556,7 +573,6 @@ static watchface_ui_api_t ui_api = {
     .set_date = watchface_set_date,
     .set_watch_env_sensors = watchface_set_watch_env_sensors,
     .ui_invalidate_cached = watchface_ui_invalidate_cached,
-    //.event_callback = watchface_event_callback,
 };
 
 static int watchface_init(void)

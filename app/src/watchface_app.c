@@ -67,7 +67,7 @@ typedef struct delayed_work_item {
     work_type_t             type;
 } delayed_work_item_t;
 
-void general_work(struct k_work *item);
+static void general_work(struct k_work *item);
 
 static void check_notifications(void);
 static void update_ui_from_event(struct k_work *item);
@@ -100,6 +100,8 @@ static watchface_ui_api_t *watchfaces[MAX_WATCHFACES];
 static uint8_t num_watchfaces;
 static uint8_t current_watchface;
 
+static watchface_app_evt_listener watchface_evt_cb;
+
 static int watchface_app_init(void)
 {
     k_work_init_delayable(&general_work_item.work, general_work);
@@ -118,9 +120,10 @@ void watchface_app_register_ui(watchface_ui_api_t *ui_api)
     num_watchfaces++;
 }
 
-void watchface_app_start(lv_group_t *group)
+void watchface_app_start(lv_group_t *group, watchface_app_evt_listener evt_cb)
 {
     __ASSERT(num_watchfaces > 0, "Must enable at least one watchface.");
+    watchface_evt_cb = evt_cb;
     general_work_item.type = OPEN_WATCHFACE;
     __ASSERT(0 <= k_work_schedule(&general_work_item.work, K_MSEC(100)), "FAIL schedule");
 }
@@ -156,7 +159,7 @@ static void refresh_ui(void)
     }
 }
 
-void general_work(struct k_work *item)
+static void general_work(struct k_work *item)
 {
     delayed_work_item_t *the_work = CONTAINER_OF(item, delayed_work_item_t, work);
     uint32_t steps;
@@ -165,7 +168,7 @@ void general_work(struct k_work *item)
         case OPEN_WATCHFACE: {
             running = true;
             is_suspended = false;
-            watchfaces[current_watchface]->show();
+            watchfaces[current_watchface]->show(watchface_evt_cb);
             refresh_ui();
 
             __ASSERT(0 <= k_work_schedule(&clock_work.work, K_NO_WAIT), "FAIL clock_work");

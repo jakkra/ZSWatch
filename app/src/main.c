@@ -68,6 +68,7 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan);
 
 static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
 static void screen_gesture_event(lv_event_t *e);
+static void watchface_app_evt_callback(watchface_app_evt_t evt);
 
 static void open_application_manager_page(void *app_name);
 static void on_close_application_manager(void);
@@ -135,7 +136,7 @@ static void run_init_work(struct k_work *item)
 
     watch_state = WATCHFACE_STATE;
     lv_obj_add_event_cb(lv_scr_act(), screen_gesture_event, LV_EVENT_GESTURE, NULL);
-    watchface_app_start(input_group);
+    watchface_app_start(input_group, watchface_app_evt_callback);
 }
 
 void run_wdt_work(struct k_work *item)
@@ -278,7 +279,7 @@ static void on_close_application_manager(void)
 {
     application_manager_delete();
     watch_state = WATCHFACE_STATE;
-    watchface_app_start(input_group);
+    watchface_app_start(input_group, watchface_app_evt_callback);
     lv_async_call(async_turn_off_buttons_allocation, NULL);
 }
 
@@ -415,7 +416,24 @@ static void screen_gesture_event(lv_event_t *e)
     }
 }
 
-void click_feedback(struct _lv_indev_drv_t *drv, uint8_t e)
+static void watchface_app_evt_callback(watchface_app_evt_t evt)
+{
+    if (watch_state == WATCHFACE_STATE && !zsw_notification_popup_is_shown()) {
+        switch (evt) {
+            case WATCHFACE_APP_EVT_CLICK_BATT:
+                open_application_manager_page("Battery");
+                break;
+            case WATCHFACE_APP_EVT_CLICK_STEP:
+                break;
+            case WATCHFACE_APP_EVT_CLICK_WEATHER:
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+static void click_feedback(struct _lv_indev_drv_t *drv, uint8_t e)
 {
     if (e == LV_EVENT_CLICKED) {
         zsw_vibration_run_pattern(ZSW_VIBRATION_PATTERN_CLICK);
@@ -480,7 +498,7 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
                     application_manager_set_index(0);
                     buttons_allocated = false;
                     watch_state = WATCHFACE_STATE;
-                    watchface_app_start(input_group);
+                    watchface_app_start(input_group, watchface_app_evt_callback);
                 }
             } else {
                 button_set_fake_press((buttonId_t)event->data.data.remote_control.button, true);
