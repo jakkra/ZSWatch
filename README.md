@@ -31,7 +31,9 @@ Smartwatch built from scratch, both hardware and software. Built on the [Zephyrâ
 
 
 ## Building or getting one
-I have received quite some requests regarding building or getting the ZSWatch, the hardware is done and you can now build it yourself. However I may do some smaller changes before I call it done and officially "release" it. If you want to get notified when I'm "releasing" it, then simply press the `Watch` button (next to Fork and Star) -> `Custom -> Releases` and you will see in your feed when it's released.
+We are very close now to a release that anyone can build. I have ordered assembled PCBs (v2 rev3) and once I get those back and verify them, PCBs are ready for release. This PCBs comes with new additions: 16MB flash, a light sensor, optional magnetic dock connector and a battery connector. A new case which is CNC:able is also pretty much ready. This repository is not updated yet with those new additions, but will be as soon as I have verified all parts.
+
+This will allow me If you want to get notified when I'm "releasing" it, then simply press the `Watch` button (next to Fork and Star) -> `Custom -> Releases` and you will see in your feed when it's released.
 <br/>
 **Or** you can fill in your **[mail here (Google form)](https://forms.gle/G48Sm5zDe9aCaYtT9)** and I'll send a reminder when it's ready (or if I decide to make a few kits, who knows).
 <br/>
