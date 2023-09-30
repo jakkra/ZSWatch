@@ -182,3 +182,9 @@ The application manager can also at any time close a running application by call
 
 ## Licence GPL-3.0
 Main difference from MIT is now that if anyone want to build something more with this, then they need to also open source their changes back to the project, which I thinks is fair. This is so everyone can benefit from those improvements. If you think this is wrong for some reason feel free to contact me, I'm open to change the LICENCE.
+
+## Thanks
+<a href="https://www.segger.com/"><img width="25%" src=".github/SEGGER-Logo-the-embedded-experts-RGB.jpg" ></a>
+
+SEGGER for supporting with SEGGER-OB licenses which makes the dock a fully functional programmer and debugger for ZSWatch.
+Thanks to this the project will be much more approchable for persons without a J-Link debugger, letting them have full development and debugging capabilites.
