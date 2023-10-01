@@ -17,7 +17,7 @@ If you have received or built a ZSWatch there are a few things you need to know 
     - Check that the pins are not "offsetted".
 <div align="center">
 
-<img src=".github/dock_connect.jpg" width="50%"/>
+<img src=".github/images/dock_connect.jpg" width="50%"/>
 <br>
 <sub>
   Note the usage for the dock v1 Rev1.
@@ -30,7 +30,7 @@ Download and install the tools needed for flashing.
 - [SEGGER J-Link](https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack)
 - [nRF Commond line tools](https://www.nordicsemi.com/Products/Development-tools/nrf-command-line-tools/download)
 
-> Don´t forget to set the group policies to allow the execution of local scripts when using Windows and a virtual environment for Zephyr. Otherwise the Zephyr installation fails. 
+> Don't forget to set the group policies to allow the execution of local scripts when using Windows and a virtual environment for Zephyr. Otherwise the Zephyr installation fails. 
 > Open a power shell as administrator and run `set-executionpolicy remotesigned` to change it. 
 
 Set up toolchain and everything by following [Zephyr Getting Started Guide](https://docs.zephyrproject.org/latest/develop/getting_started/index.html).

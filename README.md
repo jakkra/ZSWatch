@@ -4,9 +4,12 @@
 [![License](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![discord](https://img.shields.io/badge/chat-discord-blue?logo=discord&logoColor=white)](https://discord.gg/8XfNBmDfbY)
 
-<img src=".github/images/in_use.jpg"/>
+<p float="left">
+<img src=".github/images/in_use.jpg" width="62.8%" object-fit="cover"/>
+<img src=".github/images/v3_case.jpg" width="35%" object-fit="cover"/>
+</p>
 <sub>
-  ZSWatch v2
+  ZSWatch v2 (left) and v3 (right)
 </sub>
 </div>
 <br/>
@@ -31,11 +34,24 @@ Smartwatch built from scratch, both hardware and software. Built on the [Zephyrâ
 
 
 ## Building or getting one
-We are very close now to a release that anyone can build. I have ordered assembled PCBs (v2 rev3) and once I get those back and verify them, PCBs are ready for release. This PCBs comes with new additions: 16MB flash, a light sensor, optional magnetic dock connector and a battery connector. A new case which is CNC:able is also pretty much ready. This repository is not updated yet with those new additions, but will be as soon as I have verified all parts.
+Head over to the hardware repos https://github.com/jakkra/ZSWatch-HW and https://github.com/jakkra/ZSWatch-Dock for information about ordering the PCBs and assembly from PCBWay.
 
-This will allow me If you want to get notified when I'm "releasing" it, then simply press the `Watch` button (next to Fork and Star) -> `Custom -> Releases` and you will see in your feed when it's released.
+Some things are still in progress:
+- Documentation such as building instructions.
+- Final watch casing.
+- Dock casing.
+- CNC:ed casing in metal.
+
+**I'll also build a few initial kits** (assembled) for those who don't want or can build ZSWatch themselves.<br/>
+In addition to assembled ZSWatch and dock you will get the following compared to if you build it yourself:
+- **A magnetic dock connector and cable**. I have got custom ordered cables to fit the needs of ZSWatch.
+- **Dock with onboard SEGGER J-Link OB debgger**, which means you won't need an external debugger for ZSWatch development and flashing.
+- **Possibly CNC:ed casing in Stainless steel** (in progress).
+
+If you are interested in a kit, or want to get notified when the missing parts above are resolved, fill in your **[mail here (Google form)](https://forms.gle/G48Sm5zDe9aCaYtT9)** and I'll send a reminder when it's ready.
+
+**Or** if you want to get notified for releases and when the missing parts are finished simply press the `Watch` button (next to Fork and Star) -> `Custom -> Releases` and you will see in your feed when it's officially released.
 <br/>
-**Or** you can fill in your **[mail here (Google form)](https://forms.gle/G48Sm5zDe9aCaYtT9)** and I'll send a reminder when it's ready (or if I decide to make a few kits, who knows).
 <br/>
 
 # Table of content ZSWatch
@@ -44,16 +60,18 @@ This will allow me If you want to get notified when I'm "releasing" it, then sim
 - [Charger/Dock](#chargerdock)
 - [Enclosure/Casing](#enclosurecasing)
 - [Software Features](#software-features)
-  * [Larger not yet implemented SW Features and TODOs](#larger-not-yet-implemented-sw-features-and-todos)
+   * [Features and progress](#features-and-progress)
 - [Watchfaces](#watchfaces)
 - [Android phone communication](#android-phone-communication)
-  * [Pairing](#pairing)
+   * [Pairing](#pairing)
 - [PCB](#pcb)
 - [ZSWatch v1 in action (Note old, not updated for latest HW and SW).](#zswatch-v1-in-action-note-old-not-updated-for-latest-hw-and-sw)
-- [Environment, Compiling and running the code](GETTING_STARTED.md)
+- [Environment, Compiling and running the code](#environment-compiling-and-running-the-code)
 - [Writing apps for the Application Manager](#writing-apps-for-the-application-manager)
 - [Other tools](#other-tools)
 - [Licence GPL-3.0](#licence-gpl-30)
+- [Thanks](#thanks)
+
 
 ## Hardware features
 - nRF5340 BLE chip (u-blox NORA-B10 module).
@@ -66,29 +84,32 @@ This will allow me If you want to get notified when I'm "releasing" it, then sim
 - Bosch [BME688](https://www.bosch-sensortec.com/products/environmental-sensors/gas-sensors/bme688/) Environmental sensor with AI.
 - Bosch [BMP581](https://www.bosch-sensortec.com/products/environmental-sensors/pressure-sensors/bmp581/) High performance pressure sensor accuracy in units of ~20cm's.
 - ST [LIS2MDLTR](https://www.st.com/resource/en/datasheet/lis2mdl.pdf) Magnetometer.
-- Analog Devices [MAX30101](https://www.analog.com/en/products/max30101.html) Heart-Rate Monitor and Pulse Oximeter Sensor.
 - Renesas [AT25SL128A](https://eu.mouser.com/datasheet/2/698/REN_DS_AT25SL128A_109S_032023_DST_20230329-3076025.pdf) 16 MB external flash.
+- Broadcom [APDS-9306-065](https://docs.broadcom.com/docs/AV02-4755EN) Light Sensor for automatic brightness control.
 - Option to not mount some sensors to save BOM cost.
 
 ## Charger/Dock
-PCB done, casing to be designed. Idea is that watch will sit on top.
-Built in debugger. Will be an option without debugger also  (requires licence).
+Option with and without onboard SEGGER J-Link OB debugger.<br>
+As the debugger requires a license, this will only be availible as part of a kit.
+
+See more at https://github.com/jakkra/ZSWatch-Dock
 <p float="left">
-<img src=".github/images/dock.jpg" width="65%"/>
+<img src=".github/images/dock.jpg" width="48%" object-fit="cover"/>
+<img src=".github/images/dock_connector.jpg" width="49%" object-fit="cover"/>
 </p>
 
 ## Enclosure/Casing
-3D printed casing with 3D printed buttons. Does it's job, but would like to do something else, maybe CNC. Buttons are not 100% perfect right now.
+3D printed casing with 3D printed buttons. CNC:able casing in metal is in progress.
 
 ## Software Features
 - Bluetooth LE communications with [GadgetBridge](https://codeberg.org/Freeyourgadget/Gadgetbridge) Android app.
 - Also support Bluetooth Direction Finding so the watch can act as a tag and is trackable using any [u-blox AoA antenna board](https://www.u-blox.com/en/product/ant-b10-antenna-board)
-- Watchface that shows:
+- Multiple Watchfaces showing:
    - Standard stuff as time, date, battery
    - Weather
    - Step count
    - Number unread notifications
-   - Heart rate (not implemented yet however)
+   - Environmental data
    - ...
 - Pop-up notifications
 - [Application picker and app concept](#writing-apps-for-the-application-manager)
@@ -103,7 +124,7 @@ Built in debugger. Will be an option without debugger also  (requires licence).
 ...
 
 ### Features and progress
-There are almost endless of posiblities for features that could be implemented, see [here for full progress](https://github.com/users/jakkra/projects/1) and my current ideas.
+There are almost endless of posiblities for features that could be implemented, see [here for full progress](https://github.com/users/jakkra/projects/1) and in GitHub issues.
 
 ## Watchfaces
 Alternative watch faces can be chosen by selecting one or many of the appropriate Kconfig. <br>
@@ -135,14 +156,15 @@ Fortunately there is a great Android app called [GadgetBridge](https://codeberg.
 - You should now be paired.
 
 ## PCB
-A 4 layer board which measures 38mm in diameter designed in KiCad.
+A 4 layer board which measures 38mm in diameter designed in KiCad.<br>
+More info here: https://github.com/jakkra/ZSWatch-HW
 
 <p float="left">
-<img src=".github/images/pcb_features.png" width="90%" object-fit="cover"/>
+<img src=".github/images/pcb.jpg" width="83%" object-fit="cover"/>
 </p>
 <p float="left">
-<img src=".github/images/v2_render_wip_back.png" width="49%" object-fit="cover"/>
-<img src=".github/images/layer1_and_4_v2.PNG" width="41%" object-fit="cover"/>
+<img src=".github/images/front_pcb_render.png" width="43%" object-fit="cover"/>
+<img src=".github/images/back_pcb_render.png" width="40%" object-fit="cover"/>
 </p>
 
 ## ZSWatch v1 in action (Note old, not updated for latest HW and SW).
@@ -184,7 +206,7 @@ The application manager can also at any time close a running application by call
 Main difference from MIT is now that if anyone want to build something more with this, then they need to also open source their changes back to the project, which I thinks is fair. This is so everyone can benefit from those improvements. If you think this is wrong for some reason feel free to contact me, I'm open to change the LICENCE.
 
 ## Thanks
-<a href="https://www.segger.com/"><img width="25%" src=".github/SEGGER-Logo-the-embedded-experts-RGB.jpg" ></a>
+<a href="https://www.segger.com/"><img width="25%" src=".github/images/SEGGER-Logo-the-embedded-experts-RGB.jpg" ></a>
 
 SEGGER for supporting with SEGGER-OB licenses which makes the dock a fully functional programmer and debugger for ZSWatch.
 Thanks to this the project will be much more approchable for persons without a J-Link debugger, letting them have full development and debugging capabilites.
