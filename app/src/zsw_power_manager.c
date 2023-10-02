@@ -105,7 +105,7 @@ static void enter_inactive(void)
     retained_update();
     display_control_sleep_ctrl(false);
 
-    zsw_cpu_set_freq(ZSW_CPU_FREQ_FAST, true);
+    zsw_cpu_set_freq(ZSW_CPU_FREQ_DEFAULT, true);
 
     // Screen inactive -> wait for NO_MOTION interrupt in order to power off display regulator.
     zsw_imu_feature_enable(ZSW_IMU_FEATURE_NO_MOTION, true);
