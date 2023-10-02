@@ -588,7 +588,7 @@ static int8_t configure_axis_remapping(struct bmi2_dev *bmi2_dev)
     remapped_axis.x = BMI2_NEG_Y;
     remapped_axis.y = BMI2_X;
 #else
-#error "Unknown ZSWATCH_REV"
+    // Don't change anything
 #endif
 
     if (rslt == BMI2_OK) {
