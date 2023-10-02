@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 string(REGEX MATCH "zswatch_nrf5340_cpuapp(_ns)?@([0-9]+)$" ZSWATCH_BOARD "${BOARD}")
-if(ZSWATCH_BOARD )
+if(ZSWATCH_BOARD)
     set(ZSWATCH_REV ${CMAKE_MATCH_2})
+    add_definitions(-DZSWATCH_REV=${ZSWATCH_REV})
     # Rev 3 and later will handle this later in a different way.
     if(${ZSWATCH_REV} EQUAL 2)
         set(DFU_BUILD true)
@@ -20,6 +21,7 @@ add_subdirectory(drivers)
 add_subdirectory(src/applications)
 add_subdirectory(src/ext_drivers/bmi270)
 add_subdirectory(src/ext_drivers/bmp581)
+
 
 include_directories(src/)
 include_directories(src/ui)
