@@ -133,8 +133,6 @@ static int cst816s_process(const struct device *dev)
 	event = (x & 0xff) >> CST816S_EVENT_BITS_POS;
 	pressed = (event == EVENT_CONTACT);
 
-	LOG_ERR("event: %d, row: %d, col: %d", event, row, col);
-
 	if (pressed) {
 		input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
 		input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
