@@ -7,7 +7,7 @@
 #include <events/chg_event.h>
 #include <zephyr/zbus/zbus.h>
 
-LOG_MODULE_REGISTER(zsw_charger, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(zsw_charger, LOG_LEVEL_DBG);
 
 ZBUS_CHAN_DECLARE(chg_state_data_chan);
 
@@ -39,6 +39,7 @@ static void send_chg_status_event(void)
     struct chg_state_event evt = {
         .is_charging = is_charging,
     };
+    LOG_ERR("Charging status: %d", is_charging);
     zbus_chan_pub(&chg_state_data_chan, &evt, K_MSEC(250));
 }
 

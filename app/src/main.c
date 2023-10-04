@@ -41,6 +41,9 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/fatal.h>
 #include "dfu.h"
+#include <zephyr/retention/bootmode.h>
+#include <zephyr/sys/reboot.h>
+#include <zsw_rtt_flash_loader.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
 
@@ -145,6 +148,14 @@ void run_wdt_work(struct k_work *item)
 
 int main(void)
 {
+#ifdef CONFIG_SPI_FLASH_LOADER
+    if (bootmode_check(0xA)) {
+        LOG_WRN("SPI Flash Loader Boot Mode");
+        bootmode_clear();
+        zsw_rtt_flash_loader_start();
+        return 0;
+    }
+#endif
 #if defined(CONFIG_TASK_WDT) && !defined(CONFIG_BOARD_NATIVE_POSIX)
     const struct device *hw_wdt_dev = DEVICE_DT_GET(DT_ALIAS(watchdog0));
     if (!device_is_ready(hw_wdt_dev)) {

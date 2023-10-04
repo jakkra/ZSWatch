@@ -1,0 +1,6 @@
+west-commands:
+  - file: scripts/upload_fs_west_command.py
+    commands:
+      - name: upload_fs
+        class: UploadFsWestCommand
+        help: an example west extension command

@@ -133,3 +133,33 @@
 	};
 
 };
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+		lvgl_fs: lvgl_fs {
+			compatible = "zephyr,fstab,littlefs";
+			mount-point = "/lvgl_fs";
+			partition = <&lvgl_fs_partition>;
+			automount;
+			read-size = <16>;
+			prog-size = <16>;
+			cache-size = <64>;
+			lookahead-size = <32>;
+			block-cycles = <512>;
+		};
+	};
+};
+
+&at25sl128a {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		lvgl_fs_partition: partition@0 {
+			label = "storagelvgl";
+			reg = <0x00000000 0x00200000>;
+		};
+	};
+};

@@ -99,6 +99,34 @@ menu "ZSWatch"
 
 endmenu
 
+menu "SPI RTT Flash Loader"
+    config SPI_FLASH_LOADER
+        bool
+    prompt "Enable SPI flash loader"
+    default y
+    select USE_SEGGER_RTT
+    #select SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL
+    help
+        "Enable SPI flash loader"
+if SPI_FLASH_LOADER
+    config ERASE_PROGRESSIVELY
+        bool
+    depends on SPI_FLASH_LOADER
+    prompt "Erase sectors one by one when writing instead of full partition before starting."
+    default y
+    help
+        "If not writing to the full partition this will be faster"
+    
+    config RTT_TRANSFER_CHANNEL
+        int
+    depends on SPI_FLASH_LOADER
+    prompt "The RTT channel to use for transfer of data to and form flash"
+    default 2
+    help
+        "If RTT logging is enabled, channel 0 is used for this, hence avoid 1 in this scenario."
+endif
+endmenu
+
 rsource "drivers/Kconfig"
 
 module = APP

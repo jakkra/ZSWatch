@@ -53,7 +53,9 @@ target_sources(app PRIVATE src/zsw_power_manager.c)
 target_sources(app PRIVATE src/zsw_pressure_sensor.c)
 
 target_sources(app PRIVATE src/zsw_light_sensor.c)
-target_sources(app PRIVATE src/zsw_flash.c)
+
+target_sources_ifdef(CONFIG_SPI_FLASH_LOADER app PRIVATE src/zsw_rtt_flash_loader.c)
+target_sources_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS app PRIVATE src/zsw_filesystem.c)
 
 if (DFU_BUILD)
     target_sources(app PRIVATE src/dfu.c)
