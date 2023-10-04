@@ -575,6 +575,7 @@ static int8_t configure_axis_remapping(struct bmi2_dev *bmi2_dev)
 {
     int8_t rslt;
     struct bmi2_remap remapped_axis = { 0 };
+    struct bmi2_remap remapped_axis_read = { 0 };
 
     rslt = bmi2_get_remap_axes(&remapped_axis, bmi2_dev);
     bmi2_error_codes_print_result(rslt);
@@ -597,11 +598,11 @@ static int8_t configure_axis_remapping(struct bmi2_dev *bmi2_dev)
     }
 
     if (rslt == BMI2_OK) {
-        rslt = bmi2_get_remap_axes(&remapped_axis, bmi2_dev);
+        rslt = bmi2_get_remap_axes(&remapped_axis_read, bmi2_dev);
         bmi2_error_codes_print_result(rslt);
     }
 
-    if (!((remapped_axis.x == BMI2_NEG_X) && (remapped_axis.y == BMI2_NEG_Y) && (remapped_axis.z == BMI2_Z))) {
+    if (!((remapped_axis.x == remapped_axis_read.x) && (remapped_axis.y == remapped_axis_read.y) && (remapped_axis.z == remapped_axis_read.z))) {
         LOG_ERR("Wrong axis remapping read after setting");
     }
 
