@@ -1,7 +1,8 @@
 from west.commands import WestCommand  # your extension must subclass this
 from west import log                   # use this for user output
-from create_resource_fs import create_fs_image
+#from create_resource_fs import create_fs_image
 from rtt_flash_loader import run_loader
+from create_lvgl_image import create_fs_image
 import sys
 
 class UploadFsWestCommand(WestCommand):
@@ -37,5 +38,6 @@ class UploadFsWestCommand(WestCommand):
         if (args.read_file):
             filename = args.read_file
         if args.read_file is None:
-            create_fs_image(img_filename, img_size, block_size, read_size, prog_size, name_max, file_max, attr_max, source_dir, disk_version)
+            create_fs_image(img_filename, source_dir, block_size)
+            #create_fs_image(img_filename, img_size, block_size, read_size, prog_size, name_max, file_max, attr_max, source_dir, disk_version)
         sys.exit(run_loader("nRF5340_XXAA", filename, args.read_file))

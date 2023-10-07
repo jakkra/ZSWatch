@@ -80,4 +80,4 @@ int zsw_filesystem_ls(void)
 	return 0;
 }
 
-SYS_INIT(zsw_filesystem_ls, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+//SYS_INIT(zsw_filesystem_ls, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

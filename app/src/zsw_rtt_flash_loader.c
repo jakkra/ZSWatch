@@ -1,9 +1,3 @@
-/*
- * Copyright (c) 2023 Jakob Krantz
- *
- * SPDX-License-Identifier: Apache-2.0
- */
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
