@@ -115,13 +115,6 @@
         irq-gpios = <&gpio0 24 0>;
     };
 
-    max30101@57 {
-        status = "okay";
-        compatible = "maxim,max30101";
-        reg = <0x57>;
-        //irq-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH; // Not supported by Zephyr driver
-    };
-
     bmp581: bmp581@47 {
         compatible = "bosch,bmp581";
         reg = <0x47>;

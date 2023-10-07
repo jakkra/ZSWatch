@@ -3,6 +3,48 @@ menu "Zephyr Kernel"
 endmenu
 
 menu "ZSWatch"
+    menu "Applications"
+        config APPLICATIONS_USE_2048
+            bool
+        prompt "Activate the application '2048'"
+        default ny
+
+        config APPLICATIONS_USE_ACCELEROMETER
+            bool
+        prompt "Activate the application 'Accelerometer'"
+        default y
+
+        config APPLICATIONS_USE_BATTERY
+            bool
+        prompt "Activate the application 'Battery'"
+        default y
+
+        config APPLICATIONS_USE_COMPASS
+            bool
+        prompt "Activate the application 'Compass'"
+        default y
+
+        config APPLICATIONS_USE_INFO
+            bool
+        prompt "Activate the application 'Info'"
+        default y
+
+        config APPLICATIONS_USE_QR_CODE
+            bool
+        prompt "Activate the application 'QR-Code'"
+        default y
+
+        config APPLICATIONS_USE_X_RAY
+            bool
+        prompt "Activate the application 'X-Ray'"
+        default y
+
+        config APPLICATIONS_USE_ZDS
+            bool
+        prompt "Activate the application 'ZDS'"
+        default y
+    endmenu
+
     config DISABLE_PAIRING_REQUIRED
         bool
     prompt "Disable encryption required for BLE connection (pairing/bonding)"
