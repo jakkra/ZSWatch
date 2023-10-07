@@ -26,8 +26,8 @@ class UploadFsWestCommand(WestCommand):
         img_filename = "lvgl_resources"
         img_size = 2 *1024 * 1024
         block_size = 4096
-        read_size = 16
-        prog_size = 16
+        read_size = 1024
+        prog_size = 512
         name_max = 255
         file_max = 0
         attr_max = 0

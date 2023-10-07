@@ -142,10 +142,10 @@
 			mount-point = "/lvgl_fs";
 			partition = <&lvgl_fs_partition>;
 			automount;
-			read-size = <16>;
-			prog-size = <16>;
-			cache-size = <64>;
-			lookahead-size = <32>;
+			read-size = <1024>;
+			prog-size = <512>;
+			cache-size = <4096>;
+			lookahead-size = <4096>;
 			block-cycles = <512>;
 		};
 	};
