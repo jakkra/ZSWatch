@@ -1,0 +1,12 @@
+# APDS-9306 light sensor configuration options.
+
+# Copyright (c) 2023, Daniel Kampert
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config APDS9306
+	bool "APDS9306 light sensor"
+	default y
+	select I2C
+	help
+	  Enable the driver for the APDS9306 digital light sensor.
