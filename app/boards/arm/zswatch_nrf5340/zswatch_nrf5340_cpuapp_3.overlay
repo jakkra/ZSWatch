@@ -79,6 +79,11 @@
         int1-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
         int2-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
     };
+
+    apds9306: apds9306@52 {
+        compatible = "avago,apds9306";
+        reg = <0x52>;
+    };
 };
 
 &spi4  {
