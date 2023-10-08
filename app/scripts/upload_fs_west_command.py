@@ -1,9 +1,11 @@
-from west.commands import WestCommand  # your extension must subclass this
-from west import log                   # use this for user output
-#from create_resource_fs import create_fs_image
+from west.commands import WestCommand
+from west import log
+from create_custom_resource_image import create_custom_raw_fs_image
 from rtt_flash_loader import run_loader
-from create_lvgl_image import create_fs_image
+from create_littlefs_resouce_image import create_littlefs_fs_image
 import sys
+import os
+from pathlib import Path
 
 class UploadFsWestCommand(WestCommand):
 
@@ -19,7 +21,11 @@ class UploadFsWestCommand(WestCommand):
                                          help=self.help,
                                          description=self.description)
 
+        parser.add_argument('--type', type=str, default='raw', help='raw or fs. fs to load littlefs image, raw to load custom binary')
         parser.add_argument('--read_file', type=str, help='If set dump flash to this filename')
+        parser.add_argument(
+            "-p", "--partition", type=str, help="Label of partition in DTS to write to. Leave blank to use auto guess name.",
+        )
         return parser
 
     def do_run(self, args, unknown_args):
@@ -32,12 +38,21 @@ class UploadFsWestCommand(WestCommand):
         name_max = 255
         file_max = 0
         attr_max = 0
-        source_dir = "../src/images/binaries/"
         disk_version = "2.0"
         filename = "lvgl_resources"
+        partition = args.partition
+        zephyr_base = Path(os.environ.get("ZEPHYR_BASE"))
+        images_path = f'{zephyr_base.parent.absolute()}/app/src/images/binaries'
+        print(images_path)
         if (args.read_file):
             filename = args.read_file
         if args.read_file is None:
-            create_fs_image(img_filename, source_dir, block_size)
-            #create_fs_image(img_filename, img_size, block_size, read_size, prog_size, name_max, file_max, attr_max, source_dir, disk_version)
-        sys.exit(run_loader("nRF5340_XXAA", filename, args.read_file))
+            if args.type == 'raw':
+                source_dir = f"{images_path}/S"
+                partition = partition if partition else "lvgl_raw_partition"
+                create_custom_raw_fs_image(img_filename, source_dir, block_size)
+            elif args.type == 'lfs':
+                source_dir = f"{images_path}/lvgl_lfs"
+                partition = partition if partition else "lvgl_lfs_partition"
+                create_littlefs_fs_image(img_filename, img_size, block_size, read_size, prog_size, name_max, file_max, attr_max, source_dir, disk_version)
+        sys.exit(run_loader("nRF5340_XXAA", filename, partition, args.read_file))

@@ -17,9 +17,8 @@ offset:uint32
 len:uint32
 ...
 '''
-# TODO add total length ijn the beginning?
 
-def create_fs_image(img_filename, source_dir, block_size=4096):
+def create_custom_raw_fs_image(img_filename, source_dir, block_size=4096):
     table = {}
     offset = 0
     files_image = bytearray()
@@ -67,4 +66,4 @@ if __name__ == "__main__":
     block_size = args.block_size
     source_dir = args.source
 
-    create_fs_image(img_filename, source_dir, block_size)
+    create_custom_raw_fs_image(img_filename, source_dir, block_size)

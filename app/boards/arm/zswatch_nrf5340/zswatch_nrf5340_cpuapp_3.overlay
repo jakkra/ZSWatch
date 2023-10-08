@@ -137,10 +137,10 @@
 / {
 	fstab {
 		compatible = "zephyr,fstab";
-		lvgl_fs: lvgl_fs {
+		lvgl_lfs: lvgl_lfs {
 			compatible = "zephyr,fstab,littlefs";
-			mount-point = "/lvgl_fs";
-			partition = <&lvgl_fs_partition>;
+			mount-point = "/lvgl_lfs";
+			partition = <&lvgl_lfs_partition>;
 			automount;
 			read-size = <1024>;
 			prog-size = <512>;
@@ -157,9 +157,13 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		lvgl_fs_partition: partition@0 {
-			label = "storagelvgl";
+		lvgl_lfs_partition: partition@0 {
+			label = "lvgl_lfs_partition";
 			reg = <0x00000000 0x00200000>;
+		};
+		lvgl_raw_partition: partition@200000 {
+			label = "lvgl_raw_partition";
+			reg = <0x00200000 0x00200000>;
 		};
 	};
 };

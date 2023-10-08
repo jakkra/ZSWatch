@@ -40,11 +40,12 @@ def read_rtt(jlink):
         raise
 
 
-def dump_flash(jlink, file):
+def dump_flash(jlink, file, partition):
     print(jlink, file)
     with open(file, "wb") as file:
         try:
-            bytes = list(bytearray("DUMP_START", "utf-8"))
+            bytes = list(bytearray(f"DUMP_START:{partition}", "utf-8"))
+            print("Start:", bytes)
             jlink.rtt_write(2, bytes)
             time.sleep(2)
 
@@ -78,12 +79,12 @@ def dump_flash(jlink, file):
             raise
 
 
-def load_data(jlink, file):
+def load_data(jlink, file, partition):
     try:
         buffer_size = 4096 * 2
         counter = 0
         print("FILENAME", file)
-        bytes = list(bytearray("LOADER_START", "utf-8"))
+        bytes = list(bytearray(f"LOADER_START:{partition}", "utf-8"))
         jlink.rtt_write(2, bytes)
         time.sleep(2)
 
@@ -129,7 +130,7 @@ def load_data(jlink, file):
         raise
 
 
-def run_loader(target_device, file, read_data_only=False):
+def run_loader(target_device, file, partition, read_data_only=False):
     """Creates connection to target via RTT and either writes a file or reads from flash.
 
     Args:
@@ -191,9 +192,9 @@ def run_loader(target_device, file, read_data_only=False):
 
         work_thread = None
         if read_data_only:
-            work_thread = Thread(target=dump_flash, args=(jlink, file))
+            work_thread = Thread(target=dump_flash, args=(jlink, file, partition))
         else:
-            work_thread = Thread(target=load_data, args=(jlink, file))
+            work_thread = Thread(target=load_data, args=(jlink, file, partition))
         work_thread.daemon = True
         work_thread.start()
         work_thread.join()
@@ -219,13 +220,15 @@ if __name__ == "__main__":
         help="Binary file to send to target or in case of read the filename to store the data in.",
     )
     parser.add_argument(
+        "-p", "--partition", type=int, help="Label of partition in DTS to write to.", default="lvgl_raw_partition"
+    )
+    parser.add_argument(
         "--read_data", help="Read data from flash block", action="store_true"
     )
-
     parser.add_argument(
         "-s", "--serial", type=int, help="Serial number of ZSWatch attached debugger"
     )
 
     args = parser.parse_args()
 
-    sys.exit(run_loader(args.target_cpu, args.file, args.read_data))
+    sys.exit(run_loader(args.target_cpu, args.file, partition, args.read_data))
