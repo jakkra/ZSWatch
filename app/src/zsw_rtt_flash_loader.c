@@ -15,18 +15,18 @@ LOG_MODULE_REGISTER(zsw_rtt_flash_loader);
 
 #define RTT_RECIVE_BUFFER_SIZE SPI_FLASH_SECTOR_SIZE
 
-#define TRANSFER_TIMEOUT_MS		5000
+#define TRANSFER_TIMEOUT_MS     5000
 
 #define START_LOAD_SEQUENCE "LOADER_START"
-#define STOP_LOAD_SEQUENCE 	"LOADER_END"
+#define STOP_LOAD_SEQUENCE  "LOADER_END"
 #define DUMP_FLASH_SEQUENCE "DUMP_START"
-#define READ_DONE_SEQUENCE	"DUMP_END"
+#define READ_DONE_SEQUENCE  "DUMP_END"
 
-#define RTT_CHANNEL_NAME	"FlashLoaderChannel"
+#define RTT_CHANNEL_NAME    "FlashLoaderChannel"
 
 struct flash_partition_search_user_data {
     int     found_part_id;
-    char*   search_label_name;
+    char   *search_label_name;
 };
 
 static void rtt_load_flash_thread(void *, void *, void *);
@@ -41,7 +41,7 @@ static uint8_t down_buffer[SPI_FLASH_SECTOR_SIZE + 1];
 
 static const struct flash_area *flash_area;
 
-static int loader_write_flash(int partition_id, int buf_idx, uint8_t* buf, int len)
+static int loader_write_flash(int partition_id, int buf_idx, uint8_t *buf, int len)
 {
     int rc;
     if (len != SPI_FLASH_SECTOR_SIZE) {
@@ -61,12 +61,12 @@ static int loader_write_flash(int partition_id, int buf_idx, uint8_t* buf, int l
     if (rc != 0) {
         printk("Flash write failed! %d\n", rc);
         return rc;
-    }	
+    }
 
     return 0;
 }
 
-static int loader_read_flash(int partition_id, int buf_idx, uint8_t* buf, int len)
+static int loader_read_flash(int partition_id, int buf_idx, uint8_t *buf, int len)
 {
     int rc;
 
@@ -81,17 +81,17 @@ static int loader_read_flash(int partition_id, int buf_idx, uint8_t* buf, int le
 
 static void flash_part_iter_cb(const struct flash_area *fa, void *user_data)
 {
-	struct flash_partition_search_user_data* search_data = (struct flash_partition_search_user_data*)user_data;
-	const char *fa_label = flash_area_label(fa);
-	if (fa_label == NULL) {
-		return;
-	}
+    struct flash_partition_search_user_data *search_data = (struct flash_partition_search_user_data *)user_data;
+    const char *fa_label = flash_area_label(fa);
+    if (fa_label == NULL) {
+        return;
+    }
     if (strcmp(search_data->search_label_name, fa_label) == 0) {
         search_data->found_part_id = fa->fa_id;
     }
 }
 
-static int find_partition_id_from_label(char* label)
+static int find_partition_id_from_label(char *label)
 {
     struct flash_partition_search_user_data search_data = {
         .search_label_name = label,
@@ -109,9 +109,9 @@ static int find_partition_id_from_label(char* label)
     return search_data.found_part_id;
 }
 
-static bool check_start_sequence(uint8_t* buf, uint32_t len, int* partition_id)
+static bool check_start_sequence(uint8_t *buf, uint32_t len, int *partition_id)
 {
-    char* partition_label;
+    char *partition_label;
     if (strncmp(buf, START_LOAD_SEQUENCE, strlen(START_LOAD_SEQUENCE)) == 0) {
         partition_label = strchr(buf, ':');
         if (partition_label) {
@@ -125,7 +125,7 @@ static bool check_start_sequence(uint8_t* buf, uint32_t len, int* partition_id)
     return false;
 }
 
-static bool check_end_sequence(uint8_t* buf, uint32_t len)
+static bool check_end_sequence(uint8_t *buf, uint32_t len)
 {
     if (memcmp(buf, STOP_LOAD_SEQUENCE, strlen(STOP_LOAD_SEQUENCE)) == 0) {
         printk("End sequence received\n");
@@ -135,9 +135,9 @@ static bool check_end_sequence(uint8_t* buf, uint32_t len)
     return false;
 }
 
-static bool check_read_sequence(uint8_t* buf, uint32_t len, int* partition_id)
+static bool check_read_sequence(uint8_t *buf, uint32_t len, int *partition_id)
 {
-    char* partition_label;
+    char *partition_label;
     if (memcmp(buf, DUMP_FLASH_SEQUENCE, strlen(DUMP_FLASH_SEQUENCE)) == 0) {
         partition_label = strchr(buf, ':');
         if (partition_label) {
@@ -151,7 +151,7 @@ static bool check_read_sequence(uint8_t* buf, uint32_t len, int* partition_id)
     return false;
 }
 
-static void rtt_load_flash_thread(void * partition_id_param, void *, void *)
+static void rtt_load_flash_thread(void *partition_id_param, void *, void *)
 {
     int ret;
     int len;
@@ -214,7 +214,7 @@ static void rtt_load_flash_thread(void * partition_id_param, void *, void *)
     flash_area_close(flash_area);
 }
 
-static void rtt_dump_flash_thread(void * partition_id_param, void *, void *)
+static void rtt_dump_flash_thread(void *partition_id_param, void *, void *)
 {
     int ret;
     int len;
@@ -276,11 +276,11 @@ int zsw_rtt_flash_loader_start(void)
     int partition_id;
 
     SEGGER_RTT_ConfigUpBuffer(CONFIG_RTT_TRANSFER_CHANNEL, RTT_CHANNEL_NAME,
-                    up_buffer, sizeof(up_buffer),
-                    SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL);
+                              up_buffer, sizeof(up_buffer),
+                              SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL);
     SEGGER_RTT_ConfigDownBuffer(CONFIG_RTT_TRANSFER_CHANNEL, RTT_CHANNEL_NAME,
-                    down_buffer, sizeof(down_buffer),
-                    SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL);
+                                down_buffer, sizeof(down_buffer),
+                                SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL);
 
     while (1) {
         int len = SEGGER_RTT_Read(CONFIG_RTT_TRANSFER_CHANNEL, data_buf, sizeof(data_buf));
@@ -294,13 +294,13 @@ int zsw_rtt_flash_loader_start(void)
         if (check_start_sequence(data_buf, len, &partition_id)) {
             printk("Load sequence received: %s partition ID: %d\n", data_buf, partition_id);
             k_tid_t tid = k_thread_create(&rtt_work_thread, rtt_work_thread_stack, K_KERNEL_STACK_SIZEOF(rtt_work_thread_stack),
-                      rtt_load_flash_thread, (void*)partition_id, NULL, NULL, CONFIG_NUM_COOP_PRIORITIES-2, 0, K_NO_WAIT);
+                                          rtt_load_flash_thread, (void *)partition_id, NULL, NULL, CONFIG_NUM_COOP_PRIORITIES - 2, 0, K_NO_WAIT);
             k_thread_join(tid, K_FOREVER);
             printk("Load thread done\n");
         } else if (check_read_sequence(data_buf, len, &partition_id)) {
             printk("Read sequence received: %s partition ID: %d\n", data_buf, partition_id);
             k_tid_t tid = k_thread_create(&rtt_work_thread, rtt_work_thread_stack, K_KERNEL_STACK_SIZEOF(rtt_work_thread_stack),
-                      rtt_dump_flash_thread, (void*)partition_id, NULL, NULL, CONFIG_NUM_COOP_PRIORITIES-2, 0, K_NO_WAIT);
+                                          rtt_dump_flash_thread, (void *)partition_id, NULL, NULL, CONFIG_NUM_COOP_PRIORITIES - 2, 0, K_NO_WAIT);
             k_thread_join(tid, K_FOREVER);
             printk("Read thread done\n");
         } else {
