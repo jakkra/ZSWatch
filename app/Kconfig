@@ -43,6 +43,7 @@ menu "ZSWatch"
             bool
         prompt "Activate the application 'ZDS'"
         default y
+        select APPLICATIONS_USE_ACCELEROMETER
     endmenu
 
     config DISABLE_PAIRING_REQUIRED
