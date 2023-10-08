@@ -7,7 +7,7 @@ menu "ZSWatch"
         config APPLICATIONS_USE_2048
             bool
         prompt "Activate the application '2048'"
-        default ny
+        default y
 
         config APPLICATIONS_USE_ACCELEROMETER
             bool
@@ -32,12 +32,12 @@ menu "ZSWatch"
         config APPLICATIONS_USE_QR_CODE
             bool
         prompt "Activate the application 'QR-Code'"
-        default y
+        default n
 
         config APPLICATIONS_USE_X_RAY
             bool
         prompt "Activate the application 'X-Ray'"
-        default y
+        default n
 
         config APPLICATIONS_USE_ZDS
             bool
