@@ -1,3 +1,4 @@
 add_subdirectory(display)
 add_subdirectory(input)
-add_subdirectory(sensor/apds9306)
+
+add_subdirectory_ifdef(CONFIG_SENSOR sensor)
