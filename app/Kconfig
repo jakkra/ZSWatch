@@ -32,12 +32,12 @@ menu "ZSWatch"
         config APPLICATIONS_USE_QR_CODE
             bool
         prompt "Activate the application 'QR-Code'"
-        default n
+        default y if LV_Z_USE_FILESYSTEM
 
         config APPLICATIONS_USE_X_RAY
             bool
         prompt "Activate the application 'X-Ray'"
-        default n
+        default y if LV_Z_USE_FILESYSTEM
 
         config APPLICATIONS_USE_ZDS
             bool
