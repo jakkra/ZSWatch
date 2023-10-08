@@ -7,7 +7,7 @@
 
 LOG_MODULE_REGISTER(zsw_filesystem, LOG_LEVEL_DBG);
 
-#define PARTITION_NODE DT_NODELABEL(lvgl_fs)
+#define PARTITION_NODE DT_NODELABEL(lvgl_lfs)
 FS_FSTAB_DECLARE_ENTRY(PARTITION_NODE);
 
 struct fs_mount_t *mountpoint = &FS_FSTAB_ENTRY(PARTITION_NODE);
@@ -80,4 +80,4 @@ int zsw_filesystem_ls(void)
 	return 0;
 }
 
-//SYS_INIT(zsw_filesystem_ls, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(zsw_filesystem_ls, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
