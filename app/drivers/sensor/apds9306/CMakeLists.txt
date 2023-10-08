@@ -6,4 +6,4 @@
 # TODO: Doesn´t work with CMakeList.txt of the drivers directory -> Check it
 #zephyr_library()
 
-zephyr_library_sources(apds9306.c)
+zephyr_sources(apds9306.c)
