@@ -255,14 +255,14 @@ static void rtt_dump_flash_thread(void *partition_id_param, void *, void *)
 #endif
 
     while (buffer_index < flash_area->fa_size / SPI_FLASH_SECTOR_SIZE) {
-        ret = loader_read_flash((int)partition_id, buffer_index, data_buf, sizeof(data_buf));
+        ret = loader_read_flash((int)partition_id, buffer_index, data_buf, SPI_FLASH_SECTOR_SIZE);
         if (ret != 0) {
             printk("loader_read_flash failed: %dn", ret);
             break;
         }
-        len_to_send = sizeof(data_buf);
+        len_to_send = SPI_FLASH_SECTOR_SIZE;
         while (len_to_send > 0) {
-            len = SEGGER_RTT_Write(CONFIG_RTT_TRANSFER_CHANNEL, data_buf, sizeof(data_buf));
+            len = SEGGER_RTT_Write(CONFIG_RTT_TRANSFER_CHANNEL, data_buf, SPI_FLASH_SECTOR_SIZE);
             bytes_sent += len;
             len_to_send -= len;
             if (len > 0) {

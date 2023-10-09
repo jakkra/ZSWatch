@@ -46,7 +46,6 @@ def dump_flash(jlink, file, partition):
     with open(file, "wb") as file:
         try:
             bytes = list(bytearray(f"DUMP_START:{partition}", "utf-8"))
-            print("Start:", bytes)
             jlink.rtt_write(2, bytes)
             time.sleep(2)
 
@@ -222,6 +221,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Open RTT console.")
     parser.add_argument(
         "--target_cpu",
+        default="nRF5340_XXAA",
         help="Device Name (see https://www.segger.com/supported-devices/jlink/)",
     )
     parser.add_argument(
@@ -229,7 +229,7 @@ if __name__ == "__main__":
         help="Binary file to send to target or in case of read the filename to store the data in.",
     )
     parser.add_argument(
-        "-p", "--partition", type=int, help="Label of partition in DTS to write to.", default="lvgl_raw_partition"
+        "-p", "--partition", type=str, help="Label of partition in DTS to write to.", default="lvgl_raw_partition"
     )
     parser.add_argument(
         "--read_data", help="Read data from flash block", action="store_true"
@@ -240,4 +240,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    sys.exit(run_loader(args.target_cpu, args.file, partition, args.read_data))
+    sys.exit(run_loader(args.target_cpu, args.file, args.partition, args.read_data))

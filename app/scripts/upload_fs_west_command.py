@@ -46,6 +46,7 @@ class UploadFsWestCommand(WestCommand):
         print(images_path)
         if (args.read_file):
             filename = args.read_file
+            partition = partition if partition else "lvgl_lfs_partition"
         if args.read_file is None:
             if args.type == 'raw':
                 source_dir = f"{images_path}/S"
