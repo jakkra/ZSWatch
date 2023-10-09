@@ -35,17 +35,21 @@ struct rtt_rx_data_header {
     uint32_t    address;
 };
 
+#define DATA_BUFFER_SIZE (SPI_FLASH_SECTOR_SIZE + sizeof(struct rtt_rx_data_header))
+#define UP_BUFFER_SIZE (SPI_FLASH_SECTOR_SIZE + 1 + sizeof(struct rtt_rx_data_header))
+#define DOWN_BUFFER_SIZE (SPI_FLASH_SECTOR_SIZE + 1 + sizeof(struct rtt_rx_data_header))
+
 static void rtt_load_flash_thread(void *, void *, void *);
 static void rtt_dump_flash_thread(void *, void *, void *);
 
 K_THREAD_STACK_DEFINE(rtt_work_thread_stack, 8192);
 static struct k_thread rtt_work_thread;
 
-static uint8_t data_buf[SPI_FLASH_SECTOR_SIZE + sizeof(struct rtt_rx_data_header)];
-static uint8_t up_buffer[SPI_FLASH_SECTOR_SIZE + 1 + sizeof(struct rtt_rx_data_header)];
-static uint8_t down_buffer[SPI_FLASH_SECTOR_SIZE + 1 + sizeof(struct rtt_rx_data_header)];
-
 static const struct flash_area *flash_area;
+
+static uint8_t* data_buf;
+static uint8_t* up_buffer;
+static uint8_t* down_buffer;
 
 static int loader_write_flash(int partition_id, int buf_idx, uint8_t *buf, int len)
 {
@@ -109,7 +113,7 @@ static int find_partition_id_from_label(char *label)
     if (search_data.found_part_id >= 0) {
         LOG_DBG("Found target partition id: %d", search_data.found_part_id);
     } else {
-        LOG_ERR("Partition label not found: %s", label + 1);
+        LOG_ERR("Partition label not found: %s", label);
     }
 
     return search_data.found_part_id;
@@ -182,7 +186,7 @@ static void rtt_load_flash_thread(void *partition_id_param, void *, void *)
 #endif
 
     while (1) {
-        len_to_read = sizeof(data_buf) - buffer_index;
+        len_to_read = DATA_BUFFER_SIZE - buffer_index;
         len = SEGGER_RTT_Read(CONFIG_RTT_TRANSFER_CHANNEL, data_buf, len_to_read);
 
         if (len <= 0) {
@@ -210,20 +214,20 @@ static void rtt_load_flash_thread(void *partition_id_param, void *, void *)
                 break;
             }
             ret = loader_write_flash((int)partition_id, header->address / SPI_FLASH_SECTOR_SIZE,
-                                     data_buf + sizeof(struct rtt_rx_data_header), sizeof(data_buf) - sizeof(struct rtt_rx_data_header));
+                                     data_buf + sizeof(struct rtt_rx_data_header), DATA_BUFFER_SIZE - sizeof(struct rtt_rx_data_header));
             if (ret != 0) {
                 printk("loader_write_flash failed: %dn", ret);
                 break;
             }
             block_index++;
             buffer_index = 0;
-            bytes_flashed += sizeof(data_buf);
+            bytes_flashed += DATA_BUFFER_SIZE;
             if (block_index % 10 == 0) {
                 printk("RTT: Received %d (%d)\n", bytes_flashed, block_index);
             }
         } else {
             buffer_index += len;
-            if (buffer_index > sizeof(data_buf)) {
+            if (buffer_index > DATA_BUFFER_SIZE) {
                 __ASSERT(false, "Something wrong got size %d", buffer_index);
             }
         }
@@ -293,15 +297,21 @@ int zsw_rtt_flash_loader_start(void)
 {
     int partition_id;
 
+    data_buf = k_malloc(DATA_BUFFER_SIZE);
+    up_buffer = k_malloc(UP_BUFFER_SIZE);
+    down_buffer = k_malloc(DOWN_BUFFER_SIZE);
+
+    __ASSERT(data_buf && up_buffer && down_buffer, "Failed to allocate buffers for RTT file tarnsfer");
+
     SEGGER_RTT_ConfigUpBuffer(CONFIG_RTT_TRANSFER_CHANNEL, RTT_CHANNEL_NAME,
-                              up_buffer, sizeof(up_buffer),
+                              up_buffer, UP_BUFFER_SIZE,
                               SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL);
     SEGGER_RTT_ConfigDownBuffer(CONFIG_RTT_TRANSFER_CHANNEL, RTT_CHANNEL_NAME,
-                                down_buffer, sizeof(down_buffer),
+                                down_buffer, DOWN_BUFFER_SIZE,
                                 SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL);
 
     while (1) {
-        int len = SEGGER_RTT_Read(CONFIG_RTT_TRANSFER_CHANNEL, data_buf, sizeof(data_buf));
+        int len = SEGGER_RTT_Read(CONFIG_RTT_TRANSFER_CHANNEL, data_buf, DATA_BUFFER_SIZE);
 
         if (len <= 0) {
             k_msleep(100);
