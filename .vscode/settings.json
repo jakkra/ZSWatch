@@ -7,7 +7,4 @@
         "${workspaceFolder}/app",
         "${workspaceFolder}\\app"
     ],
-    "nrf-connect.debugging.bindings": {
-        "${workspaceFolder}/app/build": "Launch build"
-    },
 }
