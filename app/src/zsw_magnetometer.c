@@ -141,16 +141,16 @@ static void lis2mdl_trigger_handler(const struct device *dev,
     sensor_channel_get(magnetometer, SENSOR_CHAN_DIE_TEMP, &die_temp2);
 
     LOG_DBG("LIS2MDL: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
-            sensor_value_to_double(&magn[0]),
-            sensor_value_to_double(&magn[1]),
-            sensor_value_to_double(&magn[2]));
+            sensor_value_to_float(&magn[0]),
+            sensor_value_to_float(&magn[1]),
+            sensor_value_to_float(&magn[2]));
 
-    last_x = sensor_value_to_double(&magn[0]);
-    last_y = sensor_value_to_double(&magn[1]);
-    last_z = sensor_value_to_double(&magn[2]);
+    last_x = sensor_value_to_float(&magn[0]);
+    last_y = sensor_value_to_float(&magn[1]);
+    last_z = sensor_value_to_float(&magn[2]);
 
     LOG_DBG("LIS2MDL: Temperature: %.1f C\n",
-            sensor_value_to_double(&die_temp2));
+            sensor_value_to_float(&die_temp2));
 
     if (is_calibrating) {
         if (last_x < min_x) {

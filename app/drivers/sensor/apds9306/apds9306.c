@@ -292,20 +292,17 @@ static int apds9306_channel_get(const struct device* p_Dev, enum sensor_channel 
 {
     struct apds9306_data* Data = p_Dev->data;
 
-    switch(Channel)
+    if(Channel != SENSOR_CHAN_LIGHT)
     {
-        case SENSOR_CHAN_LIGHT:
-        {
-            p_Value->val1 = Data->light;
-            p_Value->val2 = 0;
-
-            return 0;
-        }
-        default:
-        {
-            return -ENOTSUP;
-        }
+        return -ENOTSUP;
     }
+
+    // TODO: Conversion to lux is missing here
+
+    p_Value->val1 = Data->light;
+    p_Value->val2 = 0;
+
+    return 0;
 }
 
 static int apds9306_sensor_setup(const struct device* p_Dev)
@@ -402,10 +399,10 @@ static int apds9306_init(const struct device* p_Dev)
     {
         switch(Action)
         {
-            case PM_DEVICE_ACTION_TURN_ON:
+            case PM_DEVICE_ACTION_SUSPEND:
             case PM_DEVICE_ACTION_RESUME:
             case PM_DEVICE_ACTION_TURN_OFF:
-            case PM_DEVICE_ACTION_SUSPEND:
+            case PM_DEVICE_ACTION_TURN_ON:
             {
                 break;
             }
