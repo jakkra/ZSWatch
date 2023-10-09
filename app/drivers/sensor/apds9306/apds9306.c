@@ -38,13 +38,13 @@
 #define APDS9306_REGISTER_ALS_THRES_LOW_2   0x26
 #define APDS9306_REGISTER_ALS_THRES_VAR     0x27
 
-#define ADPS9306_BIT_ALS_EN                 (0x01 << 0x01)
-#define ADPS9306_BIT_ALS_DATA_STATUS        (0x01 << 0x03)
-#define APDS9306_BIT_SW_RESET               (0x01 << 0x04)
-#define ADPS9306_BIT_ALS_INTERRUPT_STATUS   (0x01 << 0x03)
-#define APDS9306_BIT_POWER_ON_STATUS        (0x01 << 0x05)
+#define ADPS9306_BIT_ALS_EN                 BIT(0x01)
+#define ADPS9306_BIT_ALS_DATA_STATUS        BIT(0x03)
+#define APDS9306_BIT_SW_RESET               BIT(0x04)
+#define ADPS9306_BIT_ALS_INTERRUPT_STATUS   BIT(0x03)
+#define APDS9306_BIT_POWER_ON_STATUS        BIT(0x05)
 
-#if CONFIG_APDS9306_IS_APDS9306_065
+#ifdef CONFIG_APDS9306_IS_APDS9306_065
     #define APDS_9306_CHIP_ID               0xB3
 #else
     #define APDS_9306_CHIP_ID               0xB1
@@ -62,9 +62,6 @@ struct apds9306_data {
 
 struct apds9306_config {
     struct i2c_dt_spec i2c;
-    uint8_t Resolution;
-    uint8_t Rate;
-    uint8_t Gain;
 };
 
 /** @brief          Enable the ALS measurement.
@@ -75,12 +72,7 @@ static int apds9306_enable(const struct device* p_Dev)
 {
     const struct apds9306_config* Config = p_Dev->config;
 
-    if(i2c_reg_update_byte_dt(&Config->i2c, APDS9306_REGISTER_MAIN_CTRL, ADPS9306_BIT_ALS_EN, ADPS9306_BIT_ALS_EN))
-    {
-        return -EIO;
-    }
-
-    return 0;
+    return i2c_reg_update_byte_dt(&Config->i2c, APDS9306_REGISTER_MAIN_CTRL, ADPS9306_BIT_ALS_EN, ADPS9306_BIT_ALS_EN);
 }
 
 /** @brief          Disable the ALS measurement.
@@ -91,13 +83,7 @@ static int apds9306_standby(const struct device* p_Dev)
 {
     const struct apds9306_config* Config = p_Dev->config;
 
-    if(i2c_reg_update_byte_dt(&Config->i2c, APDS9306_REGISTER_MAIN_CTRL, ADPS9306_BIT_ALS_EN, 0x00))
-    {
-        LOG_ERR("Can not disable ALS!");
-        return -EIO;
-    }
-
-    return 0;
+    return i2c_reg_update_byte_dt(&Config->i2c, APDS9306_REGISTER_MAIN_CTRL, ADPS9306_BIT_ALS_EN, 0x00);
 }
 
 /** @brief          Start and wait for a new light measurement.
@@ -110,8 +96,7 @@ static int apds9306_read_light(const struct device* p_Dev, uint32_t* p_Value)
     int Error;
     const struct apds9306_config* Config = p_Dev->config;
     uint8_t Buffer[3];
-    uint8_t Temp;
-    uint8_t Register = APDS9306_REGISTER_ALS_DATA_0;
+    uint8_t Register;
     uint32_t Now;
 
     LOG_DBG("Start a new measurement...");
@@ -129,7 +114,7 @@ static int apds9306_read_light(const struct device* p_Dev, uint32_t* p_Value)
     Now = k_uptime_get_32();
     do
     {
-        if(i2c_reg_read_byte_dt(&Config->i2c, APDS9306_REGISTER_MAIN_STATUS, &Temp))
+        if(i2c_reg_read_byte_dt(&Config->i2c, APDS9306_REGISTER_MAIN_STATUS, &Buffer[0]))
         {
             LOG_ERR("Failed to read ALS status!");
             return -EIO;
@@ -143,7 +128,7 @@ static int apds9306_read_light(const struct device* p_Dev, uint32_t* p_Value)
         }
 
         k_msleep(10);
-    } while(Temp & ADPS9306_BIT_ALS_DATA_STATUS);
+    } while(Buffer[0] & ADPS9306_BIT_ALS_DATA_STATUS);
 
     if(apds9306_standby(p_Dev) != 0)
     {
@@ -152,6 +137,7 @@ static int apds9306_read_light(const struct device* p_Dev, uint32_t* p_Value)
     }
 
     // Read the results.
+    Register = APDS9306_REGISTER_ALS_DATA_0;
     Error = i2c_write_read_dt(&Config->i2c, &Register, sizeof(Register), &Buffer, sizeof(Buffer));
     if(Error < 0)
     {
@@ -351,13 +337,6 @@ static int apds9306_sensor_setup(const struct device* p_Dev)
     return 0;
 }
 
-static int apds9306_interrupt_setup(const struct device* p_Dev)
-{
-    // TODO
-
-    return 0;
-}
-
 static const struct sensor_driver_api apds9306_driver_api = {
     .attr_set = apds9306_attr_set,
     .attr_get = apds9306_attr_get,
@@ -380,12 +359,6 @@ static int apds9306_init(const struct device* p_Dev)
     if(apds9306_sensor_setup(p_Dev) < 0)
     {
         LOG_ERR("Failed to setup device!");
-        return -EIO;
-    }
-
-    if(apds9306_interrupt_setup(p_Dev) < 0)
-    {
-        LOG_ERR("Failed to setup interrupts!");
         return -EIO;
     }
 

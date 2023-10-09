@@ -51,7 +51,6 @@
 };
 
 &flash1 {
-
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

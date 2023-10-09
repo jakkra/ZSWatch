@@ -9,7 +9,7 @@
 #include <zephyr/logging/log.h>
 #include "lvgl.h"
 
-LOG_MODULE_REGISTER(display_control, LOG_LEVEL_WRN);
+LOG_MODULE_REGISTER(display_control, LOG_LEVEL_DBG);
 
 static void lvgl_render(struct k_work *item);
 
@@ -23,7 +23,6 @@ static const struct pwm_dt_spec display_blk = PWM_DT_SPEC_GET_OR(DT_ALIAS(displa
 static const struct device *const reg_dev = DEVICE_DT_GET_OR_NULL(DT_PATH(regulator_3v3_ctrl));
 static const struct device *display_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_display));
 static const struct device *touch_dev =  DEVICE_DT_GET_OR_NULL(DT_NODELABEL(cst816s));
-
 
 K_WORK_DELAYABLE_DEFINE(lvgl_work, lvgl_render);
 
@@ -52,7 +51,7 @@ void display_control_init(void)
     display_state = DISPLAY_STATE_SLEEPING;
 }
 
-int  display_control_sleep_ctrl(bool on)
+int display_control_sleep_ctrl(bool on)
 {
     int res = -EALREADY;
 
@@ -64,6 +63,7 @@ int  display_control_sleep_ctrl(bool on)
                 LOG_DBG("Display already awake");
                 res = -EALREADY;
             } else {
+                LOG_DBG("Put display to sleep");
                 display_state = DISPLAY_STATE_SLEEPING;
                 display_blanking_on(display_dev);
                 // Suspend the display and touch chip
@@ -85,6 +85,7 @@ int  display_control_sleep_ctrl(bool on)
             break;
         case DISPLAY_STATE_SLEEPING:
             if (on) {
+                LOG_DBG("Wake up display");
                 display_state = DISPLAY_STATE_AWAKE;
                 // Resume the display and touch chip
                 pm_device_action_run(display_dev, PM_DEVICE_ACTION_RESUME);
@@ -138,6 +139,7 @@ int display_control_pwr_ctrl(bool on)
             if (on) {
                 LOG_DBG("Display sleeping, power already on");
             } else {
+                LOG_DBG("Display sleeping, power off");
                 if (device_is_ready(reg_dev)) {
                     display_state = DISPLAY_STATE_POWERED_OFF;
 #ifndef CONFIG_BOARD_NATIVE_POSIX
@@ -150,6 +152,7 @@ int display_control_pwr_ctrl(bool on)
             break;
         case DISPLAY_STATE_POWERED_OFF:
             if (on) {
+                LOG_DBG("Display is off, power already on");
                 if (device_is_ready(reg_dev)) {
                     display_state = DISPLAY_STATE_SLEEPING;
 #ifndef CONFIG_BOARD_NATIVE_POSIX
@@ -160,7 +163,7 @@ int display_control_pwr_ctrl(bool on)
                     res = 0;
                 }
             } else {
-                LOG_DBG("Display is OFF, power already off.");
+                LOG_DBG("Display is off, power already off");
             }
             break;
     }
@@ -169,7 +172,6 @@ int display_control_pwr_ctrl(bool on)
 
     return res;
 }
-
 
 uint8_t display_control_get_brightness(void)
 {
