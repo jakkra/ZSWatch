@@ -45,7 +45,7 @@ def dump_flash(jlink, file, partition):
     print(jlink, file)
     with open(file, "wb") as file:
         try:
-            bytes = list(bytearray(f"DUMP_START:{partition}", "utf-8"))
+            bytes = list(bytearray(f"DUMP_START:{partition}", "utf-8")) + [0x0]
             jlink.rtt_write(2, bytes)
             time.sleep(2)
 
@@ -83,7 +83,7 @@ def load_data(jlink, file, partition):
         buffer_size = 4096
         block_number = 0
         print("FILENAME", file)
-        bytes = list(bytearray(f"LOADER_START:{partition}", "utf-8"))
+        bytes = list(bytearray(f"LOADER_START:{partition}", "utf-8")) + [0x0]
         jlink.rtt_write(2, bytes)
         time.sleep(2)
 
@@ -137,7 +137,7 @@ def load_data(jlink, file, partition):
         raise
 
 
-def run_loader(target_device, file, partition, read_data_only=False):
+def rtt_run_flush_loader(target_device, file, partition, read_data_only=False):
     """Creates connection to target via RTT and either writes a file or reads from flash.
 
     Args:
@@ -240,4 +240,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    sys.exit(run_loader(args.target_cpu, args.file, args.partition, args.read_data))
+    sys.exit(rtt_run_flush_loader(args.target_cpu, args.file, args.partition, args.read_data))

@@ -3,7 +3,7 @@ import argparse
 from struct import *
 
 MAX_FILE_NAME = 16
-FILE_TABLE_MAX_LEN = 1024 # TODO USE and match with c code
+FILE_TABLE_MAX_LEN = 1024
 '''
 magic_number:uint32
 header_len:uint32
@@ -49,6 +49,9 @@ def create_custom_raw_fs_image(img_filename, source_dir, block_size=4096):
     print('header len', len(fake_header))
     real_header = pack("<IIII", 0x0A0A0A0A, len(fake_header), len(fake_header) + len(files_image), len(table)) + header_images
 
+    if len(header_images) > FILE_TABLE_MAX_LEN:
+        print("File table is to big, increase the size on target size", FILE_TABLE_MAX_LEN, "<", len(header_images))
+        exit(1)
     # Add header length
     with open(img_filename, "wb") as f:
         f.write(real_header)

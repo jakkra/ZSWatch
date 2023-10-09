@@ -1,7 +1,7 @@
 from west.commands import WestCommand
 from west import log
 from create_custom_resource_image import create_custom_raw_fs_image
-from rtt_flash_loader import run_loader
+from rtt_flash_loader import rtt_run_flush_loader
 from create_littlefs_resouce_image import create_littlefs_fs_image
 import sys
 import os
@@ -30,7 +30,6 @@ class UploadFsWestCommand(WestCommand):
 
     def do_run(self, args, unknown_args):
         log.inf('Creating image')
-        img_filename = "lvgl_resources"
         img_size = 2 *1024 * 1024
         block_size = 4096
         read_size = 1024
@@ -51,9 +50,10 @@ class UploadFsWestCommand(WestCommand):
             if args.type == 'raw':
                 source_dir = f"{images_path}/S"
                 partition = partition if partition else "lvgl_raw_partition"
-                create_custom_raw_fs_image(img_filename, source_dir, block_size)
+                create_custom_raw_fs_image(filename, source_dir, block_size)
             elif args.type == 'lfs':
                 source_dir = f"{images_path}/lvgl_lfs"
                 partition = partition if partition else "lvgl_lfs_partition"
-                create_littlefs_fs_image(img_filename, img_size, block_size, read_size, prog_size, name_max, file_max, attr_max, source_dir, disk_version)
-        sys.exit(run_loader("nRF5340_XXAA", filename, partition, args.read_file))
+                create_littlefs_fs_image(filename, img_size, block_size, read_size, prog_size, name_max, file_max, attr_max, source_dir, disk_version)
+        log.inf('Uploading image')
+        sys.exit(rtt_run_flush_loader("nRF5340_XXAA", filename, partition, args.read_file))
