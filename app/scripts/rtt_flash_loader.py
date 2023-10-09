@@ -3,12 +3,13 @@ import argparse
 import sys
 import time
 import os
+from struct import *
 
 from threading import Thread
 
 RAM_ADDR = 0x2007FFFC
 RTT_FLASH_LOAD_BOOT_MODE = 0x0A0A0A0A
-
+RTT_HEADER_MAGIC = 0x0A0A0A0A
 
 def read_rtt(jlink):
     """Reads the JLink RTT buffer #0 at 10Hz and prints to stdout.
@@ -49,7 +50,7 @@ def dump_flash(jlink, file, partition):
             jlink.rtt_write(2, bytes)
             time.sleep(2)
 
-            counter = 0
+            block_number = 0
             read_data_len = 0
             start_ms = round(time.time() * 1000)
             while jlink.connected():
@@ -71,18 +72,17 @@ def dump_flash(jlink, file, partition):
                 if len(bytes) > 0:
                     read_data_len = read_data_len + len(bytes)
                     file.write(bytearray(bytes))
-                    counter = counter + 1
-                    if counter % 10 == 0:
+                    block_number = block_number + 1
+                    if block_number % 10 == 0:
                         print("Received", read_data_len, "bytes", end="\r")
         except Exception:
             print("IO read thread exception, exiting...")
             raise
 
-
 def load_data(jlink, file, partition):
     try:
-        buffer_size = 4096 * 2
-        counter = 0
+        buffer_size = 4096
+        block_number = 0
         print("FILENAME", file)
         bytes = list(bytearray(f"LOADER_START:{partition}", "utf-8"))
         jlink.rtt_write(2, bytes)
@@ -97,6 +97,8 @@ def load_data(jlink, file, partition):
             start_ms = round(time.time() * 1000)
             while chunk and chunk != "" and jlink.connected():
                 to_send = list(bytearray(chunk[chunk_index:]))
+                if chunk_index == 0:
+                    to_send = list(bytearray(pack("<II", RTT_HEADER_MAGIC, block_number * buffer_size))) + to_send
                 sent = jlink.rtt_write(2, to_send)
                 if sent == 0:
                     continue
@@ -104,10 +106,16 @@ def load_data(jlink, file, partition):
                     chunk_index = chunk_index + sent
                     continue
                 num_sent = num_sent + len(chunk)
-                print(counter, num_sent, "/", file_size, "len:", len(chunk), end="\r")
+                print(block_number, num_sent, "/", file_size, "len:", len(chunk), end="\r")
+
+                # Find next none empty block
                 chunk = f.read(buffer_size)
-                counter = counter + 1
                 chunk_index = 0
+                while chunk and chunk != "":
+                    block_number = block_number + 1
+                    if bytearray(chunk).count(0xFF) != len(chunk):
+                        break
+                    chunk = f.read(buffer_size)
 
             end_ms = round(time.time() * 1000)
             print("Time taken:", end_ms - start_ms, "ms")
@@ -151,6 +159,7 @@ def run_loader(target_device, file, partition, read_data_only=False):
     jlink.set_tif(pylink.enums.JLinkInterfaces.SWD)
     jlink.connect(target_device)
     print("Connected, send RTT_FLASH_LOAD_BOOT_MODE to RAM_ADDR...")
+    jlink.reset(0, False)
     jlink.memory_write32(RAM_ADDR, [RTT_FLASH_LOAD_BOOT_MODE])
     if jlink.memory_read32(RAM_ADDR, 1)[0] != RTT_FLASH_LOAD_BOOT_MODE:
         print("Could not write to RAM_ADDR, exiting...")

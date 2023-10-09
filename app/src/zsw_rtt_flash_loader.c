@@ -9,7 +9,7 @@
 #include <zephyr/storage/flash_map.h>
 #include <SEGGER_RTT.h>
 
-LOG_MODULE_REGISTER(zsw_rtt_flash_loader);
+LOG_MODULE_REGISTER(zsw_rtt_flash_loader, LOG_LEVEL_DBG);
 
 #define SPI_FLASH_SECTOR_SIZE        4096
 
@@ -23,10 +23,16 @@ LOG_MODULE_REGISTER(zsw_rtt_flash_loader);
 #define READ_DONE_SEQUENCE  "DUMP_END"
 
 #define RTT_CHANNEL_NAME    "FlashLoaderChannel"
+#define RTT_MAGIC           0x0A0A0A0A
 
 struct flash_partition_search_user_data {
     int     found_part_id;
     char   *search_label_name;
+};
+
+struct rtt_rx_data_header {
+    uint32_t    magic;
+    uint32_t    address;
 };
 
 static void rtt_load_flash_thread(void *, void *, void *);
@@ -35,9 +41,9 @@ static void rtt_dump_flash_thread(void *, void *, void *);
 K_THREAD_STACK_DEFINE(rtt_work_thread_stack, 8192);
 static struct k_thread rtt_work_thread;
 
-static uint8_t data_buf[SPI_FLASH_SECTOR_SIZE];
-static uint8_t up_buffer[SPI_FLASH_SECTOR_SIZE + 1];
-static uint8_t down_buffer[SPI_FLASH_SECTOR_SIZE + 1];
+static uint8_t data_buf[SPI_FLASH_SECTOR_SIZE + sizeof(struct rtt_rx_data_header)];
+static uint8_t up_buffer[SPI_FLASH_SECTOR_SIZE + 1 + sizeof(struct rtt_rx_data_header)];
+static uint8_t down_buffer[SPI_FLASH_SECTOR_SIZE + 1 + sizeof(struct rtt_rx_data_header)];
 
 static const struct flash_area *flash_area;
 
@@ -158,6 +164,7 @@ static void rtt_load_flash_thread(void *partition_id_param, void *, void *)
     int block_index = 0;
     int buffer_index = 0;
     int bytes_flashed = 0;
+    struct rtt_rx_data_header *header;
     uint8_t partition_id = (uint8_t)((uint32_t)partition_id_param);
     uint32_t len_to_read;
     uint32_t last_activity_ms = k_uptime_get_32();
@@ -192,7 +199,18 @@ static void rtt_load_flash_thread(void *partition_id_param, void *, void *)
             printk("RTT Transfer done: %d bytes flashed\n", bytes_flashed);
             break;
         } else if (len == len_to_read) {
-            ret = loader_write_flash((int)partition_id, block_index, data_buf, sizeof(data_buf));
+            header = (struct rtt_rx_data_header *)data_buf;
+            if (header->magic == RTT_MAGIC) {
+                if (header->address % SPI_FLASH_SECTOR_SIZE != 0) {
+                    LOG_ERR("Anvalid addres, must be multiple of %d", SPI_FLASH_SECTOR_SIZE);
+                    break;
+                }
+            } else {
+                LOG_ERR("RTT: Invalid magic: %x\n", header->magic);
+                break;
+            }
+            ret = loader_write_flash((int)partition_id, header->address / SPI_FLASH_SECTOR_SIZE,
+                                     data_buf + sizeof(struct rtt_rx_data_header), sizeof(data_buf) - sizeof(struct rtt_rx_data_header));
             if (ret != 0) {
                 printk("loader_write_flash failed: %dn", ret);
                 break;
