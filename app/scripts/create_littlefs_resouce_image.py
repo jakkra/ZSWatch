@@ -2,7 +2,19 @@ import os
 import argparse
 from littlefs import LittleFS
 
-def create_littlefs_fs_image(img_filename, img_size, block_size, read_size, prog_size, name_max, file_max, attr_max, source_dir, disk_version):
+
+def create_littlefs_fs_image(
+    img_filename,
+    img_size,
+    block_size,
+    read_size,
+    prog_size,
+    name_max,
+    file_max,
+    attr_max,
+    source_dir,
+    disk_version,
+):
     block_count = img_size // block_size
     if block_count * block_size != img_size:
         print("image size should be a multiple of block size")
@@ -76,4 +88,15 @@ if __name__ == "__main__":
     attr_max = args.attr_max
     source_dir = args.source
 
-    create_littlefs_fs_image(img_filename, img_size, block_size, read_size, prog_size, name_max, file_max, attr_max, source_dir, args.disk_version)
+    create_littlefs_fs_image(
+        img_filename,
+        img_size,
+        block_size,
+        read_size,
+        prog_size,
+        name_max,
+        file_max,
+        attr_max,
+        source_dir,
+        args.disk_version,
+    )

@@ -11,6 +11,7 @@ RAM_ADDR = 0x2007FFFC
 RTT_FLASH_LOAD_BOOT_MODE = 0x0A0A0A0A
 RTT_HEADER_MAGIC = 0x0A0A0A0A
 
+
 def read_rtt(jlink):
     """Reads the JLink RTT buffer #0 at 10Hz and prints to stdout.
 
@@ -78,6 +79,7 @@ def dump_flash(jlink, file, partition):
             print("IO read thread exception, exiting...")
             raise
 
+
 def load_data(jlink, file, partition):
     try:
         buffer_size = 4096
@@ -97,7 +99,16 @@ def load_data(jlink, file, partition):
             while chunk and chunk != "" and jlink.connected():
                 to_send = list(bytearray(chunk[chunk_index:]))
                 if chunk_index == 0:
-                    to_send = list(bytearray(pack("<II", RTT_HEADER_MAGIC, block_number * buffer_size))) + to_send
+                    to_send = (
+                        list(
+                            bytearray(
+                                pack(
+                                    "<II", RTT_HEADER_MAGIC, block_number * buffer_size
+                                )
+                            )
+                        )
+                        + to_send
+                    )
                 sent = jlink.rtt_write(2, to_send)
                 if sent == 0:
                     continue
@@ -105,7 +116,9 @@ def load_data(jlink, file, partition):
                     chunk_index = chunk_index + sent
                     continue
                 num_sent = num_sent + len(chunk)
-                print(block_number, num_sent, "/", file_size, "len:", len(chunk), end="\r")
+                print(
+                    block_number, num_sent, "/", file_size, "len:", len(chunk), end="\r"
+                )
 
                 # Find next none empty block
                 chunk = f.read(buffer_size)
@@ -229,7 +242,11 @@ if __name__ == "__main__":
         help="Binary file to send to target or in case of read the filename to store the data in.",
     )
     parser.add_argument(
-        "-p", "--partition", type=str, help="Label of partition in DTS to write to.", default="lvgl_raw_partition"
+        "-p",
+        "--partition",
+        type=str,
+        help="Label of partition in DTS to write to.",
+        default="lvgl_raw_partition",
     )
     parser.add_argument(
         "--read_data", help="Read data from flash block", action="store_true"
@@ -240,4 +257,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    sys.exit(rtt_run_flush_loader(args.target_cpu, args.file, args.partition, args.read_data))
+    sys.exit(
+        rtt_run_flush_loader(args.target_cpu, args.file, args.partition, args.read_data)
+    )
