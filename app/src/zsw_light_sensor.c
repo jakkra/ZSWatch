@@ -1,53 +1,44 @@
-#include <zsw_light_sensor.h>
+/*
+ * This file is part of ZSWatch project <https://github.com/jakkra/ZSWatch/>.
+ * Copyright (c) 2023 Jakob Krantz.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <zsw_env_sensor.h>
 #include <zephyr/kernel.h>
-#include <zephyr/init.h>
-#include <zephyr/logging/log.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
 
-LOG_MODULE_REGISTER(light_sensor, LOG_LEVEL_DBG);
+#include "zsw_light_sensor.h"
 
-#define APDS_9306_065_ADDRESS   0x52
-#define APDS_9306_065_REG_ID    0x06
-#define APDS_9306_065_CHIP_ID   0xB3
+static const struct device *const apds9306 = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(apds9306));
 
-// TODO: Proper driver implementation
-// Currently just reads ID to verify the HW
-
-#define I2C_DEV DT_NODELABEL(i2c1)
-
-int zsw_light_sensor_detect(void)
+int zsw_light_sensor_fetch(float *light)
 {
-    uint8_t id = 0;
-    const struct device *i2c_dev = DEVICE_DT_GET_OR_NULL(I2C_DEV);
+    struct sensor_value light_sensor_val;
 
-    if (i2c_dev == NULL) {
-        LOG_ERR("Error: no APDS device found.");
-        return false;
+    if((!device_is_ready(apds9306)))
+    {
+        return -ENODEV;
     }
 
-    if (!device_is_ready(i2c_dev)) {
-        LOG_ERR("Error: Device \"%s\" is not ready; "
-                "check the driver initialization logs for errors.",
-                i2c_dev->name);
-        return false;
+    if(sensor_sample_fetch(apds9306) != 0) {
+        return -ENODATA;
     }
 
-    /* Verify sensor working by reading the ID */
-    int err = i2c_reg_read_byte(i2c_dev, APDS_9306_065_ADDRESS, APDS_9306_065_REG_ID, &id);
-    if (err) {
-        LOG_ERR("Failed reading device id from APDS");
-        return false;
-    }
+    sensor_channel_get(apds9306, SENSOR_CHAN_LIGHT, &light_sensor_val);
+    *light = sensor_value_to_float(&light_sensor_val);
 
-    if (id == APDS_9306_065_CHIP_ID) {
-        LOG_INF("APDS id: %d", id);
-        return true;
-    } else {
-        LOG_ERR("Wrong APDS id: %d", id);
-    }
-
-    return false;
+    return 0;
 }
-
-SYS_INIT(zsw_light_sensor_detect, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

@@ -7,7 +7,9 @@
 #include <zephyr/logging/log.h>
 #include <zsw_pressure_sensor.h>
 #include <math.h>
-#include <zsw_env_sensor.h>
+
+#include "zsw_env_sensor.h"
+#include "zsw_light_sensor.h"
 
 LOG_MODULE_REGISTER(sensors_summary_app, LOG_LEVEL_DBG);
 
@@ -62,12 +64,18 @@ static void timer_callback(lv_timer_t *timer)
     float temperature;
     float pressure;
     float humidity;
+    float light;
 
-    if (zsw_env_sensor_fetch_all(&temperature, &pressure, &humidity) != 0) {
+    if (zsw_env_sensor_fetch_all(&temperature, &pressure, &humidity) != 0)
+    {
         return;
     }
 
     zsw_pressure_sensor_fetch_pressure(&pressure);
+
+    if (zsw_light_sensor_fetch(&light) == 0) {
+            sensors_summary_ui_set_light(light);
+    }
 
     sensors_summary_ui_set_pressure(pressure);
     sensors_summary_ui_set_temp(temperature);
