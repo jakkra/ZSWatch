@@ -64,6 +64,7 @@ static void timer_callback(lv_timer_t *timer)
     float temperature;
     float pressure;
     float humidity;
+    float light;
 
     if (zsw_env_sensor_fetch_all(&temperature, &pressure, &humidity) != 0)
     {
@@ -72,12 +73,9 @@ static void timer_callback(lv_timer_t *timer)
 
     zsw_pressure_sensor_fetch_pressure(&pressure);
 
-    #if DT_NODE_HAS_STATUS(DT_NODELABEL(apds9306), okay)
-        float light;
-
-        zsw_light_sensor_fetch(&light);
-        sensors_summary_ui_set_light(light);
-    #endif
+    if (zsw_light_sensor_fetch(&light) == 0) {
+            sensors_summary_ui_set_light(light);
+    }
 
     sensors_summary_ui_set_pressure(pressure);
     sensors_summary_ui_set_temp(temperature);
