@@ -140,9 +140,7 @@ void sensors_summary_ui_set_gas(float gas)
     lv_label_set_text_fmt(gas_label, "Gas:\t%.2f", gas);
 }
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(apds9306), okay)
-    void sensors_summary_ui_set_light(float light)
-    {
-        lv_label_set_text_fmt(light_label, "Light:\t%.2f", light);
-    }
-#endif
+void sensors_summary_ui_set_light(float light)
+{
+    lv_label_set_text_fmt(light_label, "Light:\t%.2f", light);
+}

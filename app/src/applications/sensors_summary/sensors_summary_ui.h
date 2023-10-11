@@ -23,6 +23,4 @@ void sensors_summary_ui_set_rel_height(float rel_height);
 
 void sensors_summary_ui_set_gas(float gas);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(apds9306), okay)
-    void sensors_summary_ui_set_light(float light);
-#endif
+void sensors_summary_ui_set_light(float light);
