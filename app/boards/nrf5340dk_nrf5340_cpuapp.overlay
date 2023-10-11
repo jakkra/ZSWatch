@@ -61,10 +61,10 @@
         zephyr,keyboard-scan = &cst816s;
     };
     aliases {
-        sw-top-right = &button1;
-        sw-top-left = &button0;
-        sw-bottom-right = &button3;
-        sw-bottom-left = &button2;
+        sw-top-right = &button2;
+        sw-top-left = &button1;
+        sw-bottom-right = &button4;
+        sw-bottom-left = &button3;
         magn = &lis2mdl;
         accel = &bmi270;
         input = &cst816s;

@@ -1,21 +1,25 @@
 / {
 	buttons: buttons {
         compatible = "gpio-keys";
-        button0: button_0 {
-            gpios = <&gpio0 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-            zephyr,code = <INPUT_KEY_ENTER>;
-        };
         button1: button_1 {
-            gpios = <&gpio0 31 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-            zephyr,code = <INPUT_KEY_ENTER>;
+            label = "top-right";
+            gpios = <&gpio0 27 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            zephyr,code = <INPUT_KEY_1>;
         };
         button2: button_2 {
-            gpios = <&gpio1 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-            zephyr,code = <INPUT_KEY_ENTER>;
+            label = "bottom-left";
+            gpios = <&gpio0 31 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            zephyr,code = <INPUT_KEY_2>;
         };
         button3: button_3 {
+            label = "bottom-right";
+            gpios = <&gpio1 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            zephyr,code = <INPUT_KEY_3>;
+        };
+        button4: button_4 {
+            label = "top-left";
             gpios = <&gpio1 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-            zephyr,code = <INPUT_KEY_ENTER>;
+            zephyr,code = <INPUT_KEY_4>;
         };
     };
 
@@ -23,7 +27,7 @@
         compatible = "gpio-keys";
         charging_status: charging_status {
             gpios = <&gpio0 30 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
-            zephyr,code = <INPUT_KEY_ENTER>;
+            zephyr,code = <INPUT_KEY_POWER>;
         };
     };
 

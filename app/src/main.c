@@ -6,7 +6,6 @@
 #include <zephyr/kernel.h>
 #include <buttons.h>
 #include <battery.h>
-#include <gpio_debug.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -40,6 +39,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/fatal.h>
+#include <zephyr/input/input.h>
 #include "dfu.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
@@ -52,6 +52,13 @@ typedef enum ui_state {
     APPLICATION_MANAGER_STATE,
 } ui_state_t;
 
+static struct input_worker_item_t
+{
+    struct k_work work;
+    struct input_event data;
+} input_worker_item;
+
+static void run_input_work(struct k_work *item);
 static void run_init_work(struct k_work *item);
 
 static void run_wdt_work(struct k_work *item);
@@ -59,20 +66,18 @@ static void enable_bluetoth(void);
 static bool load_retention_ram(void);
 static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
 static void click_feedback(struct _lv_indev_drv_t *drv, uint8_t e);
-static void ble_data_cb(ble_comm_cb_data_t *cb);
 static void open_notification_popup(void *data);
 static void async_turn_off_buttons_allocation(void *unused);
-static void on_popup_notifcation_closed(uint32_t id);
-static void zbus_ble_comm_data_callback(const struct zbus_channel *chan);
-
-static void onButtonPressCb(buttonPressType_t type, buttonId_t id);
-static void screen_gesture_event(lv_event_t *e);
-static void watchface_app_evt_callback(watchface_app_evt_t evt);
-
 static void open_application_manager_page(void *app_name);
-static void on_close_application_manager(void);
 
-K_WORK_DELAYABLE_DEFINE(wdt_work, run_wdt_work);
+static void on_ApplicationManager_Close(void);
+static void on_PopupNotifcation_Closed(uint32_t id);
+static void on_BLEDAta_Callback(ble_comm_cb_data_t *cb);
+static void on_zbusBLECommData_Callback(const struct zbus_channel *chan);
+static void on_InputSyubsys_Callback(struct input_event *evt);
+static void on_ScreenGestureEvent_Callback(lv_event_t *e);
+static void on_WatchfaceAppEvent_Callback(watchface_app_evt_t evt);
+
 static int kernal_wdt_id;
 
 static bool buttons_allocated = false;
@@ -87,10 +92,101 @@ static bool pending_not_open;
 
 static ui_state_t watch_state = INIT_STATE;
 
+K_WORK_DELAYABLE_DEFINE(wdt_work, run_wdt_work);
 K_WORK_DEFINE(init_work, run_init_work);
+K_WORK_DEFINE(input_work, run_input_work);
 
 ZBUS_CHAN_DECLARE(ble_comm_data_chan);
-ZBUS_LISTENER_DEFINE(main_ble_comm_lis, zbus_ble_comm_data_callback);
+ZBUS_LISTENER_DEFINE(main_ble_comm_lis, on_zbusBLECommData_Callback);
+
+static void run_input_work(struct k_work *item)
+{
+    struct input_worker_item_t *container = CONTAINER_OF(item, struct input_worker_item_t, work);
+
+    LOG_WRN("Worker, Button %u", container->data.code);
+
+    // Don't process the press if it caused wakeup.
+    if(zsw_power_manager_reset_idle_timout())
+    {
+        return;
+    }
+
+    // Handle the input events. We have to take care about the screen orientation for the touch events.
+    switch(container->data.code)
+    {
+        // Touch event
+        // Slide from right to left.
+        case INPUT_BTN_NORTH:
+        {
+            break;
+        }
+        // Touch event
+        // Slide from left to right.
+        case INPUT_BTN_SOUTH:
+        {
+            break;
+        }
+        // Touch event
+        // Slide from bottom to top.
+        case INPUT_BTN_WEST:
+        {
+            break;
+        }
+        // Touch event
+        // Slide from top to bottom.
+        case INPUT_BTN_EAST:
+        {
+            break;
+        }
+        // Button event
+        // Always allow force restart.
+        case(INPUT_KEY_Y):
+        {
+            LOG_INF("Force restart");
+
+            retained.off_count += 1;
+            retained_update();
+            sys_reboot(SYS_REBOOT_COLD);
+
+            break;
+        }
+        // Button event
+        case INPUT_KEY_3:
+        {
+            if(zsw_notification_popup_is_shown())
+            {
+                zsw_notification_popup_remove();
+            }
+            else if(watch_state == APPLICATION_MANAGER_STATE)
+            {
+                application_manager_exit_app();
+
+                return;
+            }
+
+            break;
+        }
+        case INPUT_KEY_4:
+        {
+            if(watch_state == WATCHFACE_STATE)
+            {
+                zsw_vibration_run_pattern(ZSW_VIBRATION_PATTERN_CLICK);
+                lv_async_call(open_application_manager_page, NULL);
+            }
+
+            break;
+        }
+    }
+
+    if(buttons_allocated)
+    {
+        // Handled by LVGL.
+        return;
+    }
+}
+
+const struct device *const buttons_dev = DEVICE_DT_GET(DT_NODELABEL(buttons));
+const struct device *const longpress_dev = DEVICE_DT_GET(DT_NODELABEL(longpress));
 
 static void run_init_work(struct k_work *item)
 {
@@ -103,11 +199,12 @@ static void run_init_work(struct k_work *item)
     zsw_magnetometer_init();
     zsw_pressure_sensor_init();
     zsw_clock_init(retained.current_time_seconds);
-    buttonsInit(&onButtonPressCb);
     // Not to self, PWM consumes like 250uA...
     // Need to disable also when screen is off.
     display_control_init();
     display_control_sleep_ctrl(true);
+
+    INPUT_CALLBACK_DEFINE(NULL, on_InputSyubsys_Callback);
 
     lv_indev_drv_init(&enc_drv);
     enc_drv.type = LV_INDEV_TYPE_ENCODER;
@@ -133,8 +230,8 @@ static void run_init_work(struct k_work *item)
     }
 
     watch_state = WATCHFACE_STATE;
-    lv_obj_add_event_cb(lv_scr_act(), screen_gesture_event, LV_EVENT_GESTURE, NULL);
-    watchface_app_start(input_group, watchface_app_evt_callback);
+    lv_obj_add_event_cb(lv_scr_act(), on_ScreenGestureEvent_Callback, LV_EVENT_GESTURE, NULL);
+    watchface_app_start(input_group, on_WatchfaceAppEvent_Callback);
 }
 
 void run_wdt_work(struct k_work *item)
@@ -163,6 +260,13 @@ int main(void)
     // this RAM forever, instead re-use the system workqueue for init
     // it has the required amount of stack.
     k_work_submit(&init_work);
+
+    int Counter = 0;
+    while(1)
+    {
+        LOG_ERR("Counter: %u", Counter++);
+        k_msleep(1000);
+    }
 
     return 0;
 }
@@ -195,7 +299,7 @@ static void enable_bluetoth(void)
     settings_load();
 #endif
 
-    __ASSERT_NO_MSG(ble_comm_init(ble_data_cb) == 0);
+    __ASSERT_NO_MSG(ble_comm_init(on_BLEDAta_Callback) == 0);
     bleAoaInit();
 }
 
@@ -222,7 +326,7 @@ static void open_notification_popup(void *data)
         lv_group_set_default(temp_group);
         lv_indev_set_group(enc_indev, temp_group);
         zsw_vibration_run_pattern(ZSW_VIBRATION_PATTERN_NOTIFICATION);
-        zsw_notification_popup_show(not->title, not->body, not->src, not->id, on_popup_notifcation_closed, 10);
+        zsw_notification_popup_show(not->title, not->body, not->src, not->id, on_PopupNotifcation_Closed, 10);
         buttons_allocated = true;
     }
     pending_not_open = false;
@@ -233,7 +337,7 @@ static void open_application_manager_page(void *app_name)
     watchface_app_stop();
     buttons_allocated = true;
     watch_state = APPLICATION_MANAGER_STATE;
-    application_manager_show(on_close_application_manager, lv_scr_act(), input_group, (char *)app_name);
+    application_manager_show(on_ApplicationManager_Close, lv_scr_act(), input_group, (char *)app_name);
 }
 
 static void close_popup_notification(lv_timer_t *timer)
@@ -261,7 +365,7 @@ static void close_popup_notification(lv_timer_t *timer)
     ble_comm_send(buf, msg_len);
 }
 
-static void on_popup_notifcation_closed(uint32_t id)
+static void on_PopupNotifcation_Closed(uint32_t id)
 {
     lv_timer_t *timer;
     // Changing back input group directly here causes LVGL
@@ -273,11 +377,11 @@ static void on_popup_notifcation_closed(uint32_t id)
     lv_timer_set_repeat_count(timer, 1);
 }
 
-static void on_close_application_manager(void)
+static void on_ApplicationManager_Close(void)
 {
     application_manager_delete();
     watch_state = WATCHFACE_STATE;
-    watchface_app_start(input_group, watchface_app_evt_callback);
+    watchface_app_start(input_group, on_WatchfaceAppEvent_Callback);
     lv_async_call(async_turn_off_buttons_allocation, NULL);
 }
 
@@ -286,56 +390,21 @@ static void async_turn_off_buttons_allocation(void *unused)
     buttons_allocated = false;
 }
 
-static void onButtonPressCb(buttonPressType_t type, buttonId_t id)
+static void on_InputSyubsys_Callback(struct input_event *evt)
 {
-    LOG_WRN("Pressed %d, type: %d", id, type);
-
-    if (zsw_power_manager_reset_idle_timout()) {
-        // Don't process the press if it caused wakeup.
+    // Currently you have to define a keycode as binding between buttons and longpress. We skip this binding codes for now.
+    // Also touch events will be skipped, because they are handled by LVGL.
+    // TODO: Charger is also ignored for now.
+    // TODO: Replace this filtering with a propper device filtering setup for the input handler
+    if((evt->code == INPUT_ABS_X) || (evt->code == INPUT_ABS_Y) || (evt->code == INPUT_BTN_TOUCH) ||
+       (evt->code == INPUT_KEY_KP0) || (evt->code == INPUT_KEY_POWER) || (evt->value == 1))
+    {
         return;
     }
 
-    // Always allow force restart
-    if (type == BUTTONS_LONG_PRESS && id == BUTTON_TOP_LEFT) {
-        retained.off_count += 1;
-        retained_update();
-        sys_reboot(SYS_REBOOT_COLD);
-    }
-
-    if (id == BUTTON_BOTTOM_RIGHT && zsw_notification_popup_is_shown()) {
-        zsw_notification_popup_remove();
-    } else if (id == BUTTON_BOTTOM_RIGHT && watch_state == APPLICATION_MANAGER_STATE) {
-        application_manager_exit_app();
-        return;
-    }
-
-    if (buttons_allocated) {
-        // Handled by LVGL
-        return;
-    }
-
-    // A bit hacky, but if we consumed the fake press in the callback
-    // we need to clear it, otherwise LVGL will think the button is still pressed later.
-    // Clear it by reading the button.
-    button_read(id);
-
-    if (type == BUTTONS_SHORT_PRESS && watch_state == WATCHFACE_STATE) {
-        zsw_vibration_run_pattern(ZSW_VIBRATION_PATTERN_CLICK);
-        if (id == BUTTON_TOP_LEFT) {
-            LOG_DBG("Close Watchface, open App Manager");
-            lv_async_call(open_application_manager_page, NULL);
-        } else {
-            LOG_WRN("Unhandled button %d, type: %d, watch_state: %d", id, type, watch_state);
-        }
-    } else {
-        if (id == BUTTON_TOP_LEFT) {
-            retained.off_count += 1;
-            retained_update();
-            sys_reboot(SYS_REBOOT_COLD);
-        } else {
-            LOG_WRN("Unhandled button %d, type: %d, watch_state: %d", id, type, watch_state);
-        }
-    }
+    input_worker_item.data = *evt;
+    input_worker_item.work = input_work;
+    k_work_submit(&input_worker_item.work);
 }
 
 static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
@@ -379,7 +448,7 @@ static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *da
     }
 }
 
-static void screen_gesture_event(lv_event_t *e)
+static void on_ScreenGestureEvent_Callback(lv_event_t *e)
 {
     lv_event_code_t event = lv_event_get_code(e);
     if (event == LV_EVENT_GESTURE) {
@@ -414,7 +483,7 @@ static void screen_gesture_event(lv_event_t *e)
     }
 }
 
-static void watchface_app_evt_callback(watchface_app_evt_t evt)
+static void on_WatchfaceAppEvent_Callback(watchface_app_evt_t evt)
 {
     if (watch_state == WATCHFACE_STATE && !zsw_notification_popup_is_shown()) {
         switch (evt) {
@@ -438,7 +507,7 @@ static void click_feedback(struct _lv_indev_drv_t *drv, uint8_t e)
     }
 }
 
-static void ble_data_cb(ble_comm_cb_data_t *cb)
+static void on_BLEDAta_Callback(ble_comm_cb_data_t *cb)
 {
     not_mngr_notification_t *parsed_not;
 
@@ -466,7 +535,7 @@ static void ble_data_cb(ble_comm_cb_data_t *cb)
     }
 }
 
-static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
+static void on_zbusBLECommData_Callback(const struct zbus_channel *chan)
 {
     const struct ble_data_event *event = zbus_chan_const_msg(chan);
     switch (event->data.type) {
@@ -496,10 +565,11 @@ static void zbus_ble_comm_data_callback(const struct zbus_channel *chan)
                     application_manager_set_index(0);
                     buttons_allocated = false;
                     watch_state = WATCHFACE_STATE;
-                    watchface_app_start(input_group, watchface_app_evt_callback);
+                    watchface_app_start(input_group, on_WatchfaceAppEvent_Callback);
                 }
             } else {
-                button_set_fake_press((buttonId_t)event->data.data.remote_control.button, true);
+                // TODO: Can we rework it with triggering input events?
+                //button_set_fake_press((buttonId_t)event->data.data.remote_control.button, true);
             }
 
             break;

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021 Qingsong Gou <gouqs@hotmail.com>
  * Copyright (c) 2022 Jakob Krantz <mail@jakobkrantz.se>
+ * Copyright (c) 2023 Daniel Kampert <kontakt@daniel-kampert.de>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,73 +108,87 @@ struct cst816s_data {
 	#endif
 };
 
+struct cst816s_output {
+	uint8_t gesture;
+	uint8_t points;
+	uint16_t x;
+	uint16_t y;
+};
+
 LOG_MODULE_REGISTER(cst816s, CONFIG_INPUT_LOG_LEVEL);
 
 static int cst816s_process(const struct device *dev)
 {
-	uint16_t x;
-	uint16_t y;
-	uint8_t gesture;
+	uint8_t event;
+	uint16_t row, col;
+	bool isPressed;
+
+	struct cst816s_output output;
 	const struct cst816s_config *cfg = dev->config;
 
-	if ((i2c_burst_read_dt(&cfg->i2c, CST816S_REG_YPOS_H, (uint8_t*)&y, sizeof(y)) < 0) ||
-		(i2c_burst_read_dt(&cfg->i2c, CST816S_REG_XPOS_H, (uint8_t*)&x, sizeof(x)) < 0) ||
-		(i2c_burst_read_dt(&cfg->i2c, CST816S_REG_GESTURE_ID, &gesture, sizeof(gesture)) < 0)
-		)
+	if (i2c_burst_read_dt(&cfg->i2c, CST816S_REG_GESTURE_ID, (uint8_t*)&output, sizeof(output)) < 0)
 	{
 		LOG_ERR("Could not read data");
 		return -ENODATA;
 	}
 
-	LOG_DBG("Gesture: %u", gesture);
+	col = sys_be16_to_cpu(output.x) & 0x0fff;
+	row = sys_be16_to_cpu(output.y) & 0x0fff;
 
-	switch(gesture)
+	event = (output.x & 0xff) >> CST816S_EVENT_BITS_POS;
+	isPressed = (event == EVENT_CONTACT);
+
+	LOG_DBG("Event: %u", event);
+	LOG_DBG("Pressed: %u", isPressed);
+	LOG_DBG("Gesture: %u", output.gesture);
+
+	if(isPressed)
 	{
-		case CST816S_GESTURE_CLICK:
-		{
-			uint16_t row;
-			uint16_t col;
+		// These events are generated for the LVGL touch implementation.
+		input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
+		input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
+		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
+	}
+	else
+	{
+		// This event is generated for the LVGL touch implementation.
+		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
 
-			col = sys_be16_to_cpu(x) & 0x0FFF;
-			row = sys_be16_to_cpu(y) & 0x0FFF;
-
-			input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
-			input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
-			input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
-
-			break;
-		}
-		case CST816S_GESTURE_LONG_PRESS:
+		// These events are generated for common gesture events.
+		switch(output.gesture)
 		{
-			break;
-		}
-		case CST816S_GESTURE_UP_SLIDING:
-		{
-			input_report_key(dev, INPUT_BTN_NORTH, 0, true, K_FOREVER);
+			case CST816S_GESTURE_LONG_PRESS:
+			{
+				break;
+			}
+			case CST816S_GESTURE_UP_SLIDING:
+			{
+				input_report_key(dev, INPUT_BTN_NORTH, 0, true, K_FOREVER);
 
-			break;
-		}
-		case CST816S_GESTURE_DOWN_SLIDING:
-		{
-			input_report_key(dev, INPUT_BTN_SOUTH, 0, true, K_FOREVER);
+				break;
+			}
+			case CST816S_GESTURE_DOWN_SLIDING:
+			{
+				input_report_key(dev, INPUT_BTN_SOUTH, 0, true, K_FOREVER);
 
-			break;
-		}
-		case CST816S_GESTURE_LEFT_SLIDE:
-		{
-			input_report_key(dev, INPUT_BTN_WEST, 0, true, K_FOREVER);
+				break;
+			}
+			case CST816S_GESTURE_LEFT_SLIDE:
+			{
+				input_report_key(dev, INPUT_BTN_WEST, 0, true, K_FOREVER);
 
-			break;
-		}
-		case CST816S_GESTURE_RIGHT_SLIDE:
-		{
-			input_report_key(dev, INPUT_BTN_EAST, 0, true, K_FOREVER);
+				break;
+			}
+			case CST816S_GESTURE_RIGHT_SLIDE:
+			{
+				input_report_key(dev, INPUT_BTN_EAST, 0, true, K_FOREVER);
 
-			break;
-		}
-		default:
-		{
-			break;
+				break;
+			}
+			default:
+			{
+				break;
+			}
 		}
 	}
 

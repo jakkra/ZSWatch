@@ -47,18 +47,18 @@
     aliases {
         display-blk = &display_blk;
         vibrator-pwm = &vibrator_pwm;
-        sw0 = &button0;
         sw1 = &button1;
         sw2 = &button2;
         sw3 = &button3;
-        sw-top-right = &button0;
-        sw-top-left = &button3;
-        sw-bottom-right = &button2;
-        sw-bottom-left = &button1;
+        sw4 = &button4;
+        sw-top-right = &button1;
+        sw-top-left = &button4;
+        sw-bottom-right = &button3;
+        sw-bottom-left = &button2;
         magn = &lis2mdl;
         watchdog0 = &wdt0;
         accel = &bmi270;
-        mcuboot-button0 = &button1;
+        mcuboot-button1 = &button1;
     };
 };
 
@@ -86,7 +86,7 @@
 
 &gpio0 {
     status = "okay";
-    sense-edge-mask = < 0xffffffff >;
+    sense-edge-mask = <0xffffffff>;
 };
 
 &gpio1 {
