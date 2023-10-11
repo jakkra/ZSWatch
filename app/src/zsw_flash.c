@@ -19,14 +19,14 @@ LOG_MODULE_REGISTER(zsw_flash, LOG_LEVEL_DBG);
 
 static int zsw_flash_test(void)
 {
-	const struct device *flash_dev = DEVICE_DT_GET_OR_NULL(DT_ALIAS(spi_flash0));
+    const struct device *flash_dev = DEVICE_DT_GET_OR_NULL(DT_ALIAS(spi_flash0));
 
-	if (!flash_dev || !device_is_ready(flash_dev)) {
-		LOG_ERR("No external flash present: %s", flash_dev ? flash_dev->name: "spi_flash0");
-		return 0;
-	}
+    if (!flash_dev || !device_is_ready(flash_dev)) {
+        LOG_ERR("No external flash present: %s", flash_dev ? flash_dev->name : "spi_flash0");
+        return 0;
+    }
 
-	return 0;
+    return 0;
 }
 
 SYS_INIT(zsw_flash_test, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

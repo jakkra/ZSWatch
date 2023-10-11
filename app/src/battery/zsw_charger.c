@@ -1,4 +1,3 @@
-#include <zsw_charger.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/device.h>
@@ -6,6 +5,8 @@
 #include <zephyr/logging/log.h>
 #include <events/chg_event.h>
 #include <zephyr/zbus/zbus.h>
+
+#include "battery/zsw_charger.h"
 
 LOG_MODULE_REGISTER(zsw_charger, LOG_LEVEL_ERR);
 

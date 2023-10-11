@@ -1,8 +1,9 @@
-#include <2048/game_2048_ui.h>
-#include <application_manager.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <lv_100ask_2048.h>
+
+#include "game_2048_ui.h"
+#include "manager/application_manager.h"
 
 // Functions needed for all applications
 static void game_2048_app_start(lv_obj_t *root, lv_group_t *group);

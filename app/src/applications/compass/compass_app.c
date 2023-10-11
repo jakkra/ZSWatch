@@ -1,10 +1,10 @@
-#include <compass/compass_ui.h>
-#include <application_manager.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
-#include <zsw_magnetometer.h>
-#include <zsw_popup_window.h>
+
+#include "compass_ui.h"
+#include "sensors/zsw_magnetometer.h"
+#include "manager/application_manager.h"
 
 LOG_MODULE_REGISTER(compass_app, LOG_LEVEL_DBG);
 

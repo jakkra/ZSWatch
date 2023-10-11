@@ -1,5 +1,5 @@
-#include <zsw_popup_window.h>
-#include <zsw_power_manager.h>
+#include "manager/zsw_power_manager.h"
+#include "ui/popup/zsw_popup_window.h"
 
 static void on_popup_closed(lv_event_t *e);
 static void close_popup_timer(lv_timer_t *timer);

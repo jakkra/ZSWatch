@@ -1,7 +1,7 @@
 #ifndef __ZSW_POPUP_NOTIFCATION_H
 #define __ZSW_POPUP_NOTIFCATION_H
 
-#include <notification_manager.h>
+#include "manager/notification_manager.h"
 
 typedef void (*on_close_notif_cb_t)(uint32_t id);
 

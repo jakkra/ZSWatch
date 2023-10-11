@@ -45,15 +45,15 @@
 #define APDS9306_BIT_POWER_ON_STATUS        BIT(0x05)
 
 #ifdef CONFIG_APDS9306_IS_APDS9306_065
-    #define APDS_9306_CHIP_ID               0xB3
+#define APDS_9306_CHIP_ID               0xB3
 #else
-    #define APDS_9306_CHIP_ID               0xB1
+#define APDS_9306_CHIP_ID               0xB1
 #endif
 
 LOG_MODULE_REGISTER(apds9306, CONFIG_SENSOR_LOG_LEVEL);
 
 #if(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0)
-    #warning "apds9306 driver enabled without any devices"
+#warning "apds9306 driver enabled without any devices"
 #endif
 
 struct apds9306_data {
@@ -68,9 +68,9 @@ struct apds9306_config {
  *  @param p_Dev    Pointer to sensor device
  *  @return         0 when successful
 */
-static int apds9306_enable(const struct device* p_Dev)
+static int apds9306_enable(const struct device *p_Dev)
 {
-    const struct apds9306_config* Config = p_Dev->config;
+    const struct apds9306_config *Config = p_Dev->config;
 
     return i2c_reg_update_byte_dt(&Config->i2c, APDS9306_REGISTER_MAIN_CTRL, ADPS9306_BIT_ALS_EN, ADPS9306_BIT_ALS_EN);
 }
@@ -79,9 +79,9 @@ static int apds9306_enable(const struct device* p_Dev)
  *  @param p_Dev    Pointer to sensor device
  *  @return         0 when successful
 */
-static int apds9306_standby(const struct device* p_Dev)
+static int apds9306_standby(const struct device *p_Dev)
 {
-    const struct apds9306_config* Config = p_Dev->config;
+    const struct apds9306_config *Config = p_Dev->config;
 
     return i2c_reg_update_byte_dt(&Config->i2c, APDS9306_REGISTER_MAIN_CTRL, ADPS9306_BIT_ALS_EN, 0x00);
 }
@@ -91,17 +91,16 @@ static int apds9306_standby(const struct device* p_Dev)
  *  @param p_Value  Pointer to sensor result
  *  @return         0 when successful
 */
-static int apds9306_read_light(const struct device* p_Dev, uint32_t* p_Value)
+static int apds9306_read_light(const struct device *p_Dev, uint32_t *p_Value)
 {
     int Error;
-    const struct apds9306_config* Config = p_Dev->config;
+    const struct apds9306_config *Config = p_Dev->config;
     uint8_t Buffer[3];
     uint8_t Register;
     uint32_t Now;
 
     LOG_DBG("Start a new measurement...");
-    if(apds9306_enable(p_Dev) != 0)
-    {
+    if (apds9306_enable(p_Dev) != 0) {
         LOG_ERR("Can not enable ALS!");
         return -EIO;
     }
@@ -112,26 +111,22 @@ static int apds9306_read_light(const struct device* p_Dev, uint32_t* p_Value)
 
     // Wait for the end of the measurement.
     Now = k_uptime_get_32();
-    do
-    {
-        if(i2c_reg_read_byte_dt(&Config->i2c, APDS9306_REGISTER_MAIN_STATUS, &Buffer[0]))
-        {
+    do {
+        if (i2c_reg_read_byte_dt(&Config->i2c, APDS9306_REGISTER_MAIN_STATUS, &Buffer[0])) {
             LOG_ERR("Failed to read ALS status!");
             return -EIO;
         }
 
         // We wait 100 ms maximum for the device to become ready.
-        if((k_uptime_get_32() - Now) > 500)
-        {
+        if ((k_uptime_get_32() - Now) > 500) {
             LOG_ERR("Sensor timeout!");
             return -EIO;
         }
 
         k_msleep(10);
-    } while(Buffer[0] & ADPS9306_BIT_ALS_DATA_STATUS);
+    } while (Buffer[0] & ADPS9306_BIT_ALS_DATA_STATUS);
 
-    if(apds9306_standby(p_Dev) != 0)
-    {
+    if (apds9306_standby(p_Dev) != 0) {
         LOG_ERR("Can not disable ALS!");
         return -EIO;
     }
@@ -139,55 +134,46 @@ static int apds9306_read_light(const struct device* p_Dev, uint32_t* p_Value)
     // Read the results.
     Register = APDS9306_REGISTER_ALS_DATA_0;
     Error = i2c_write_read_dt(&Config->i2c, &Register, sizeof(Register), &Buffer, sizeof(Buffer));
-    if(Error < 0)
-    {
+    if (Error < 0) {
         return Error;
     }
-    
+
     *p_Value = sys_get_le24(Buffer);
 
     return 0;
 }
 
-static int apds9306_attr_set(const struct device* p_Dev, enum sensor_channel Channel, enum sensor_attribute Attribute, const struct sensor_value* p_Value)
+static int apds9306_attr_set(const struct device *p_Dev, enum sensor_channel Channel, enum sensor_attribute Attribute,
+                             const struct sensor_value *p_Value)
 {
     uint8_t Mask;
     uint8_t Value;
     uint8_t Register;
-    const struct apds9306_config* Config = p_Dev->config;
+    const struct apds9306_config *Config = p_Dev->config;
 
     __ASSERT_NO_MSG(p_Value != NULL);
 
-    if(Channel != SENSOR_CHAN_LIGHT)
-    {
+    if (Channel != SENSOR_CHAN_LIGHT) {
         return -ENOTSUP;
     }
 
-    if(Attribute == SENSOR_ATTR_SAMPLING_FREQUENCY)
-    {
+    if (Attribute == SENSOR_ATTR_SAMPLING_FREQUENCY) {
         Register = APDS9306_REGISTER_ALS_MEAS_RATE;
         Mask = (0x07) << 0x00;
         Value = p_Value->val1 & 0x07;
-    }
-    else if(Attribute == SENSOR_APDS9306_ATTR_GAIN)
-    {
+    } else if (Attribute == SENSOR_APDS9306_ATTR_GAIN) {
         Register = APDS9306_REGISTER_ALS_GAIN;
         Mask = (0x07) << 0x00;
         Value = p_Value->val1 & 0x07;
-    }
-    else if(Attribute == SENSOR_APDS9306_ATTR_RESOLUTION)
-    {
+    } else if (Attribute == SENSOR_APDS9306_ATTR_RESOLUTION) {
         Register = APDS9306_REGISTER_ALS_MEAS_RATE;
         Mask = (0x07) << 0x04;
         Value = (p_Value->val1 & 0x07) << 0x04;
-    }
-    else
-    {
+    } else {
         return -ENOTSUP;
     }
 
-    if(i2c_reg_update_byte_dt(&Config->i2c, Register, Mask, Value))
-    {
+    if (i2c_reg_update_byte_dt(&Config->i2c, Register, Mask, Value)) {
         LOG_ERR("Failed to set sensor attribute!");
         return -EIO;
     }
@@ -195,42 +181,34 @@ static int apds9306_attr_set(const struct device* p_Dev, enum sensor_channel Cha
     return 0;
 }
 
-static int apds9306_attr_get(const struct device* p_Dev, enum sensor_channel Channel, enum sensor_attribute Attribute, struct sensor_value* p_Value)
+static int apds9306_attr_get(const struct device *p_Dev, enum sensor_channel Channel, enum sensor_attribute Attribute,
+                             struct sensor_value *p_Value)
 {
     uint8_t Mask;
     uint8_t Value;
     uint8_t Register;
-    const struct apds9306_config* Config = p_Dev->config;
+    const struct apds9306_config *Config = p_Dev->config;
 
     __ASSERT_NO_MSG(p_Value != NULL);
 
-    if(Channel != SENSOR_CHAN_LIGHT)
-    {
+    if (Channel != SENSOR_CHAN_LIGHT) {
         return -ENOTSUP;
     }
 
-    if(Attribute == SENSOR_ATTR_SAMPLING_FREQUENCY)
-    {
+    if (Attribute == SENSOR_ATTR_SAMPLING_FREQUENCY) {
         Register = APDS9306_REGISTER_ALS_MEAS_RATE;
         Mask = 0x00;
-    }
-    else if(Attribute == SENSOR_APDS9306_ATTR_GAIN)
-    {
+    } else if (Attribute == SENSOR_APDS9306_ATTR_GAIN) {
         Register = APDS9306_REGISTER_ALS_GAIN;
         Mask = 0x00;
-    }
-    else if(Attribute == SENSOR_APDS9306_ATTR_RESOLUTION)
-    {
+    } else if (Attribute == SENSOR_APDS9306_ATTR_RESOLUTION) {
         Register = APDS9306_REGISTER_ALS_MEAS_RATE;
         Mask = 0x04;
-    }
-    else
-    {
+    } else {
         return -ENOTSUP;
     }
 
-    if(i2c_reg_read_byte_dt(&Config->i2c, Register, &Value))
-    {
+    if (i2c_reg_read_byte_dt(&Config->i2c, Register, &Value)) {
         LOG_ERR("Failed to read sensor attribute!");
         return -EIO;
     }
@@ -243,27 +221,24 @@ static int apds9306_attr_get(const struct device* p_Dev, enum sensor_channel Cha
     return 0;
 }
 
-static int apds9306_sample_fetch(const struct device* p_Dev, enum sensor_channel Channel)
+static int apds9306_sample_fetch(const struct device *p_Dev, enum sensor_channel Channel)
 {
     int Error;
     uint32_t Value;
-    struct apds9306_data* Data = p_Dev->data;
+    struct apds9306_data *Data = p_Dev->data;
     enum pm_device_state pm_state;
 
     (void)pm_device_state_get(p_Dev, &pm_state);
-    if(pm_state != PM_DEVICE_STATE_ACTIVE)
-    {
+    if (pm_state != PM_DEVICE_STATE_ACTIVE) {
         return -EIO;
     }
 
-    if((Channel != SENSOR_CHAN_ALL) && (Channel != SENSOR_CHAN_LIGHT))
-    {
+    if ((Channel != SENSOR_CHAN_ALL) && (Channel != SENSOR_CHAN_LIGHT)) {
         return -ENOTSUP;
     }
 
     Error = apds9306_read_light(p_Dev, &Value);
-    if(Error < 0)
-    {
+    if (Error < 0) {
         return Error;
     }
 
@@ -274,12 +249,11 @@ static int apds9306_sample_fetch(const struct device* p_Dev, enum sensor_channel
     return 0;
 }
 
-static int apds9306_channel_get(const struct device* p_Dev, enum sensor_channel Channel, struct sensor_value* p_Value)
+static int apds9306_channel_get(const struct device *p_Dev, enum sensor_channel Channel, struct sensor_value *p_Value)
 {
-    struct apds9306_data* Data = p_Dev->data;
+    struct apds9306_data *Data = p_Dev->data;
 
-    if(Channel != SENSOR_CHAN_LIGHT)
-    {
+    if (Channel != SENSOR_CHAN_LIGHT) {
         return -ENOTSUP;
     }
 
@@ -291,43 +265,38 @@ static int apds9306_channel_get(const struct device* p_Dev, enum sensor_channel 
     return 0;
 }
 
-static int apds9306_sensor_setup(const struct device* p_Dev)
+static int apds9306_sensor_setup(const struct device *p_Dev)
 {
     uint32_t Now;
     uint8_t Temp;
-    const struct apds9306_config* Config = p_Dev->config;
+    const struct apds9306_config *Config = p_Dev->config;
 
     // Wait for the device to become ready after a power cycle.
     Now = k_uptime_get_32();
-    do
-    {
+    do {
         i2c_reg_read_byte_dt(&Config->i2c, APDS9306_REGISTER_MAIN_STATUS, &Temp);
 
         // We wait 100 ms maximum for the device to become ready.
-        if((k_uptime_get_32() - Now) > 100)
-        {
+        if ((k_uptime_get_32() - Now) > 100) {
             LOG_ERR("Sensor timeout!");
             return -EIO;
         }
 
         k_msleep(10);
-    } while(Temp & APDS9306_BIT_POWER_ON_STATUS);
+    } while (Temp & APDS9306_BIT_POWER_ON_STATUS);
 
-    if(i2c_reg_read_byte_dt(&Config->i2c, APDS9306_REGISTER_PART_ID, &Temp))
-    {
+    if (i2c_reg_read_byte_dt(&Config->i2c, APDS9306_REGISTER_PART_ID, &Temp)) {
         LOG_ERR("Failed reading chip id!");
         return -EIO;
     }
 
-    if(Temp != APDS_9306_CHIP_ID)
-    {
+    if (Temp != APDS_9306_CHIP_ID) {
         LOG_ERR("Invalid chip id! Found 0x%X, expect 0x%X", Temp, APDS_9306_CHIP_ID);
         return -EIO;
     }
 
     // Reset the sensor.
-    if(i2c_reg_write_byte_dt(&Config->i2c, APDS9306_REGISTER_MAIN_CTRL, APDS9306_BIT_SW_RESET))
-    {
+    if (i2c_reg_write_byte_dt(&Config->i2c, APDS9306_REGISTER_MAIN_CTRL, APDS9306_BIT_SW_RESET)) {
         LOG_ERR("Can not reset the sensor!");
         return -EIO;
     }
@@ -344,20 +313,18 @@ static const struct sensor_driver_api apds9306_driver_api = {
     .channel_get = apds9306_channel_get,
 };
 
-static int apds9306_init(const struct device* p_Dev)
+static int apds9306_init(const struct device *p_Dev)
 {
-    const struct apds9306_config* Config = p_Dev->config;
+    const struct apds9306_config *Config = p_Dev->config;
 
     LOG_DBG("Start to initialize APDS9306...");
 
-    if(device_is_ready(Config->i2c.bus) == false)
-    {
+    if (device_is_ready(Config->i2c.bus) == false) {
         LOG_ERR("Bus device is not ready");
         return -EINVAL;
     }
 
-    if(apds9306_sensor_setup(p_Dev) < 0)
-    {
+    if (apds9306_sensor_setup(p_Dev) < 0) {
         LOG_ERR("Failed to setup device!");
         return -EIO;
     }
@@ -368,41 +335,38 @@ static int apds9306_init(const struct device* p_Dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-    static int apds9306_pm_action(const struct device* p_Dev, enum pm_device_action Action)
-    {
-        switch(Action)
-        {
-            case PM_DEVICE_ACTION_SUSPEND:
-            case PM_DEVICE_ACTION_RESUME:
-            case PM_DEVICE_ACTION_TURN_OFF:
-            case PM_DEVICE_ACTION_TURN_ON:
-            {
-                break;
-            }
-            default:
-            {
-                return -ENOTSUP;
-            }
+static int apds9306_pm_action(const struct device *p_Dev, enum pm_device_action Action)
+{
+    switch (Action) {
+        case PM_DEVICE_ACTION_SUSPEND:
+        case PM_DEVICE_ACTION_RESUME:
+        case PM_DEVICE_ACTION_TURN_OFF:
+        case PM_DEVICE_ACTION_TURN_ON: {
+            break;
         }
-
-        return 0;
+        default: {
+            return -ENOTSUP;
+        }
     }
+
+    return 0;
+}
 #endif
 
-#define APDS9306_INIT(inst)							                    \
-    static struct apds9306_data apds9306_data_##inst;				    \
+#define APDS9306_INIT(inst)                                             \
+    static struct apds9306_data apds9306_data_##inst;                   \
                                                                         \
     static const struct apds9306_config apds9306_config_##inst = {      \
-        .i2c = I2C_DT_SPEC_INST_GET(inst),				                \
-    };								                                    \
+        .i2c = I2C_DT_SPEC_INST_GET(inst),                              \
+    };                                                                  \
                                                                         \
     PM_DEVICE_DT_INST_DEFINE(inst, apds9306_pm_action);                 \
                                                                         \
-    SENSOR_DEVICE_DT_INST_DEFINE(inst, apds9306_init,			        \
-                  PM_DEVICE_DT_INST_GET(inst),			                \
-                  &apds9306_data_##inst,				                \
-                  &apds9306_config_##inst, POST_KERNEL,		            \
-                  CONFIG_SENSOR_INIT_PRIORITY,		                    \
+    SENSOR_DEVICE_DT_INST_DEFINE(inst, apds9306_init,                   \
+                  PM_DEVICE_DT_INST_GET(inst),                          \
+                  &apds9306_data_##inst,                                \
+                  &apds9306_config_##inst, POST_KERNEL,                 \
+                  CONFIG_SENSOR_INIT_PRIORITY,                          \
                   &apds9306_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(APDS9306_INIT)

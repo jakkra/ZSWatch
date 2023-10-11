@@ -1,8 +1,9 @@
-#include <ble_transport.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/logging/log.h>
+
+#include "ble/ble_transport.h"
 
 LOG_MODULE_REGISTER(ble_transport, LOG_LEVEL_DBG);
 

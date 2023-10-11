@@ -20,14 +20,15 @@
 #include <zephyr/init.h>
 #include <zephyr/zbus/zbus.h>
 #include <zephyr/logging/log.h>
-#include <events/battery_event.h>
-#include <events/chg_event.h>
-#include <battery.h>
 #include <zephyr/bluetooth/conn.h>
-#include <ble_comm.h>
-#include <zsw_charger.h>
-#include <zsw_battery_manager.h>
 #include <zephyr/bluetooth/services/bas.h>
+
+#include "ble/ble_comm.h"
+#include "battery/battery.h"
+#include "battery/zsw_charger.h"
+#include "events/chg_event.h"
+#include "events/battery_event.h"
+#include "manager/zsw_battery_manager.h"
 
 LOG_MODULE_REGISTER(zsw_phone_app_publisher, LOG_LEVEL_DBG);
 

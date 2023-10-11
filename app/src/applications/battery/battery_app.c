@@ -1,11 +1,12 @@
-#include <battery/battery_ui.h>
-#include <application_manager.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/init.h>
-#include <battery.h>
 #include <zephyr/zbus/zbus.h>
-#include <events/battery_event.h>
+
+#include "battery/battery.h"
+#include "battery/battery_ui.h"
+#include "events/battery_event.h"
+#include "manager/application_manager.h"
 
 LOG_MODULE_REGISTER(battery_app, LOG_LEVEL_WRN);
 

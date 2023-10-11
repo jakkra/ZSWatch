@@ -5,7 +5,6 @@
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <buttons.h>
-#include <battery.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -14,25 +13,12 @@
 #include <zephyr/logging/log.h>
 #include <zsw_clock.h>
 #include <lvgl.h>
-#include "watchface_app.h"
 #include <sys/time.h>
 #include <ram_retention_storage.h>
-#include <zsw_imu.h>
-#include <ble_comm.h>
-#include <ble_aoa.h>
-#include <zsw_popup_notifcation.h>
-#include <notification_manager.h>
 #include <zsw_vibration_motor.h>
 #include <display_control.h>
-#include <applications/application_manager.h>
-#include <events/ble_data_event.h>
-#include <events/accel_event.h>
-#include <zsw_magnetometer.h>
-#include <zsw_pressure_sensor.h>
 #include <zephyr/zbus/zbus.h>
 #include <zsw_cpu_freq.h>
-#include <zsw_charger.h>
-#include <zsw_power_manager.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/task_wdt/task_wdt.h>
@@ -40,7 +26,22 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/fatal.h>
 #include <zephyr/input/input.h>
+
 #include "dfu.h"
+#include "ui/zsw_ui.h"
+#include "ble/ble_comm.h"
+#include "ble/ble_aoa.h"
+#include "battery/battery.h"
+#include "battery/zsw_charger.h"
+#include "events/accel_event.h"
+#include "events/ble_data_event.h"
+#include "sensors/zsw_imu.h"
+#include "sensors/zsw_magnetometer.h"
+#include "sensors/zsw_pressure_sensor.h"
+#include "manager/zsw_power_manager.h"
+#include "manager/application_manager.h"
+#include "manager/notification_manager.h"
+#include "applications/watchface/watchface_app.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
 
@@ -52,8 +53,7 @@ typedef enum ui_state {
     APPLICATION_MANAGER_STATE,
 } ui_state_t;
 
-static struct input_worker_item_t
-{
+static struct input_worker_item_t {
     struct k_work work;
     struct input_event data;
 } input_worker_item;
@@ -106,42 +106,35 @@ static void run_input_work(struct k_work *item)
     LOG_WRN("Worker, Button %u", container->data.code);
 
     // Don't process the press if it caused wakeup.
-    if(zsw_power_manager_reset_idle_timout())
-    {
+    if (zsw_power_manager_reset_idle_timout()) {
         return;
     }
 
     // Handle the input events. We have to take care about the screen orientation for the touch events.
-    switch(container->data.code)
-    {
+    switch (container->data.code) {
         // Touch event
         // Slide from right to left.
-        case INPUT_BTN_NORTH:
-        {
+        case INPUT_BTN_NORTH: {
             break;
         }
         // Touch event
         // Slide from left to right.
-        case INPUT_BTN_SOUTH:
-        {
+        case INPUT_BTN_SOUTH: {
             break;
         }
         // Touch event
         // Slide from bottom to top.
-        case INPUT_BTN_WEST:
-        {
+        case INPUT_BTN_WEST: {
             break;
         }
         // Touch event
         // Slide from top to bottom.
-        case INPUT_BTN_EAST:
-        {
+        case INPUT_BTN_EAST: {
             break;
         }
         // Button event
         // Always allow force restart.
-        case(INPUT_KEY_Y):
-        {
+        case (INPUT_KEY_Y): {
             LOG_INF("Force restart");
 
             retained.off_count += 1;
@@ -151,14 +144,10 @@ static void run_input_work(struct k_work *item)
             break;
         }
         // Button event
-        case INPUT_KEY_3:
-        {
-            if(zsw_notification_popup_is_shown())
-            {
+        case INPUT_KEY_3: {
+            if (zsw_notification_popup_is_shown()) {
                 zsw_notification_popup_remove();
-            }
-            else if(watch_state == APPLICATION_MANAGER_STATE)
-            {
+            } else if (watch_state == APPLICATION_MANAGER_STATE) {
                 application_manager_exit_app();
 
                 return;
@@ -166,10 +155,8 @@ static void run_input_work(struct k_work *item)
 
             break;
         }
-        case INPUT_KEY_4:
-        {
-            if(watch_state == WATCHFACE_STATE)
-            {
+        case INPUT_KEY_4: {
+            if (watch_state == WATCHFACE_STATE) {
                 zsw_vibration_run_pattern(ZSW_VIBRATION_PATTERN_CLICK);
                 lv_async_call(open_application_manager_page, NULL);
             }
@@ -178,8 +165,7 @@ static void run_input_work(struct k_work *item)
         }
     }
 
-    if(buttons_allocated)
-    {
+    if (buttons_allocated) {
         // Handled by LVGL.
         return;
     }
@@ -262,8 +248,7 @@ int main(void)
     k_work_submit(&init_work);
 
     int Counter = 0;
-    while(1)
-    {
+    while (1) {
         LOG_ERR("Counter: %u", Counter++);
         k_msleep(1000);
     }
@@ -396,9 +381,8 @@ static void on_InputSyubsys_Callback(struct input_event *evt)
     // Also touch events will be skipped, because they are handled by LVGL.
     // TODO: Charger is also ignored for now.
     // TODO: Replace this filtering with a propper device filtering setup for the input handler
-    if((evt->code == INPUT_ABS_X) || (evt->code == INPUT_ABS_Y) || (evt->code == INPUT_BTN_TOUCH) ||
-       (evt->code == INPUT_KEY_KP0) || (evt->code == INPUT_KEY_POWER) || (evt->value == 1))
-    {
+    if ((evt->code == INPUT_ABS_X) || (evt->code == INPUT_ABS_Y) || (evt->code == INPUT_BTN_TOUCH) ||
+        (evt->code == INPUT_KEY_KP0) || (evt->code == INPUT_KEY_POWER) || (evt->value == 1)) {
         return;
     }
 

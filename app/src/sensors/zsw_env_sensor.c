@@ -15,13 +15,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <zsw_env_sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <math.h>
 
-#include "zsw_env_sensor.h"
+#include "sensors/zsw_env_sensor.h"
 
 static const struct device *const bme688 = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(bme688));
 

@@ -1,5 +1,3 @@
-#include <info/info_ui.h>
-#include <application_manager.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/device.h>
@@ -7,7 +5,10 @@
 #include <ram_retention_storage.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
-#include <zsw_power_manager.h>
+
+#include "info_ui.h"
+#include "manager/zsw_power_manager.h"
+#include "manager/application_manager.h"
 
 LOG_MODULE_REGISTER(info_app, LOG_LEVEL_DBG);
 

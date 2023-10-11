@@ -1,4 +1,4 @@
-#include <ble_comm.h>
+#include "ble/ble_comm.h"
 
 struct ble_data_event {
     ble_comm_cb_data_t data;

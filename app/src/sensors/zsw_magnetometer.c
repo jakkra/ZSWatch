@@ -1,4 +1,3 @@
-#include <zsw_magnetometer.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
@@ -8,6 +7,8 @@
 #include <zephyr/logging/log.h>
 #include <inttypes.h>
 #include <math.h>
+
+#include "sensors/zsw_magnetometer.h"
 
 LOG_MODULE_REGISTER(magnetometer, LOG_LEVEL_WRN);
 
