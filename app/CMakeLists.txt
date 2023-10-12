@@ -26,7 +26,6 @@ include_directories(src/)
 include_directories(src/ui)
 include_directories(src/applications)
 
-target_sources(app PRIVATE src/buttons.c)
 target_sources(app PRIVATE src/display_control.c)
 target_sources(app PRIVATE src/main.c)
 target_sources(app PRIVATE src/ram_retention_storage.c)
