@@ -79,7 +79,7 @@ static void on_InputSyubsys_Callback(struct input_event *evt);
 static void on_WatchfaceAppEvent_Callback(watchface_app_evt_t evt);
 
 // TODO: Marked for removal
-static void on_ScreenGestureEvent_Callback(lv_event_t *e);
+//static void on_ScreenGestureEvent_Callback(lv_event_t *e);
 
 static int kernal_wdt_id;
 
@@ -171,13 +171,13 @@ static void run_input_work(struct k_work *item)
             // Touch event
             // Watch: Slide from right to left.
             case INPUT_BTN_NORTH: {
-                watchface_change();
+                open_application_manager_page("Notification");
                 break;
             }
             // Touch event
             // Watch: Slide from left to right.
             case INPUT_BTN_SOUTH: {
-                open_application_manager_page("Notification");
+                watchface_change();
                 break;
             }
             // Touch event

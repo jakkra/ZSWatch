@@ -121,7 +121,7 @@ static int cst816s_process(const struct device *dev)
 {
     uint8_t event;
     uint16_t row, col;
-    bool isPressed;
+    bool is_pressed;
 
     struct cst816s_output output;
     const struct cst816s_config *cfg = dev->config;
@@ -135,13 +135,13 @@ static int cst816s_process(const struct device *dev)
     row = sys_be16_to_cpu(output.y) & 0x0fff;
 
     event = (output.x & 0xff) >> CST816S_EVENT_BITS_POS;
-    isPressed = (event == EVENT_CONTACT);
+    is_pressed = (event == EVENT_CONTACT);
 
     LOG_DBG("Event: %u", event);
-    LOG_DBG("Pressed: %u", isPressed);
+    LOG_DBG("Pressed: %u", is_pressed);
     LOG_DBG("Gesture: %u", output.gesture);
 
-    if (isPressed) {
+    if (is_pressed) {
         // These events are generated for the LVGL touch implementation.
         input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
         input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
