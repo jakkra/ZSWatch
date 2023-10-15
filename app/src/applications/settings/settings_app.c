@@ -8,6 +8,7 @@
 #include <ble_comm.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/settings/settings.h>
 
 static void settings_app_start(lv_obj_t *root, lv_group_t *group);
 static void settings_app_stop(void);
@@ -160,6 +161,8 @@ static void on_brightness_changed(lv_setting_value_t value, bool final)
 {
     // Slider have values 0-10 hence multiply with 10 to get brightness in percent
     display_control_set_brightness(value.item.slider * 10);
+    value.item.slider *= 10;
+    settings_save_one("settings/brightness", &value.item.slider, sizeof(value.item.slider));
 }
 
 static void on_display_on_changed(lv_setting_value_t value, bool final)
@@ -203,11 +206,46 @@ static void on_reset_steps_changed(lv_setting_value_t value, bool final)
     }
 }
 
+static int setting_on_commit(void)
+{
+    printk("Settings loaded\n");
+}
+
+static int settings_load_cb(const char *name, size_t len,
+                            settings_read_cb read_cb, void *cb_arg)
+{
+    const char *next;
+    int rc;
+    int32_t bri;
+
+    if (settings_name_steq(name, "brightness", &next) && !next) {
+        if (len != sizeof(bri)) {
+            return -EINVAL;
+        }
+
+        rc = read_cb(cb_arg, &bri, sizeof(bri));
+        printk("Read br: %d\n", bri);
+        general_page_items[0].item.slider.inital_val = bri / 10;
+        display_control_set_brightness(bri);
+        if (rc >= 0) {
+            return 0;
+        }
+
+        return rc;
+    }
+
+
+    return -ENOENT;
+}
+
 static int settings_app_add(void)
 {
     application_manager_add_application(&app);
 
     return 0;
 }
+
+SETTINGS_STATIC_HANDLER_DEFINE(my_name, "settings", NULL,
+                               settings_load_cb, setting_on_commit, NULL);
 
 SYS_INIT(settings_app_add, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

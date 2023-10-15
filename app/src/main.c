@@ -102,6 +102,9 @@ static void run_init_work(struct k_work *item)
     load_retention_ram();
     notification_manager_init();
     enable_bluetoth();
+    //uint32_t br = 1337;
+    //int rc = settings_save_one("settings/brightness", &br, sizeof(br));
+    //printk("RC: %d\n", rc);
     zsw_imu_init();
     zsw_magnetometer_init();
     zsw_pressure_sensor_init();
@@ -197,14 +200,14 @@ static void enable_bluetoth(void)
 #endif
 
     err = bt_enable(NULL);
-    if (err != 0) {
-        LOG_ERR("Failed to enable Bluetooth, err: %d", err);
-        return;
-    }
 
 #ifdef CONFIG_SETTINGS
     settings_load();
 #endif
+    if (err != 0) {
+        LOG_ERR("Failed to enable Bluetooth, err: %d", err);
+        return;
+    }
 
     __ASSERT_NO_MSG(ble_comm_init(ble_data_cb) == 0);
     bleAoaInit();
