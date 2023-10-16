@@ -510,11 +510,11 @@ static int parse_notify(char *data, int len)
     memset(&cb, 0, sizeof(cb));
 
     cb.type = BLE_COMM_DATA_TYPE_NOTIFY;
-    cb.data.notify.id = extract_value_uint32("id:", data);
-    cb.data.notify.src = extract_value_str("src:", data, &cb.data.notify.src_len);
-    cb.data.notify.sender = extract_value_str("sender:", data, &cb.data.notify.sender_len);
-    cb.data.notify.title = extract_value_str("title:", data, &cb.data.notify.title_len);
-    cb.data.notify.body = extract_value_str("body:", data, &cb.data.notify.body_len);
+    cb.data.notify.id = extract_value_uint32("\"id\":", data);
+    cb.data.notify.src = extract_value_str("\"src\":", data, &cb.data.notify.src_len);
+    cb.data.notify.sender = extract_value_str("\"sender\":", data, &cb.data.notify.sender_len);
+    cb.data.notify.title = extract_value_str("\"title\":", data, &cb.data.notify.title_len);
+    cb.data.notify.body = extract_value_str("\"body\":", data, &cb.data.notify.body_len);
 
     // Little hack since we know it's JSON, we can terminate all values in the data
     // which saves us some hassle and we can just pass all values null terminated
@@ -543,8 +543,8 @@ static int parse_notify_delete(char *data, int len)
     memset(&cb, 0, sizeof(cb));
 
     cb.type = BLE_COMM_DATA_TYPE_NOTIFY_REMOVE;
-    cb.data.notify.id = extract_value_uint32("id:", data);
-    data_parsed_cb(&cb);
+    cb.data.notify.id = extract_value_uint32("\"id\":", data);
+    send_ble_data_event(&cb);
     return 0;
 }
 
@@ -558,12 +558,12 @@ static int parse_weather(char *data, int len)
     memset(&cb, 0, sizeof(cb));
 
     cb.type = BLE_COMM_DATA_TYPE_WEATHER;
-    int32_t temperature_k = extract_value_uint32("temp:", data);
-    cb.data.weather.humidity = extract_value_uint32("hum:", data);
-    cb.data.weather.weather_code = extract_value_uint32("code:", data);
-    cb.data.weather.wind = extract_value_uint32("wind:", data);
-    cb.data.weather.wind_direction = extract_value_uint32("wdir:", data);
-    temp_value = extract_value_str("txt:", data, &temp_len);
+    int32_t temperature_k = extract_value_uint32("\"temp\":", data);
+    cb.data.weather.humidity = extract_value_uint32("\"hum\":", data);
+    cb.data.weather.weather_code = extract_value_uint32("\"code\":", data);
+    cb.data.weather.wind = extract_value_uint32("\"wind\":", data);
+    cb.data.weather.wind_direction = extract_value_uint32("\"wdir\":", data);
+    temp_value = extract_value_str("\"txt\":", data, &temp_len);
 
     strncpy(cb.data.weather.report_text, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
 
@@ -583,14 +583,14 @@ static int parse_musicinfo(char *data, int len)
     memset(&cb, 0, sizeof(cb));
 
     cb.type = BLE_COMM_DATA_TYPE_MUSTIC_INFO;
-    cb.data.music_info.duration = extract_value_int32("dur:", data);
-    cb.data.music_info.track_count = extract_value_int32("c:", data);
-    cb.data.music_info.track_num = extract_value_int32("n:", data);
-    temp_value = extract_value_str("artist:", data, &temp_len);
+    cb.data.music_info.duration = extract_value_int32("\"dur\":", data);
+    cb.data.music_info.track_count = extract_value_int32("\"c\":", data);
+    cb.data.music_info.track_num = extract_value_int32("\"n\":", data);
+    temp_value = extract_value_str("\"artist\":", data, &temp_len);
     strncpy(cb.data.music_info.artist, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
-    temp_value = extract_value_str("album:", data, &temp_len);
+    temp_value = extract_value_str("\"album\":", data, &temp_len);
     strncpy(cb.data.music_info.album, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
-    temp_value = extract_value_str("track:", data, &temp_len);
+    temp_value = extract_value_str("\"track\":", data, &temp_len);
     strncpy(cb.data.music_info.track_name, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
 
     send_ble_data_event(&cb);
@@ -607,11 +607,11 @@ static int parse_musicstate(char *data, int len)
     memset(&cb, 0, sizeof(cb));
 
     cb.type = BLE_COMM_DATA_TYPE_MUSTIC_STATE;
-    cb.data.music_state.position = extract_value_int32("position:", data);
-    cb.data.music_state.shuffle = extract_value_int32("shuffle:", data);
-    cb.data.music_state.repeat = extract_value_int32("repeat:", data);
+    cb.data.music_state.position = extract_value_int32("\"position\":", data);
+    cb.data.music_state.shuffle = extract_value_int32("\"shuffle\":", data);
+    cb.data.music_state.repeat = extract_value_int32("\"repeat\":", data);
 
-    temp_value = extract_value_str("state:", data, &temp_len);
+    temp_value = extract_value_str("\"state\":", data, &temp_len);
     if (strncmp(temp_value, "play", temp_len) == 0) {
         cb.data.music_state.playing = true;
     } else {
@@ -628,7 +628,7 @@ static int parse_data(char *data, int len)
     int type_len;
     char *type;
 
-    type = extract_value_str("t:", data, &type_len);
+    type = extract_value_str("\"t\":", data, &type_len);
     if (type == NULL) {
         return -1;
     }
