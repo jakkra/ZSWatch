@@ -89,263 +89,263 @@
 #define EVENT_NONE                      0x03
 
 struct cst816s_config {
-    struct i2c_dt_spec i2c;
-    const struct gpio_dt_spec rst_gpio;
+	struct i2c_dt_spec i2c;
+	const struct gpio_dt_spec rst_gpio;
 
 #ifdef CONFIG_INPUT_CST816S_INTERRUPT
-    const struct gpio_dt_spec int_gpio;
+	const struct gpio_dt_spec int_gpio;
 #endif
 };
 
 struct cst816s_data {
-    const struct device *dev;
-    struct k_work work;
+	const struct device *dev;
+	struct k_work work;
 
 #ifdef CONFIG_INPUT_CST816S_INTERRUPT
-    struct gpio_callback int_gpio_cb;
+	struct gpio_callback int_gpio_cb;
 #else
-    struct k_timer timer;
+	struct k_timer timer;
 #endif
 };
 
 struct cst816s_output {
-    uint8_t gesture;
-    uint8_t points;
-    uint16_t x;
-    uint16_t y;
+	uint8_t gesture;
+	uint8_t points;
+	uint16_t x;
+	uint16_t y;
 };
 
 LOG_MODULE_REGISTER(cst816s, CONFIG_INPUT_LOG_LEVEL);
 
 static int cst816s_process(const struct device *dev)
 {
-    uint8_t event;
-    uint16_t row, col;
-    bool is_pressed;
+	uint8_t event;
+	uint16_t row, col;
+	bool is_pressed;
 
-    struct cst816s_output output;
-    const struct cst816s_config *cfg = dev->config;
+	struct cst816s_output output;
+	const struct cst816s_config *cfg = dev->config;
 
-    if (i2c_burst_read_dt(&cfg->i2c, CST816S_REG_GESTURE_ID, (uint8_t * )&output, sizeof(output)) < 0) {
-        LOG_ERR("Could not read data");
-        return -ENODATA;
-    }
+	if (i2c_burst_read_dt(&cfg->i2c, CST816S_REG_GESTURE_ID, (uint8_t * )&output, sizeof(output)) < 0) {
+		LOG_ERR("Could not read data");
+		return -ENODATA;
+	}
 
-    col = sys_be16_to_cpu(output.x) & 0x0fff;
-    row = sys_be16_to_cpu(output.y) & 0x0fff;
+	col = sys_be16_to_cpu(output.x) & 0x0fff;
+	row = sys_be16_to_cpu(output.y) & 0x0fff;
 
-    event = (output.x & 0xff) >> CST816S_EVENT_BITS_POS;
-    is_pressed = (event == EVENT_CONTACT);
+	event = (output.x & 0xff) >> CST816S_EVENT_BITS_POS;
+	is_pressed = (event == EVENT_CONTACT);
 
-    LOG_DBG("Event: %u", event);
-    LOG_DBG("Pressed: %u", is_pressed);
-    LOG_DBG("Gesture: %u", output.gesture);
+	LOG_DBG("Event: %u", event);
+	LOG_DBG("Pressed: %u", is_pressed);
+	LOG_DBG("Gesture: %u", output.gesture);
 
-    if (is_pressed) {
-        // These events are generated for the LVGL touch implementation.
-        input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
-        input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
-        input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
-    } else {
-        // This event is generated for the LVGL touch implementation.
-        input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
+	if (is_pressed) {
+		// These events are generated for the LVGL touch implementation.
+		input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
+		input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
+		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
+	} else {
+		// This event is generated for the LVGL touch implementation.
+		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
 
-        // These events are generated for common gesture events.
-        switch (output.gesture) {
-            case CST816S_GESTURE_LONG_PRESS: {
-                break;
-            }
-            case CST816S_GESTURE_UP_SLIDING: {
-                input_report_key(dev, INPUT_BTN_NORTH, 0, true, K_FOREVER);
+		// These events are generated for common gesture events.
+		switch (output.gesture) {
+			case CST816S_GESTURE_LONG_PRESS: {
+				break;
+			}
+			case CST816S_GESTURE_UP_SLIDING: {
+				input_report_key(dev, INPUT_BTN_NORTH, 0, true, K_FOREVER);
 
-                break;
-            }
-            case CST816S_GESTURE_DOWN_SLIDING: {
-                input_report_key(dev, INPUT_BTN_SOUTH, 0, true, K_FOREVER);
+				break;
+			}
+			case CST816S_GESTURE_DOWN_SLIDING: {
+				input_report_key(dev, INPUT_BTN_SOUTH, 0, true, K_FOREVER);
 
-                break;
-            }
-            case CST816S_GESTURE_LEFT_SLIDE: {
-                input_report_key(dev, INPUT_BTN_WEST, 0, true, K_FOREVER);
+				break;
+			}
+			case CST816S_GESTURE_LEFT_SLIDE: {
+				input_report_key(dev, INPUT_BTN_WEST, 0, true, K_FOREVER);
 
-                break;
-            }
-            case CST816S_GESTURE_RIGHT_SLIDE: {
-                input_report_key(dev, INPUT_BTN_EAST, 0, true, K_FOREVER);
+				break;
+			}
+			case CST816S_GESTURE_RIGHT_SLIDE: {
+				input_report_key(dev, INPUT_BTN_EAST, 0, true, K_FOREVER);
 
-                break;
-            }
-            default: {
-                break;
-            }
-        }
-    }
+				break;
+			}
+			default: {
+				break;
+			}
+		}
+	}
 
-    return 0;
+	return 0;
 }
 
 static void cst816s_work_handler(struct k_work *work)
 {
-    struct cst816s_data *data = CONTAINER_OF(work, struct cst816s_data, work);
+	struct cst816s_data *data = CONTAINER_OF(work, struct cst816s_data, work);
 
-    cst816s_process(data->dev);
+	cst816s_process(data->dev);
 }
 
 #ifdef CONFIG_INPUT_CST816S_INTERRUPT
 static void cst816s_isr_handler(const struct device *dev, struct gpio_callback *cb, uint32_t mask)
 {
-    struct cst816s_data *data = CONTAINER_OF(cb, struct cst816s_data, int_gpio_cb);
+	struct cst816s_data *data = CONTAINER_OF(cb, struct cst816s_data, int_gpio_cb);
 
-    k_work_submit(&data->work);
+	k_work_submit(&data->work);
 }
 #else
 static void cst816s_timer_handler(struct k_timer *timer)
 {
-    struct cst816s_data *data = CONTAINER_OF(timer, struct cst816s_data, timer);
+	struct cst816s_data *data = CONTAINER_OF(timer, struct cst816s_data, timer);
 
-    k_work_submit(&data->work);
+	k_work_submit(&data->work);
 }
 #endif
 
 static void cst816s_chip_reset(const struct device *dev)
 {
-    const struct cst816s_config *config = dev->config;
+	const struct cst816s_config *config = dev->config;
 
-    if (gpio_is_ready_dt(&config->rst_gpio)) {
-        if (gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_INACTIVE) < 0) {
-            LOG_ERR("Could not configure reset GPIO pin");
-            return;
-        }
+	if (gpio_is_ready_dt(&config->rst_gpio)) {
+		if (gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_INACTIVE) < 0) {
+			LOG_ERR("Could not configure reset GPIO pin");
+			return;
+		}
 
-        gpio_pin_set_dt(&config->rst_gpio, 1);
-        k_msleep(CST816S_RESET_DELAY);
-        gpio_pin_set_dt(&config->rst_gpio, 0);
-        k_msleep(CST816S_WAIT_DELAY);
-    }
+		gpio_pin_set_dt(&config->rst_gpio, 1);
+		k_msleep(CST816S_RESET_DELAY);
+		gpio_pin_set_dt(&config->rst_gpio, 0);
+		k_msleep(CST816S_WAIT_DELAY);
+	}
 }
 
 static int cst816s_chip_init(const struct device *dev)
 {
-    const struct cst816s_config *cfg = dev->config;
-    uint8_t chip_id;
+	const struct cst816s_config *cfg = dev->config;
+	uint8_t chip_id;
 
-    cst816s_chip_reset(dev);
+	cst816s_chip_reset(dev);
 
-    if (!device_is_ready(cfg->i2c.bus)) {
-        LOG_ERR("I2C bus %s not ready", cfg->i2c.bus->name);
-        return -ENODEV;
-    }
+	if (!device_is_ready(cfg->i2c.bus)) {
+		LOG_ERR("I2C bus %s not ready", cfg->i2c.bus->name);
+		return -ENODEV;
+	}
 
-    if (i2c_reg_read_byte_dt(&cfg->i2c, CST816S_REG_CHIP_ID, &chip_id) < 0) {
-        LOG_ERR("failed reading chip id");
-        return -ENODATA;
-    }
+	if (i2c_reg_read_byte_dt(&cfg->i2c, CST816S_REG_CHIP_ID, &chip_id) < 0) {
+		LOG_ERR("failed reading chip id");
+		return -ENODATA;
+	}
 
-    if (chip_id != CST816S_CHIP_ID) {
-        LOG_ERR("CST816S wrong chip id: returned 0x%x", chip_id);
-        return -ENODEV;
-    }
+	if (chip_id != CST816S_CHIP_ID) {
+		LOG_ERR("CST816S wrong chip id: returned 0x%x", chip_id);
+		return -ENODEV;
+	}
 
-    if (i2c_reg_update_byte_dt(&cfg->i2c, CST816S_REG_MOTION_MASK, CST816S_MOTION_EN_DCLICK, 0) < 0) {
-        LOG_ERR("Could not set motion mask");
-        return -ENODATA;
-    }
+	if (i2c_reg_update_byte_dt(&cfg->i2c, CST816S_REG_MOTION_MASK, CST816S_MOTION_EN_DCLICK, 0) < 0) {
+		LOG_ERR("Could not set motion mask");
+		return -ENODATA;
+	}
 
-    if (i2c_reg_update_byte_dt(&cfg->i2c, CST816S_REG_IRQ_CTL, CST816S_IRQ_EN_TOUCH | CST816S_IRQ_EN_CHANGE,
-                               CST816S_IRQ_EN_TOUCH | CST816S_IRQ_EN_CHANGE) < 0) {
-        LOG_ERR("Could not enable irq");
-        return -ENODATA;
-    }
+	if (i2c_reg_update_byte_dt(&cfg->i2c, CST816S_REG_IRQ_CTL, CST816S_IRQ_EN_TOUCH | CST816S_IRQ_EN_CHANGE,
+							   CST816S_IRQ_EN_TOUCH | CST816S_IRQ_EN_CHANGE) < 0) {
+		LOG_ERR("Could not enable irq");
+		return -ENODATA;
+	}
 
-    return 0;
+	return 0;
 }
 
 static int cst816s_init(const struct device *dev)
 {
-    struct cst816s_data *data = dev->data;
+	struct cst816s_data *data = dev->data;
 
-    data->dev = dev;
-    k_work_init(&data->work, cst816s_work_handler);
+	data->dev = dev;
+	k_work_init(&data->work, cst816s_work_handler);
 
-    LOG_DBG("Initialize CST816S");
+	LOG_DBG("Initialize CST816S");
 
 #ifdef CONFIG_INPUT_CST816S_INTERRUPT
-    const struct cst816s_config *config = dev->config;
+	const struct cst816s_config *config = dev->config;
 
-    if (!gpio_is_ready_dt(&config->int_gpio)) {
-        LOG_ERR("GPIO port %s not ready", config->int_gpio.port->name);
-        return -EIO;
-    }
+	if (!gpio_is_ready_dt(&config->int_gpio)) {
+		LOG_ERR("GPIO port %s not ready", config->int_gpio.port->name);
+		return -EIO;
+	}
 
-    if (gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT) < 0) {
-        LOG_ERR("Could not configure interrupt GPIO pin");
-        return -EIO;
-    }
+	if (gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT) < 0) {
+		LOG_ERR("Could not configure interrupt GPIO pin");
+		return -EIO;
+	}
 
-    if (gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE) < 0) {
-        LOG_ERR("Could not configure interrupt GPIO interrupt.");
-        return -EIO;
-    }
+	if (gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE) < 0) {
+		LOG_ERR("Could not configure interrupt GPIO interrupt.");
+		return -EIO;
+	}
 
-    gpio_init_callback(&data->int_gpio_cb, cst816s_isr_handler, BIT(config->int_gpio.pin));
+	gpio_init_callback(&data->int_gpio_cb, cst816s_isr_handler, BIT(config->int_gpio.pin));
 
-    if (gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb) < 0) {
-        LOG_ERR("Could not set gpio callback");
-        return -EIO;
-    }
+	if (gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb) < 0) {
+		LOG_ERR("Could not set gpio callback");
+		return -EIO;
+	}
 #else
-    k_timer_init(&data->timer, cst816s_timer_handler, NULL);
-    k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_CST816S_PERIOD), K_MSEC(CONFIG_INPUT_CST816S_PERIOD));
+	k_timer_init(&data->timer, cst816s_timer_handler, NULL);
+	k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_CST816S_PERIOD), K_MSEC(CONFIG_INPUT_CST816S_PERIOD));
 #endif
 
-    return cst816s_chip_init(dev);
+	return cst816s_chip_init(dev);
 };
 
 #ifdef CONFIG_PM_DEVICE
 static int cst816s_pm_action(const struct device *dev, enum pm_device_action action)
 {
-    const struct cst816s_config *config = dev->config;
-    int status;
+	const struct cst816s_config *config = dev->config;
+	int status;
 
-    LOG_DBG("Status: %u", action);
+	LOG_DBG("Status: %u", action);
 
-    switch (action) {
-        case PM_DEVICE_ACTION_SUSPEND: {
-            LOG_DBG("State changed to suspended");
-            if (device_is_ready(config->rst_gpio.port)) {
-                status = gpio_pin_set_dt(&config->rst_gpio, 1);
-            }
+	switch (action) {
+		case PM_DEVICE_ACTION_SUSPEND: {
+			LOG_DBG("State changed to suspended");
+			if (device_is_ready(config->rst_gpio.port)) {
+				status = gpio_pin_set_dt(&config->rst_gpio, 1);
+			}
 
-            break;
-        }
-        case PM_DEVICE_ACTION_RESUME: {
-            LOG_DBG("State changed to active");
-            status = cst816s_chip_init(dev);
+			break;
+		}
+		case PM_DEVICE_ACTION_RESUME: {
+			LOG_DBG("State changed to active");
+			status = cst816s_chip_init(dev);
 
-            break;
-        }
-        default: {
-            return -ENOTSUP;
-        }
-    }
+			break;
+		}
+		default: {
+			return -ENOTSUP;
+		}
+	}
 
-    return status;
+	return status;
 }
 #endif
 
 #define CST816S_DEFINE(index)                                                                       \
-    static struct cst816s_data cst816s_data_##index;                                                \
-    static const struct cst816s_config cst816s_config_##index = {                                   \
-        .i2c = I2C_DT_SPEC_INST_GET(index),                                                         \
-        COND_CODE_1(CONFIG_INPUT_CST816S_INTERRUPT,                                                 \
-                (.int_gpio = GPIO_DT_SPEC_INST_GET(index, irq_gpios),), ())                         \
-            .rst_gpio = GPIO_DT_SPEC_INST_GET_OR(index, rst_gpios, {}),                             \
-    };                                                                                              \
-                                                                                                    \
-    PM_DEVICE_DT_INST_DEFINE(index, cst816s_pm_action);                                             \
-                                                                                                    \
-    DEVICE_DT_INST_DEFINE(index, cst816s_init, NULL, &cst816s_data_##index,                         \
-                  &cst816s_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,                 \
-                  NULL);
+	static struct cst816s_data cst816s_data_##index;                                                \
+	static const struct cst816s_config cst816s_config_##index = {                                   \
+		.i2c = I2C_DT_SPEC_INST_GET(index),                                                         \
+		COND_CODE_1(CONFIG_INPUT_CST816S_INTERRUPT,                                                 \
+				(.int_gpio = GPIO_DT_SPEC_INST_GET(index, irq_gpios),), ())                         \
+			.rst_gpio = GPIO_DT_SPEC_INST_GET_OR(index, rst_gpios, {}),                             \
+	};                                                                                              \
+																									\
+	PM_DEVICE_DT_INST_DEFINE(index, cst816s_pm_action);                                             \
+																									\
+	DEVICE_DT_INST_DEFINE(index, cst816s_init, NULL, &cst816s_data_##index,                         \
+				  &cst816s_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,                 \
+				  NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CST816S_DEFINE)
