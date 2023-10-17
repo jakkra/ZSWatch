@@ -210,6 +210,7 @@ static void on_reset_steps_changed(lv_setting_value_t value, bool final)
 static int setting_on_commit(void)
 {
     printk("Settings loaded\n");
+    return 0;
 }
 
 static int settings_load_cb(const char *name, size_t len,
