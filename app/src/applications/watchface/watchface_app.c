@@ -1,3 +1,20 @@
+/*
+ * This file is part of ZSWatch project <https://github.com/jakkra/ZSWatch/>.
+ * Copyright (c) 2023 Jakob Krantz.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
@@ -22,8 +39,8 @@
 #include "sensors/zsw_imu.h"
 #include "sensors/zsw_env_sensor.h"
 #include "sensors/zsw_pressure_sensor.h"
-#include "manager/zsw_battery_manager.h"
-#include "manager/notification_manager.h"
+#include "managers/zsw_battery_manager.h"
+#include "managers/zsw_notification_manager.h"
 
 LOG_MODULE_REGISTER(watcface_app, LOG_LEVEL_WRN);
 
@@ -212,7 +229,7 @@ static void general_work(struct k_work *item)
 
 static void check_notifications(void)
 {
-    uint32_t num_unread = notification_manager_get_num();
+    uint32_t num_unread = zsw_notification_manager_get_num();
     watchfaces[current_watchface]->set_num_notifcations(num_unread);
 }
 

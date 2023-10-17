@@ -1,6 +1,5 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <display_control.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/settings/settings.h>
@@ -9,7 +8,8 @@
 #include "ble/ble_aoa.h"
 #include "ble/ble_comm.h"
 #include "sensors/zsw_imu.h"
-#include "manager/application_manager.h"
+#include "drivers/zsw_display_control.h"
+#include "managers/zsw_app_manager.h"
 
 static void settings_app_start(lv_obj_t *root, lv_group_t *group);
 static void settings_app_stop(void);
@@ -155,13 +155,13 @@ static void settings_app_stop(void)
 static void on_close_settings(void)
 {
     printk("on_close_settings\n");
-    application_manager_app_close_request(&app);
+    zsw_app_manager_app_close_request(&app);
 }
 
 static void on_brightness_changed(lv_setting_value_t value, bool final)
 {
     // Slider have values 0-10 hence multiply with 10 to get brightness in percent
-    display_control_set_brightness(value.item.slider * 10);
+    zsw_display_control_set_brightness(value.item.slider * 10);
     value.item.slider *= 10;
     settings_save_one("settings/brightness", &value.item.slider, sizeof(value.item.slider));
 }
@@ -228,7 +228,7 @@ static int settings_load_cb(const char *name, size_t len,
         rc = read_cb(cb_arg, &bri, sizeof(bri));
         printk("Read br: %d\n", bri);
         general_page_items[0].item.slider.inital_val = bri / 10;
-        display_control_set_brightness(bri);
+        zsw_display_control_set_brightness(bri);
         if (rc >= 0) {
             return 0;
         }
@@ -242,7 +242,7 @@ static int settings_load_cb(const char *name, size_t len,
 
 static int settings_app_add(void)
 {
-    application_manager_add_application(&app);
+    zsw_app_manager_add_application(&app);
 
     return 0;
 }

@@ -19,14 +19,14 @@
 #include <zephyr/init.h>
 #include <events/accel_event.h>
 #include <zephyr/zbus/zbus.h>
-#include <display_control.h>
+#include "drivers/zsw_display_control.h"
 #include <lvgl.h>
 #include <zephyr/logging/log.h>
 #include <events/activity_event.h>
 #include <ram_retention_storage.h>
 #include <zsw_cpu_freq.h>
 
-#include "manager/zsw_power_manager.h"
+#include "managers/zsw_power_manager.h"
 
 LOG_MODULE_REGISTER(zsw_power_manager, LOG_LEVEL_INF);
 
@@ -59,7 +59,7 @@ static void enter_inactive(void)
     is_active = false;
     retained.wakeup_time += k_uptime_get_32() - last_wakeup_time;
     retained_update();
-    display_control_sleep_ctrl(false);
+    zsw_display_control_sleep_ctrl(false);
 
     zsw_cpu_set_freq(ZSW_CPU_FREQ_DEFAULT, true);
 
@@ -85,8 +85,8 @@ static void enter_active(void)
     // and the SPI transmit time.
     zsw_cpu_set_freq(ZSW_CPU_FREQ_FAST, true);
 
-    ret = display_control_pwr_ctrl(true);
-    display_control_sleep_ctrl(true);
+    ret = zsw_display_control_pwr_ctrl(true);
+    zsw_display_control_sleep_ctrl(true);
 
     if (ret == 0) {
         retained.display_off_time += k_uptime_get_32() - last_pwr_off_time;
@@ -173,7 +173,7 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
             if (!is_active) {
                 is_stationary = true;
                 last_pwr_off_time = k_uptime_get();
-                display_control_pwr_ctrl(false);
+                zsw_display_control_pwr_ctrl(false);
                 zsw_imu_feature_enable(ZSW_IMU_FEATURE_ANY_MOTION, true);
                 zsw_imu_feature_disable(ZSW_IMU_FEATURE_NO_MOTION);
 
@@ -185,7 +185,7 @@ static void zbus_accel_data_callback(const struct zbus_channel *chan)
             LOG_INF("Watch moved, init display");
             if (!is_active) {
                 is_stationary = false;
-                display_control_pwr_ctrl(true);
+                zsw_display_control_pwr_ctrl(true);
                 retained.display_off_time += k_uptime_get_32() - last_pwr_off_time;
                 retained_update();
                 zsw_imu_feature_enable(ZSW_IMU_FEATURE_NO_MOTION, true);

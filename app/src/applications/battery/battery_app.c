@@ -6,7 +6,7 @@
 #include "battery/battery.h"
 #include "battery/battery_ui.h"
 #include "events/battery_event.h"
-#include "manager/application_manager.h"
+#include "managers/zsw_app_manager.h"
 
 LOG_MODULE_REGISTER(battery_app, LOG_LEVEL_WRN);
 
@@ -108,7 +108,7 @@ static int get_num_samples(void)
 
 static int battery_app_add(void)
 {
-    application_manager_add_application(&app);
+    zsw_app_manager_add_application(&app);
     memset(battery_samples, 0, sizeof(battery_samples));
     return 0;
 }

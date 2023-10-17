@@ -28,7 +28,7 @@
 #include "battery/zsw_charger.h"
 #include "events/chg_event.h"
 #include "events/battery_event.h"
-#include "manager/zsw_battery_manager.h"
+#include "managers/zsw_battery_manager.h"
 
 LOG_MODULE_REGISTER(zsw_phone_app_publisher, LOG_LEVEL_DBG);
 

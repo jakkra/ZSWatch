@@ -1,8 +1,25 @@
+/*
+ * This file is part of ZSWatch project <https://github.com/jakkra/ZSWatch/>.
+ * Copyright (c) 2023 Jakob Krantz.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 
-#include "manager/application_manager.h"
+#include "managers/zsw_app_manager.h"
 
 LOG_MODULE_REGISTER(APP_MANAGER, LOG_LEVEL_INF);
 
@@ -20,7 +37,7 @@ static uint8_t num_visible_apps;
 static uint8_t current_app;
 static lv_obj_t *root_obj;
 static lv_group_t *group_obj;
-static on_application_manager_cb_fn close_cb_func;
+static on_app_manager_cb_fn close_cb_func;
 static lv_obj_t *grid;
 static uint8_t last_index;
 static bool app_launch_only;
@@ -90,14 +107,14 @@ static void async_app_close(lv_timer_t *timer)
         apps[current_app]->stop_func();
         current_app = INVALID_APP_ID;
         if (app_launch_only) {
-            application_manager_delete();
+            zsw_app_manager_delete();
             close_cb_func();
         } else {
             draw_application_picker();
         }
     } else {
         // No app running, then close whole application_manager
-        application_manager_delete();
+        zsw_app_manager_delete();
         close_cb_func();
     }
 }
@@ -239,7 +256,7 @@ static void draw_application_picker(void)
     lv_obj_scroll_to_view(lv_obj_get_child(grid, apps[last_index]->private_list_index), LV_ANIM_OFF);
 }
 
-int application_manager_show(on_application_manager_cb_fn close_cb, lv_obj_t *root, lv_group_t *group, char *app_name)
+int zsw_app_manager_show(on_app_manager_cb_fn close_cb, lv_obj_t *root, lv_group_t *group, char *app_name)
 {
     int err = 0;
     bool app_found;
@@ -272,7 +289,7 @@ int application_manager_show(on_application_manager_cb_fn close_cb, lv_obj_t *ro
     return err;
 }
 
-void application_manager_delete(void)
+void zsw_app_manager_delete(void)
 {
     if (current_app < num_apps) {
         LOG_DBG("Stop force %d", current_app);
@@ -281,7 +298,7 @@ void application_manager_delete(void)
     delete_application_picker();
 }
 
-void application_manager_add_application(application_t *app)
+void zsw_app_manager_add_application(application_t *app)
 {
     __ASSERT_NO_MSG(num_apps < MAX_APPS);
     apps[num_apps] = app;
@@ -292,19 +309,19 @@ void application_manager_add_application(application_t *app)
     }
 }
 
-void application_manager_exit_app(void)
+void zsw_app_manager_exit_app(void)
 {
     lv_timer_t *timer = lv_timer_create(async_app_close, 500,  NULL);
     lv_timer_set_repeat_count(timer, 1);
 }
 
-void application_manager_app_close_request(application_t *app)
+void zsw_app_manager_app_close_request(application_t *app)
 {
-    LOG_DBG("application_manager_app_close_request");
-    application_manager_exit_app();
+    LOG_DBG("zsw_app_manager_app_close_request");
+    zsw_app_manager_exit_app();
 }
 
-void application_manager_set_index(int index)
+void zsw_app_manager_set_index(int index)
 {
     __ASSERT_NO_MSG(index >= 0 && index < num_apps);
 

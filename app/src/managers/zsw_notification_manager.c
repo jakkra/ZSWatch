@@ -1,6 +1,6 @@
 #include <string.h>
 
-#include "notification_manager.h"
+#include "zsw_notification_manager.h"
 
 #define NOTIFICATION_INVALID_ID             0xFFFFFFFF
 #define NOTIFICATION_INVALID_INDEX          0xFFFFFFFF
@@ -10,11 +10,11 @@ static uint32_t find_notification_idx(uint32_t id);
 static uint32_t find_oldest_notification_idx(void);
 static uint32_t find_newest_notification_idx(void);
 
-static not_mngr_notification_t notifications[NOTIFICATION_MANAGER_MAX_STORED];
+static zsw_not_mngr_notification_t notifications[NOTIFICATION_MANAGER_MAX_STORED];
 static uint8_t num_notifications;
-static not_mngr_notification_t *active_notification;
+static zsw_not_mngr_notification_t *active_notification;
 
-void notification_manager_init(void)
+void zsw_notification_manager_init(void)
 {
     memset(notifications, 0, sizeof(notifications));
     for (int i = 0; i < NOTIFICATION_MANAGER_MAX_STORED; i++) {
@@ -24,7 +24,7 @@ void notification_manager_init(void)
     active_notification = NULL;
 }
 
-not_mngr_notification_t *notification_manager_add(ble_comm_notify_t *not)
+zsw_not_mngr_notification_t *zsw_notification_manager_add(ble_comm_notify_t *not)
 {
     uint32_t idx = find_free_notification_idx();
     if (idx == NOTIFICATION_INVALID_INDEX) {
@@ -34,7 +34,7 @@ not_mngr_notification_t *notification_manager_add(ble_comm_notify_t *not)
         notifications[idx].id = NOTIFICATION_INVALID_ID;
         num_notifications--;
     }
-    memset(&notifications[idx], 0, sizeof(not_mngr_notification_t));
+    memset(&notifications[idx], 0, sizeof(zsw_not_mngr_notification_t));
     if (strncmp(not->src, "Messenger", not->src_len) == 0) {
         notifications[idx].src = NOTIFICATION_SRC_MESSENGER;
         notifications[idx].id = not->id;
@@ -71,7 +71,7 @@ not_mngr_notification_t *notification_manager_add(ble_comm_notify_t *not)
     return &notifications[idx];
 }
 
-int32_t notification_manager_remove(uint32_t id)
+int32_t zsw_notification_manager_remove(uint32_t id)
 {
     uint32_t idx = find_notification_idx(id);
     if (idx != NOTIFICATION_INVALID_INDEX) {
@@ -83,7 +83,7 @@ int32_t notification_manager_remove(uint32_t id)
     }
 }
 
-int32_t notification_manager_get_all(not_mngr_notification_t *nots, int *num_notifications)
+int32_t zsw_notification_manager_get_all(zsw_not_mngr_notification_t *nots, int *num_notifications)
 {
     int num_stored = 0;
     for (int i = 0; i < NOTIFICATION_MANAGER_MAX_STORED; i++) {
@@ -96,12 +96,12 @@ int32_t notification_manager_get_all(not_mngr_notification_t *nots, int *num_not
     return 0;
 }
 
-int32_t notification_manager_get_num(void)
+int32_t zsw_notification_manager_get_num(void)
 {
     return num_notifications;
 }
 
-not_mngr_notification_t *notification_manager_get_newest(void)
+zsw_not_mngr_notification_t *zsw_notification_manager_get_newest(void)
 {
     int idx = find_newest_notification_idx();
     if (idx != NOTIFICATION_INVALID_ID) {

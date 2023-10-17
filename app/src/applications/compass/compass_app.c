@@ -5,7 +5,7 @@
 #include "compass_ui.h"
 #include "ui/popup/zsw_popup_window.h"
 #include "sensors/zsw_magnetometer.h"
-#include "manager/application_manager.h"
+#include "managers/zsw_app_manager.h"
 
 LOG_MODULE_REGISTER(compass_app, LOG_LEVEL_DBG);
 
@@ -68,7 +68,7 @@ static void timer_callback(lv_timer_t *timer)
 
 static int compass_app_add(void)
 {
-    application_manager_add_application(&app);
+    zsw_app_manager_add_application(&app);
     return 0;
 }
 

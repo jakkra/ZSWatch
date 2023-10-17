@@ -1,4 +1,21 @@
-#include "manager/zsw_power_manager.h"
+/*
+ * This file is part of ZSWatch project <https://github.com/jakkra/ZSWatch/>.
+ * Copyright (c) 2023 Jakob Krantz.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "managers/zsw_power_manager.h"
 #include "ui/popup/zsw_popup_window.h"
 
 static void on_popup_closed(lv_event_t *e);

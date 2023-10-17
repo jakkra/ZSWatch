@@ -9,7 +9,7 @@
 #include "sensors/zsw_env_sensor.h"
 #include "sensors/zsw_light_sensor.h"
 #include "sensors/zsw_pressure_sensor.h"
-#include "manager/application_manager.h"
+#include "managers/zsw_app_manager.h"
 
 LOG_MODULE_REGISTER(sensors_summary_app, LOG_LEVEL_DBG);
 
@@ -85,7 +85,7 @@ static void timer_callback(lv_timer_t *timer)
 
 static void on_close_sensors_summary(void)
 {
-    application_manager_app_close_request(&app);
+    zsw_app_manager_app_close_request(&app);
 }
 
 static void on_ref_set(void)
@@ -95,7 +95,7 @@ static void on_ref_set(void)
 
 static int sensors_summary_app_add(void)
 {
-    application_manager_add_application(&app);
+    zsw_app_manager_add_application(&app);
     return 0;
 }
 

@@ -3,7 +3,7 @@
 
 static void not_button_pressed(lv_event_t *e);
 static void scroll_event_cb(lv_event_t *e);
-static void build_notification_entry(lv_obj_t *parent, not_mngr_notification_t *not, lv_group_t *input_group);
+static void build_notification_entry(lv_obj_t *parent, zsw_not_mngr_notification_t *not, lv_group_t *input_group);
 
 static on_notification_remove_cb_t not_removed_callback;
 
@@ -15,7 +15,7 @@ void notifications_page_init(on_notification_remove_cb_t not_removed_cb)
     not_removed_callback = not_removed_cb;
 }
 
-void notifications_page_create(not_mngr_notification_t *notifications, uint8_t num_notifications,
+void notifications_page_create(zsw_not_mngr_notification_t *notifications, uint8_t num_notifications,
                                lv_group_t *input_group)
 {
     group = input_group;
@@ -49,7 +49,7 @@ void notifications_page_close(void)
     lv_obj_del(main_page);
 }
 
-static void build_notification_entry(lv_obj_t *parent, not_mngr_notification_t *not, lv_group_t *input_group)
+static void build_notification_entry(lv_obj_t *parent, zsw_not_mngr_notification_t *not, lv_group_t *input_group)
 {
     lv_obj_t *title;
     lv_obj_t *cont;

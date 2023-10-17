@@ -1,9 +1,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <display_control.h>
+#include "drivers/zsw_display_control.h"
 
 #include "x_ray_ui.h"
-#include "manager/application_manager.h"
+#include "managers/zsw_app_manager.h"
 
 // Functions needed for all applications
 static void x_ray_app_start(lv_obj_t *root, lv_group_t *group);
@@ -22,20 +22,20 @@ static uint8_t original_brightness;
 
 static void x_ray_app_start(lv_obj_t *root, lv_group_t *group)
 {
-    original_brightness = display_control_get_brightness();
-    display_control_set_brightness(100);
+    original_brightness = zsw_display_control_get_brightness();
+    zsw_display_control_set_brightness(100);
     x_ray_ui_show(root);
 }
 
 static void x_ray_app_stop(void)
 {
-    display_control_set_brightness(original_brightness);
+    zsw_display_control_set_brightness(original_brightness);
     x_ray_ui_remove();
 }
 
 static int x_ray_app_add(void)
 {
-    application_manager_add_application(&app);
+    zsw_app_manager_add_application(&app);
 
     return 0;
 }

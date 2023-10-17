@@ -6,7 +6,7 @@
 #include "music_control_ui.h"
 #include "ble/ble_comm.h"
 #include "events/ble_data_event.h"
-#include "manager/application_manager.h"
+#include "managers/zsw_app_manager.h"
 
 // Functions needed for all applications
 static void music_control_app_start(lv_obj_t *root, lv_group_t *group);
@@ -60,7 +60,7 @@ static void on_music_ui_evt_music(music_control_ui_evt_type_t evt_type)
 
     switch (evt_type) {
         case MUSIC_CONTROL_UI_CLOSE:
-            application_manager_app_close_request(&app);
+            zsw_app_manager_app_close_request(&app);
             break;
         case MUSIC_CONTROL_UI_PLAY:
             msg_len = snprintf(buf, sizeof(buf), "{\"t\":\"music\", \"n\": %s} \n", "play");
@@ -127,7 +127,7 @@ static void timer_callback(lv_timer_t *timer)
 
 static int music_control_app_add(void)
 {
-    application_manager_add_application(&app);
+    zsw_app_manager_add_application(&app);
     running = false;
 
     return 0;

@@ -1,33 +1,39 @@
+/*
+ * This file is part of ZSWatch project <https://github.com/jakkra/ZSWatch/>.
+ * Copyright (c) 2023 Jakob Krantz.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <zephyr/device.h>
-#include <zephyr/drivers/display.h>
-#include <zephyr/sys/reboot.h>
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/sensor.h>
-#include <zephyr/drivers/pwm.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/settings/settings.h>
-#include <zephyr/drivers/led.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
 #include <zsw_clock.h>
 #include <lvgl.h>
 #include <sys/time.h>
-#include <ram_retention_storage.h>
-#include <zsw_vibration_motor.h>
-#include <display_control.h>
 #include <zephyr/zbus/zbus.h>
 #include <zsw_cpu_freq.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/hci.h>
 #include <zephyr/task_wdt/task_wdt.h>
-#include <zephyr/arch/cpu.h>
-#include <zephyr/logging/log_ctrl.h>
 #include <zephyr/fatal.h>
 #include <zephyr/input/input.h>
 #include <zephyr/retention/bootmode.h>
 #include <zephyr/sys/reboot.h>
-#include <zsw_rtt_flash_loader.h>
 #include "dfu.h"
 #include "ui/zsw_ui.h"
 #include "ble/ble_comm.h"
@@ -39,10 +45,14 @@
 #include "sensors/zsw_imu.h"
 #include "sensors/zsw_magnetometer.h"
 #include "sensors/zsw_pressure_sensor.h"
-#include "manager/zsw_power_manager.h"
-#include "manager/application_manager.h"
-#include "manager/notification_manager.h"
+#include <ram_retention_storage.h>
+#include "drivers/zsw_vibration_motor.h"
+#include "drivers/zsw_display_control.h"
+#include "managers/zsw_power_manager.h"
+#include "managers/zsw_app_manager.h"
+#include "managers/zsw_notification_manager.h"
 #include "applications/watchface/watchface_app.h"
+#include <filesystem/zsw_rtt_flash_loader.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
 
@@ -141,7 +151,7 @@ static void run_input_work(struct k_work *item)
             if (zsw_notification_popup_is_shown()) {
                 zsw_notification_popup_remove();
             } else if (watch_state == APPLICATION_MANAGER_STATE) {
-                application_manager_exit_app();
+                zsw_app_manager_exit_app();
 
                 return;
             }
@@ -199,7 +209,7 @@ static void run_init_work(struct k_work *item)
     lv_indev_t *touch_indev;
 
     load_retention_ram();
-    notification_manager_init();
+    zsw_notification_manager_init();
     enable_bluetoth();
     //uint32_t br = 1337;
     //int rc = settings_save_one("settings/brightness", &br, sizeof(br));
@@ -210,8 +220,8 @@ static void run_init_work(struct k_work *item)
     zsw_clock_init(retained.current_time_seconds);
     // Not to self, PWM consumes like 250uA...
     // Need to disable also when screen is off.
-    display_control_init();
-    display_control_sleep_ctrl(true);
+    zsw_display_control_init();
+    zsw_display_control_sleep_ctrl(true);
 
     INPUT_CALLBACK_DEFINE(NULL, on_input_subsys_callback);
 
@@ -335,7 +345,7 @@ static bool load_retention_ram(void)
 
 static void open_notification_popup(void *data)
 {
-    not_mngr_notification_t *not = notification_manager_get_newest();
+    zsw_not_mngr_notification_t *not = zsw_notification_manager_get_newest();
     if (not != NULL) {
         lv_group_set_default(temp_group);
         lv_indev_set_group(enc_indev, temp_group);
@@ -351,7 +361,7 @@ static void open_application_manager_page(void *app_name)
     watchface_app_stop();
     is_buttons_for_lvgl = true;
     watch_state = APPLICATION_MANAGER_STATE;
-    application_manager_show(on_application_manager_close, lv_scr_act(), input_group, (char *)app_name);
+    zsw_app_manager_show(on_application_manager_close, lv_scr_act(), input_group, (char *)app_name);
 }
 
 static void close_popup_notification(lv_timer_t *timer)
@@ -362,7 +372,7 @@ static void close_popup_notification(lv_timer_t *timer)
 
     id = (uint32_t)timer->user_data;
     // Notification was dismissed, hence consider it read.
-    notification_manager_remove(id);
+    zsw_notification_manager_remove(id);
 
     lv_group_set_default(input_group);
     lv_indev_set_group(enc_indev, input_group);
@@ -393,7 +403,7 @@ static void on_popup_notifcation_closed(uint32_t id)
 
 static void on_application_manager_close(void)
 {
-    application_manager_delete();
+    zsw_app_manager_delete();
     watch_state = WATCHFACE_STATE;
     watchface_app_start(input_group, on_watchface_app_event_callback);
     lv_async_call(async_turn_off_buttons_allocation, NULL);
@@ -449,7 +459,7 @@ static void handle_screen_gesture(lv_dir_t event_code)
     } else if (watch_state == APPLICATION_MANAGER_STATE && event_code == LV_DIR_RIGHT) {
 #ifdef CONFIG_BOARD_NATIVE_POSIX
         // Until there is a better way to go back without access to buttons.
-        application_manager_exit_app();
+        zsw_app_manager_exit_app();
 #endif
     }
 }
@@ -536,11 +546,11 @@ static void click_feedback(struct _lv_indev_drv_t *drv, uint8_t e)
 
 static void on_ble_data_callback(ble_comm_cb_data_t *cb)
 {
-    not_mngr_notification_t *parsed_not;
+    zsw_not_mngr_notification_t *parsed_not;
 
     switch (cb->type) {
         case BLE_COMM_DATA_TYPE_NOTIFY:
-            parsed_not = notification_manager_add(&cb->data.notify);
+            parsed_not = zsw_notification_manager_add(&cb->data.notify);
             if (!parsed_not) {
                 return;
             }
@@ -571,7 +581,7 @@ static void on_zbus_ble_data_callback(const struct zbus_channel *chan)
             // Handled in ble_comm callback for now
             break;
         case BLE_COMM_DATA_TYPE_NOTIFY_REMOVE:
-            if (notification_manager_remove(event->data.data.notify_remove.id) != 0) {
+            if (zsw_notification_manager_remove(event->data.data.notify_remove.id) != 0) {
                 LOG_WRN("Notification %d not found", event->data.data.notify_remove.id);
             }
             break;
@@ -589,8 +599,8 @@ static void on_zbus_ble_data_callback(const struct zbus_channel *chan)
             if (event->data.data.remote_control.button == 4) {
                 zsw_power_manager_reset_idle_timout();
                 if (watch_state == APPLICATION_MANAGER_STATE) {
-                    application_manager_delete();
-                    application_manager_set_index(0);
+                    zsw_app_manager_delete();
+                    zsw_app_manager_set_index(0);
                     is_buttons_for_lvgl = false;
                     watch_state = WATCHFACE_STATE;
                     watchface_app_start(input_group, on_watchface_app_event_callback);

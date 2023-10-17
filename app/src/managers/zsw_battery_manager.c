@@ -22,7 +22,7 @@
 
 #include "battery/battery.h"
 #include "events/battery_event.h"
-#include "manager/zsw_battery_manager.h"
+#include "managers/zsw_battery_manager.h"
 
 LOG_MODULE_REGISTER(zsw_battery_manager, LOG_LEVEL_WRN);
 

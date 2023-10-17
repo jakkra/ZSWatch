@@ -5,7 +5,7 @@
 #include "accel_ui.h"
 #include "sensors/zsw_imu.h"
 #include "events/zsw_periodic_event.h"
-#include "manager/application_manager.h"
+#include "managers/zsw_app_manager.h"
 
 static void zbus_fetch_accel_data_callback(const struct zbus_channel *chan);
 static void accel_app_start(lv_obj_t *root, lv_group_t *group);
@@ -49,12 +49,12 @@ static void zbus_fetch_accel_data_callback(const struct zbus_channel *chan)
 
 static void on_close_accel(void)
 {
-    application_manager_app_close_request(&app);
+    zsw_app_manager_app_close_request(&app);
 }
 
 static int accel_app_add(void)
 {
-    application_manager_add_application(&app);
+    zsw_app_manager_add_application(&app);
 
     return 0;
 }

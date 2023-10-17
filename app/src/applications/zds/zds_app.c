@@ -4,7 +4,7 @@
 #include <zephyr/zbus/zbus.h>
 
 #include "events/accel_event.h"
-#include "manager/application_manager.h"
+#include "managers/zsw_app_manager.h"
 
 // Functions needed for all applications
 static void zds_app_start(lv_obj_t *root, lv_group_t *group);
@@ -38,7 +38,7 @@ static void zds_app_stop(void)
 
 static int zds_app_add(void)
 {
-    application_manager_add_application(&app);
+    zsw_app_manager_add_application(&app);
 
     return 0;
 }

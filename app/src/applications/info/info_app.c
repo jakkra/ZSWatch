@@ -7,8 +7,8 @@
 #include <zephyr/bluetooth/hci.h>
 
 #include "info_ui.h"
-#include "manager/zsw_power_manager.h"
-#include "manager/application_manager.h"
+#include "managers/zsw_power_manager.h"
+#include "managers/zsw_app_manager.h"
 
 LOG_MODULE_REGISTER(info_app, LOG_LEVEL_DBG);
 
@@ -78,7 +78,7 @@ static void on_reset_pressed(void)
 
 static int info_app_add(void)
 {
-    application_manager_add_application(&app);
+    zsw_app_manager_add_application(&app);
     return 0;
 }
 

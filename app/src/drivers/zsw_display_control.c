@@ -1,4 +1,21 @@
-#include <display_control.h>
+/*
+ * This file is part of ZSWatch project <https://github.com/jakkra/ZSWatch/>.
+ * Copyright (c) 2023 Jakob Krantz.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "drivers/zsw_display_control.h"
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
@@ -33,7 +50,7 @@ static display_state_t display_state;
 static bool first_render_since_poweron;
 static uint8_t last_brightness = 30;
 
-void display_control_init(void)
+void zsw_display_control_init(void)
 {
     if (!device_is_ready(display_dev)) {
         LOG_ERR("Device display not ready.");
@@ -51,7 +68,7 @@ void display_control_init(void)
     display_state = DISPLAY_STATE_SLEEPING;
 }
 
-int display_control_sleep_ctrl(bool on)
+int zsw_display_control_sleep_ctrl(bool on)
 {
     int res = -EALREADY;
 
@@ -72,7 +89,7 @@ int display_control_sleep_ctrl(bool on)
                     pm_device_action_run(touch_dev, PM_DEVICE_ACTION_SUSPEND);
                 }
                 // Turn off PWM peripheral as it consumes like 200-250uA
-                display_control_set_brightness(0);
+                zsw_display_control_set_brightness(0);
                 // Cancel pending call to lv_task_handler
                 // Don't waste resosuces to rendering when display is off anyway.
                 k_work_cancel_delayable_sync(&lvgl_work, &canel_work_sync);
@@ -96,7 +113,7 @@ int display_control_sleep_ctrl(bool on)
                 // then wait to show content until rendering completes.
                 // This avoids user seeing random pixel data for ~500ms
                 if (!first_render_since_poweron) {
-                    display_control_set_brightness(last_brightness);
+                    zsw_display_control_set_brightness(last_brightness);
                 }
                 display_blanking_off(display_dev);
                 k_work_schedule(&lvgl_work, K_MSEC(250));
@@ -121,7 +138,7 @@ int display_control_sleep_ctrl(bool on)
     return res;
 }
 
-int display_control_pwr_ctrl(bool on)
+int zsw_display_control_pwr_ctrl(bool on)
 {
     int res = -EALREADY;
 
@@ -173,12 +190,12 @@ int display_control_pwr_ctrl(bool on)
     return res;
 }
 
-uint8_t display_control_get_brightness(void)
+uint8_t zsw_display_control_get_brightness(void)
 {
     return last_brightness;
 }
 
-void display_control_set_brightness(uint8_t percent)
+void zsw_display_control_set_brightness(uint8_t percent)
 {
     if (!device_is_ready(display_blk.dev)) {
         return;
@@ -209,7 +226,7 @@ static void lvgl_render(struct k_work *item)
 {
     const int64_t next_update_in_ms = lv_task_handler();
     if (first_render_since_poweron) {
-        display_control_set_brightness(last_brightness);
+        zsw_display_control_set_brightness(last_brightness);
         first_render_since_poweron = false;
     }
     k_work_schedule(&lvgl_work, K_MSEC(next_update_in_ms));

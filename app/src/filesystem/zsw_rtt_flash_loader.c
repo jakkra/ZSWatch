@@ -1,3 +1,20 @@
+/*
+ * This file is part of ZSWatch project <https://github.com/jakkra/ZSWatch/>.
+ * Copyright (c) 2023 Jakob Krantz.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -47,9 +64,9 @@ static struct k_thread rtt_work_thread;
 
 static const struct flash_area *flash_area;
 
-static uint8_t* data_buf;
-static uint8_t* up_buffer;
-static uint8_t* down_buffer;
+static uint8_t *data_buf;
+static uint8_t *up_buffer;
+static uint8_t *down_buffer;
 
 static int loader_write_flash(int partition_id, int buf_idx, uint8_t *buf, int len)
 {

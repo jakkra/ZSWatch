@@ -15,7 +15,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <zsw_gatt_sensor_server.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -26,6 +25,7 @@
 #include "events/zsw_periodic_event.h"
 
 #include "ble/ble_comm.h"
+#include <ble/zsw_gatt_sensor_server.h>
 
 #include "sensors/zsw_imu.h"
 #include "sensors/zsw_env_sensor.h"

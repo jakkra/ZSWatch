@@ -15,14 +15,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __ZSW_MAGNETOMETER_H_
-#define __ZSW_MAGNETOMETER_H_
+#ifndef __ZSW_DISPLAY_CONTROL_H_
+#define __ZSW_DISPLAY_CONTROL_H_
+#include <inttypes.h>
 #include <stdbool.h>
 
-int zsw_magnetometer_init(void);
-int zsw_magnetometer_set_enable(bool enabled);
-double zsw_magnetometer_get_heading(void);
-int zsw_magnetometer_get_all(float *x, float *y, float *z);
-int zsw_magnetometer_start_calibration(void);
-int zsw_magnetometer_stop_calibration(void);
+void zsw_display_control_init(void);
+int zsw_display_control_sleep_ctrl(bool on);
+int zsw_display_control_pwr_ctrl(bool on);
+void zsw_display_control_set_brightness(uint8_t percent);
+uint8_t zsw_display_control_get_brightness(void);
 #endif

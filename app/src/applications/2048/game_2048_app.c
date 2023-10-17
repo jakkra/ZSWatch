@@ -3,7 +3,7 @@
 #include <lv_100ask_2048.h>
 
 #include "game_2048_ui.h"
-#include "manager/application_manager.h"
+#include "managers/zsw_app_manager.h"
 
 // Functions needed for all applications
 static void game_2048_app_start(lv_obj_t *root, lv_group_t *group);
@@ -30,7 +30,7 @@ static void game_2048_app_stop(void)
 
 static int game_2048_app_add(void)
 {
-    application_manager_add_application(&app);
+    zsw_app_manager_add_application(&app);
 
     return 0;
 }
