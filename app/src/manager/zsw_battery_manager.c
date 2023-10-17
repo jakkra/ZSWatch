@@ -15,13 +15,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <zsw_battery_manager.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/zbus/zbus.h>
 #include <zephyr/logging/log.h>
-#include <events/battery_event.h>
-#include <battery.h>
+
+#include "battery/battery.h"
+#include "events/battery_event.h"
+#include "manager/zsw_battery_manager.h"
 
 LOG_MODULE_REGISTER(zsw_battery_manager, LOG_LEVEL_WRN);
 

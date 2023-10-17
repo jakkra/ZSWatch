@@ -20,13 +20,16 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/logging/log.h>
-#include <zsw_imu.h>
-#include <zsw_env_sensor.h>
-#include <zsw_magnetometer.h>
 #include <zephyr/zbus/zbus.h>
-#include <events/periodic_event.h>
-#include <zsw_periodic_event.h>
-#include <ble_comm.h>
+
+#include "events/periodic_event.h"
+#include "events/zsw_periodic_event.h"
+
+#include "ble/ble_comm.h"
+
+#include "sensors/zsw_imu.h"
+#include "sensors/zsw_env_sensor.h"
+#include "sensors/zsw_magnetometer.h"
 
 LOG_MODULE_REGISTER(zsw_gatt_sensor_server, LOG_LEVEL_WRN);
 

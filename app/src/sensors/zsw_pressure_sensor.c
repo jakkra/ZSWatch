@@ -15,12 +15,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <zsw_pressure_sensor.h>
 #include <bmp5_port.h>
 #include <bmp5.h>
 #include <zephyr/logging/log.h>
 #include <events/pressure_event.h>
 #include <zephyr/zbus/zbus.h>
+
+#include "sensors/zsw_pressure_sensor.h"
 
 LOG_MODULE_REGISTER(bmp581_pressure, LOG_LEVEL_DBG);
 

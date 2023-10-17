@@ -1,7 +1,8 @@
-#include <applications/application_manager.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
+
+#include "manager/application_manager.h"
 
 LOG_MODULE_REGISTER(APP_MANAGER, LOG_LEVEL_INF);
 

@@ -21,10 +21,9 @@
 */
 #define SENSOR_APDS9306_ATTR_RESOLUTION SENSOR_ATTR_PRIV_START + 2
 
-/** @brief APDS9306 resolution options. 
+/** @brief APDS9306 resolution options.
 */
-typedef enum
-{
+typedef enum {
     APDS9306_RES_20     = 0,        /**< 20 bit resolution. */
     APDS9306_RES_19,                /**< 19 bit resolution. */
     APDS9306_RES_18,                /**< 18 bit resolution (default). */
@@ -33,10 +32,9 @@ typedef enum
     APDS9306_RES_13,                /**< 13 bit resolution. */
 } APDS9306_Resolution_t;
 
-/** @brief APDS9306 measurement rate options. 
+/** @brief APDS9306 measurement rate options.
 */
-typedef enum
-{
+typedef enum {
     APDS9306_RATE_25MS  = 0,        /**< 25 ms measurement rate. */
     APDS9306_RATE_50MS,             /**< 50 ms measurement rate. */
     APDS9306_RATE_100MS,            /**< 100 ms measurement rate (default). */
@@ -46,10 +44,9 @@ typedef enum
     APDS9306_RATE_2S,               /**< 2 s measurement rate. */
 } APDS9306_Rate_t;
 
-/** @brief APDS9306 gain range options. 
+/** @brief APDS9306 gain range options.
 */
-typedef enum
-{
+typedef enum {
     APDS9306_GAIN_1     = 0,        /**< Measurement gain x1. */
     APDS9306_GAIN_3,                /**< Measurement gain x3 (default). */
     APDS9306_GAIN_6,                /**< Measurement gain x6. */

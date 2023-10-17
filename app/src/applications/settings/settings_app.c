@@ -1,13 +1,14 @@
-#include <settings/settings_ui.h>
-#include <application_manager.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <ble_aoa.h>
 #include <display_control.h>
-#include <zsw_imu.h>
-#include <ble_comm.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/bluetooth.h>
+
+#include "settings_ui.h"
+#include "ble/ble_aoa.h"
+#include "ble/ble_comm.h"
+#include "sensors/zsw_imu.h"
+#include "manager/application_manager.h"
 
 static void settings_app_start(lv_obj_t *root, lv_group_t *group);
 static void settings_app_stop(void);

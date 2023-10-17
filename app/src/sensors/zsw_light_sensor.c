@@ -15,12 +15,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <zsw_env_sensor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 
-#include "zsw_light_sensor.h"
+#include "sensors/zsw_light_sensor.h"
 
 static const struct device *const apds9306 = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(apds9306));
 
@@ -28,12 +27,11 @@ int zsw_light_sensor_fetch(float *light)
 {
     struct sensor_value light_sensor_val;
 
-    if((!device_is_ready(apds9306)))
-    {
+    if ((!device_is_ready(apds9306))) {
         return -ENODEV;
     }
 
-    if(sensor_sample_fetch(apds9306) != 0) {
+    if (sensor_sample_fetch(apds9306) != 0) {
         return -ENODATA;
     }
 

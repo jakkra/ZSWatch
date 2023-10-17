@@ -22,36 +22,40 @@ add_subdirectory(src/applications)
 add_subdirectory(src/ext_drivers/bmi270)
 add_subdirectory(src/ext_drivers/bmp581)
 
-
 include_directories(src/)
 include_directories(src/ui)
 include_directories(src/applications)
 
-target_sources(app PRIVATE src/battery.c)
-target_sources(app PRIVATE src/ble_aoa.c)
-target_sources(app PRIVATE src/ble_comm.c)
-target_sources(app PRIVATE src/ble_transport.c)
-target_sources(app PRIVATE src/buttons.c)
 target_sources(app PRIVATE src/display_control.c)
-target_sources(app PRIVATE src/gpio_debug.c)
 target_sources(app PRIVATE src/main.c)
-target_sources(app PRIVATE src/notification_manager.c)
 target_sources(app PRIVATE src/ram_retention_storage.c)
-target_sources(app PRIVATE src/watchface_app.c)
 target_sources(app PRIVATE src/zsw_vibration_motor.c)
-target_sources(app PRIVATE src/zsw_battery_manager.c)
 target_sources(app PRIVATE src/zsw_clock.c)
-target_sources(app PRIVATE src/zsw_charger.c)
 target_sources(app PRIVATE src/zsw_cpu_freq.c)
-target_sources(app PRIVATE src/zsw_env_sensor.c)
-target_sources(app PRIVATE src/zsw_light_sensor.c)
 target_sources(app PRIVATE src/zsw_gatt_sensor_server.c)
-target_sources(app PRIVATE src/zsw_imu.c)
-target_sources(app PRIVATE src/zsw_magnetometer.c)
-target_sources(app PRIVATE src/zsw_periodic_event.c)
 target_sources(app PRIVATE src/zsw_phone_app_publisher.c)
-target_sources(app PRIVATE src/zsw_power_manager.c)
-target_sources(app PRIVATE src/zsw_pressure_sensor.c)
+
+target_sources(app PRIVATE src/manager/application_manager.c)
+target_sources(app PRIVATE src/manager/notification_manager.c)
+target_sources(app PRIVATE src/manager/zsw_battery_manager.c)
+target_sources(app PRIVATE src/manager/zsw_power_manager.c)
+
+target_sources(app PRIVATE src/battery/battery.c)
+target_sources(app PRIVATE src/battery/zsw_charger.c)
+
+target_sources(app PRIVATE src/ble/ble_aoa.c)
+target_sources(app PRIVATE src/ble/ble_comm.c)
+target_sources(app PRIVATE src/ble/ble_transport.c)
+
+target_sources(app PRIVATE src/sensors/zsw_imu.c)
+target_sources(app PRIVATE src/sensors/zsw_pressure_sensor.c)
+target_sources(app PRIVATE src/sensors/zsw_magnetometer.c)
+target_sources(app PRIVATE src/sensors/zsw_env_sensor.c)
+target_sources(app PRIVATE src/sensors/zsw_light_sensor.c)
+
+target_sources(app PRIVATE src/ui/notification/zsw_popup_notifcation.c)
+target_sources(app PRIVATE src/ui/popup/zsw_popup_window.c)
+target_sources(app PRIVATE src/ui/utils/zsw_ui_utils.c)
 
 target_sources(app PRIVATE src/zsw_flash.c)
 
@@ -64,9 +68,6 @@ target_sources(app PRIVATE ${img_sources})
 
 FILE(GLOB font_sources src/images/fonts/*.c)
 target_sources(app PRIVATE ${font_sources})
-
-FILE(GLOB ui_sources src/ui/*.c)
-target_sources(app PRIVATE ${ui_sources})
 
 zephyr_sources_ifdef(CONFIG_WATCHFACE_ANALOG src/ui/watchfaces/zsw_watchface_analog_ui.c)
 zephyr_sources_ifdef(CONFIG_WATCHFACE_DIGITAL src/ui/watchfaces/zsw_watchface_digital_ui.c)

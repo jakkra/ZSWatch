@@ -1,5 +1,6 @@
-#include <ui/zsw_ui_utils.h>
+
 #include <lvgl.h>
+#include "utils/zsw_ui_utils.h"
 
 #if CONFIG_WATCHFACE_BACKGROUND_SPACE
 LV_IMG_DECLARE(space_blur_bg);

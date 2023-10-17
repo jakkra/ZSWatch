@@ -1,9 +1,10 @@
-#include <zsw_imu.h>
 #include <bmi270_port.h>
 #include <bmi270.h>
 #include <zephyr/logging/log.h>
 #include <events/accel_event.h>
 #include <zephyr/zbus/zbus.h>
+
+#include "sensors/zsw_imu.h"
 
 LOG_MODULE_REGISTER(accel, LOG_LEVEL_INF);
 
@@ -602,7 +603,8 @@ static int8_t configure_axis_remapping(struct bmi2_dev *bmi2_dev)
         bmi2_error_codes_print_result(rslt);
     }
 
-    if (!((remapped_axis.x == remapped_axis_read.x) && (remapped_axis.y == remapped_axis_read.y) && (remapped_axis.z == remapped_axis_read.z))) {
+    if (!((remapped_axis.x == remapped_axis_read.x) && (remapped_axis.y == remapped_axis_read.y) &&
+          (remapped_axis.z == remapped_axis_read.z))) {
         LOG_ERR("Wrong axis remapping read after setting");
     }
 

@@ -1,8 +1,8 @@
-#include <zsw_periodic_event.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/zbus/zbus.h>
-#include <events/periodic_event.h>
+
+#include "events/periodic_event.h"
 
 static void handle_slow_timeout(struct k_work *item);
 static void handle_fast_timeout(struct k_work *item);

@@ -80,15 +80,15 @@ static void create_ui(lv_obj_t *parent)
     lv_obj_set_align(gas_label, LV_ALIGN_LEFT_MID);
     lv_label_set_text(gas_label, "Gas:");
 
-    #if DT_NODE_HAS_STATUS(DT_NODELABEL(apds9306), okay)
-        light_label = lv_label_create(parent);
-        lv_obj_set_width(light_label, LV_SIZE_CONTENT);
-        lv_obj_set_height(light_label, LV_SIZE_CONTENT);
-        lv_obj_set_x(light_label, 5);
-        lv_obj_set_y(light_label, 15);
-        lv_obj_set_align(light_label, LV_ALIGN_LEFT_MID);
-        lv_label_set_text(light_label, "Light: ");
-    #endif
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(apds9306), okay)
+    light_label = lv_label_create(parent);
+    lv_obj_set_width(light_label, LV_SIZE_CONTENT);
+    lv_obj_set_height(light_label, LV_SIZE_CONTENT);
+    lv_obj_set_x(light_label, 5);
+    lv_obj_set_y(light_label, 15);
+    lv_obj_set_align(light_label, LV_ALIGN_LEFT_MID);
+    lv_label_set_text(light_label, "Light: ");
+#endif
 
     lv_obj_add_event_cb(set_ref_btn, event_set_reference_button, LV_EVENT_CLICKED, NULL);
 }

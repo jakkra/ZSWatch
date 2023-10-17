@@ -15,7 +15,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <zsw_power_manager.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <events/accel_event.h>
@@ -27,6 +26,8 @@
 #include <ram_retention_storage.h>
 #include <zsw_cpu_freq.h>
 
+#include "manager/zsw_power_manager.h"
+
 LOG_MODULE_REGISTER(zsw_power_manager, LOG_LEVEL_INF);
 
 #ifdef CONFIG_BOARD_NATIVE_POSIX
@@ -36,8 +37,6 @@ LOG_MODULE_REGISTER(zsw_power_manager, LOG_LEVEL_INF);
 #endif
 
 static void update_and_publish_state(zsw_power_manager_state_t new_state);
-static void enter_active(void);
-static void enter_inactive(void);
 static void handle_idle_timeout(struct k_work *item);
 static void zbus_accel_data_callback(const struct zbus_channel *chan);
 
@@ -53,49 +52,6 @@ static bool is_stationary;
 static uint32_t last_wakeup_time;
 static uint32_t last_pwr_off_time;
 static zsw_power_manager_state_t state;
-
-bool zsw_power_manager_reset_idle_timout(void)
-{
-    if (!is_active) {
-        // If we are inactive, then this means we we should enter active.
-        enter_active();
-        return true;
-    } else {
-        // We are active, then just reschdule the inactivity timeout.
-        k_work_reschedule(&idle_work, K_SECONDS(IDLE_TIMEOUT_SECONDS));
-        return false;
-    }
-}
-
-uint32_t zsw_power_manager_get_ms_to_inactive(void)
-{
-    if (!is_active) {
-        return 0;
-    }
-    uint32_t time_since_lvgl_activity = lv_disp_get_inactive_time(NULL);
-    uint32_t time_to_timeout = k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&idle_work));
-
-    if (time_since_lvgl_activity >= IDLE_TIMEOUT_SECONDS * 1000) {
-        return time_to_timeout;
-    } else {
-        return MAX(time_to_timeout, IDLE_TIMEOUT_SECONDS * 1000 - lv_disp_get_inactive_time(NULL));
-    }
-}
-
-zsw_power_manager_state_t zsw_power_manager_get_state(void)
-{
-    return state;
-}
-
-static void update_and_publish_state(zsw_power_manager_state_t new_state)
-{
-    state = new_state;
-
-    struct activity_state_event evt = {
-        .state = state,
-    };
-    zbus_chan_pub(&activity_state_data_chan, &evt, K_MSEC(250));
-}
 
 static void enter_inactive(void)
 {
@@ -144,6 +100,49 @@ static void enter_active(void)
     update_and_publish_state(ZSW_ACTIVITY_STATE_ACTIVE);
 
     k_work_schedule(&idle_work, K_SECONDS(IDLE_TIMEOUT_SECONDS));
+}
+
+bool zsw_power_manager_reset_idle_timout(void)
+{
+    if (!is_active) {
+        // If we are inactive, then this means we we should enter active.
+        enter_active();
+        return true;
+    } else {
+        // We are active, then just reschdule the inactivity timeout.
+        k_work_reschedule(&idle_work, K_SECONDS(IDLE_TIMEOUT_SECONDS));
+        return false;
+    }
+}
+
+uint32_t zsw_power_manager_get_ms_to_inactive(void)
+{
+    if (!is_active) {
+        return 0;
+    }
+    uint32_t time_since_lvgl_activity = lv_disp_get_inactive_time(NULL);
+    uint32_t time_to_timeout = k_ticks_to_ms_ceil32(k_work_delayable_remaining_get(&idle_work));
+
+    if (time_since_lvgl_activity >= IDLE_TIMEOUT_SECONDS * 1000) {
+        return time_to_timeout;
+    } else {
+        return MAX(time_to_timeout, IDLE_TIMEOUT_SECONDS * 1000 - lv_disp_get_inactive_time(NULL));
+    }
+}
+
+zsw_power_manager_state_t zsw_power_manager_get_state(void)
+{
+    return state;
+}
+
+static void update_and_publish_state(zsw_power_manager_state_t new_state)
+{
+    state = new_state;
+
+    struct activity_state_event evt = {
+        .state = state,
+    };
+    zbus_chan_pub(&activity_state_data_chan, &evt, K_MSEC(250));
 }
 
 static void handle_idle_timeout(struct k_work *item)

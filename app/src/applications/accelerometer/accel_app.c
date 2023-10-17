@@ -1,10 +1,11 @@
-#include <accelerometer/accel_ui.h>
-#include <application_manager.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <zsw_imu.h>
-#include <events/periodic_event.h>
-#include <zsw_periodic_event.h>
+#include <zephyr/zbus/zbus.h>
+
+#include "accel_ui.h"
+#include "sensors/zsw_imu.h"
+#include "events/zsw_periodic_event.h"
+#include "manager/application_manager.h"
 
 static void zbus_fetch_accel_data_callback(const struct zbus_channel *chan);
 static void accel_app_start(lv_obj_t *root, lv_group_t *group);

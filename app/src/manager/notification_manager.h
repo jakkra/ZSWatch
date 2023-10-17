@@ -1,7 +1,9 @@
 #ifndef __NOTIFICATION_MANAGERH_
 #define __NOTIFICATION_MANAGERH_
+
 #include <inttypes.h>
-#include <ble_comm.h>
+
+#include "ble/ble_comm.h"
 
 #define NOTIFICATION_MGR_MAX_FIELD_LEN  50
 #define NOTIFICATION_MANAGER_MAX_STORED 20

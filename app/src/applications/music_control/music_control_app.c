@@ -1,11 +1,12 @@
-#include <music_control/music_control_ui.h>
-#include <application_manager.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <events/ble_data_event.h>
 #include <zsw_clock.h>
-#include <ble_comm.h>
 #include <zephyr/zbus/zbus.h>
+
+#include "music_control_ui.h"
+#include "ble/ble_comm.h"
+#include "events/ble_data_event.h"
+#include "manager/application_manager.h"
 
 // Functions needed for all applications
 static void music_control_app_start(lv_obj_t *root, lv_group_t *group);

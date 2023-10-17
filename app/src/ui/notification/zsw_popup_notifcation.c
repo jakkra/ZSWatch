@@ -1,6 +1,6 @@
-#include <zsw_popup_notifcation.h>
-
 #include <lvgl.h>
+
+#include "ui/notification/zsw_popup_notifcation.h"
 
 typedef struct {
     lv_obj_t *panel;

@@ -1,5 +1,6 @@
-#include <notification_manager.h>
 #include <string.h>
+
+#include "notification_manager.h"
 
 #define NOTIFICATION_INVALID_ID             0xFFFFFFFF
 #define NOTIFICATION_INVALID_INDEX          0xFFFFFFFF
