@@ -70,6 +70,7 @@ static void click_feedback(struct _lv_indev_drv_t *drv, uint8_t e);
 static void open_notification_popup(void *data);
 static void async_turn_off_buttons_allocation(void *unused);
 static void open_application_manager_page(void *app_name);
+static void handle_screen_gesture(lv_dir_t event_code);
 
 static void on_application_manager_close(void);
 static void on_popup_notifcation_closed(uint32_t id);
@@ -102,9 +103,6 @@ K_WORK_DEFINE(input_work, run_input_work);
 
 ZBUS_CHAN_DECLARE(ble_comm_data_chan);
 ZBUS_LISTENER_DEFINE(main_ble_comm_lis, on_zbus_ble_data_callback);
-
-const struct device *const buttons_dev = DEVICE_DT_GET(DT_NODELABEL(buttons));
-const struct device *const longpress_dev = DEVICE_DT_GET(DT_NODELABEL(longpress));
 
 static void run_input_work(struct k_work *item)
 {
@@ -165,41 +163,32 @@ static void run_input_work(struct k_work *item)
     }
 
     // Handle the input events. We have to take care about the screen orientation for the touch events.
-    if (watch_state == WATCHFACE_STATE && !zsw_notification_popup_is_shown()) {
-        switch (container->event.code) {
-            // Touch event
-            // Watch: Slide from right to left.
-            case INPUT_BTN_NORTH: {
-                open_application_manager_page("Notification");
-                break;
-            }
-            // Touch event
-            // Watch: Slide from left to right.
-            case INPUT_BTN_SOUTH: {
-                watchface_change();
-                break;
-            }
-            // Touch event
-            // Watch: Slide from bottom to top.
-            case INPUT_BTN_WEST: {
-                open_application_manager_page("Settings");
-                break;
-            }
-            // Touch event
-            // Watch: Slide from top to bottom.
-            case INPUT_BTN_EAST: {
-                open_application_manager_page(NULL);
-                break;
-            }
+    lv_dir_t gesture_code = LV_DIR_NONE;
+    switch (container->event.code) {
+        // Watch: Slide from right to left.
+        case INPUT_BTN_NORTH: {
+            gesture_code = LV_DIR_LEFT;
+            break;
         }
-        lv_indev_wait_release(lv_indev_get_act());
-    } else if (zsw_notification_popup_is_shown()) {
-        zsw_notification_popup_remove();
-    } else if (watch_state == APPLICATION_MANAGER_STATE && container->event.code == INPUT_BTN_SOUTH) {
-#ifdef CONFIG_BOARD_NATIVE_POSIX
-        // Until there is a better way to go back without access to buttons.
-        application_manager_exit_app();
-#endif
+        // Watch: Slide from left to right.
+        case INPUT_BTN_SOUTH: {
+            gesture_code = LV_DIR_RIGHT;
+            break;
+        }
+        // Watch: Slide from bottom to top.
+        case INPUT_BTN_WEST: {
+            gesture_code = LV_DIR_TOP;
+            break;
+        }
+        // Watch: Slide from top to bottom.
+        case INPUT_BTN_EAST: {
+            gesture_code = LV_DIR_BOTTOM;
+            break;
+        }
+    }
+
+    if (gesture_code != LV_DIR_NONE) {
+        handle_screen_gesture(gesture_code);
     }
 }
 
@@ -418,6 +407,40 @@ static void on_input_subsys_callback(struct input_event *evt)
     k_work_submit(&input_worker_item.work);
 }
 
+static void handle_screen_gesture(lv_dir_t event_code)
+{
+    if (watch_state == WATCHFACE_STATE && !zsw_notification_popup_is_shown()) {
+        switch (event_code) {
+            case LV_DIR_LEFT: {
+                open_application_manager_page("Notification");
+                break;
+            }
+            case LV_DIR_RIGHT: {
+                watchface_change();
+                break;
+            }
+            case LV_DIR_TOP: {
+                open_application_manager_page("Settings");
+                break;
+            }
+            case LV_DIR_BOTTOM: {
+                open_application_manager_page(NULL);
+                break;
+            }
+            default:
+                __ASSERT(false, "Not a valid gesture code: %d", event_code);
+        }
+        lv_indev_wait_release(lv_indev_get_act());
+    } else if (zsw_notification_popup_is_shown()) {
+        zsw_notification_popup_remove();
+    } else if (watch_state == APPLICATION_MANAGER_STATE && event_code == LV_DIR_RIGHT) {
+#ifdef CONFIG_BOARD_NATIVE_POSIX
+        // Until there is a better way to go back without access to buttons.
+        application_manager_exit_app();
+#endif
+    }
+}
+
 #ifdef CONFIG_BOARD_NATIVE_POSIX
 static void on_lvgl_screen_gesture_event_callback(lv_event_t *e)
 {
@@ -425,10 +448,7 @@ static void on_lvgl_screen_gesture_event_callback(lv_event_t *e)
     lv_event_code_t event = lv_event_get_code(e);
     if (event == LV_EVENT_GESTURE) {
         dir = lv_indev_get_gesture_dir(lv_indev_get_act());
-        if (watch_state == APPLICATION_MANAGER_STATE && dir == LV_DIR_RIGHT) {
-            // Until there is a better way to go back without access to buttons.
-            application_manager_exit_app();
-        }
+        handle_screen_gesture(dir);
     }
 }
 #endif

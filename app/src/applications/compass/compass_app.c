@@ -3,6 +3,7 @@
 #include <zephyr/logging/log.h>
 
 #include "compass_ui.h"
+#include "ui/popup/zsw_popup_window.h"
 #include "sensors/zsw_magnetometer.h"
 #include "manager/application_manager.h"
 
