@@ -18,10 +18,13 @@ void x_ray_ui_show(lv_obj_t *root)
     // Does not loog very good on the round display.
     lv_obj_set_scrollbar_mode(root_page, LV_SCROLLBAR_MODE_OFF);
 
-    LV_IMG_DECLARE(x_ray);
-
     lv_obj_t *img = lv_img_create(root_page);
+#ifdef CONFIG_LV_Z_USE_FILESYSTEM
+    lv_img_set_src(img, "S:x_ray.bin");
+#else
+    LV_IMG_DECLARE(x_ray);
     lv_img_set_src(img, &x_ray);
+#endif
     lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_size(img, 240, 240);
 }

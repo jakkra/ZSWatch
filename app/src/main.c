@@ -25,7 +25,9 @@
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/fatal.h>
 #include <zephyr/input/input.h>
-
+#include <zephyr/retention/bootmode.h>
+#include <zephyr/sys/reboot.h>
+#include <zsw_rtt_flash_loader.h>
 #include "dfu.h"
 #include "ui/zsw_ui.h"
 #include "ble/ble_comm.h"
@@ -199,6 +201,9 @@ static void run_init_work(struct k_work *item)
     load_retention_ram();
     notification_manager_init();
     enable_bluetoth();
+    //uint32_t br = 1337;
+    //int rc = settings_save_one("settings/brightness", &br, sizeof(br));
+    //printk("RC: %d\n", rc);
     zsw_imu_init();
     zsw_magnetometer_init();
     zsw_pressure_sensor_init();
@@ -250,6 +255,14 @@ void run_wdt_work(struct k_work *item)
 
 int main(void)
 {
+#ifdef CONFIG_SPI_FLASH_LOADER
+    if (bootmode_check(0xA)) {
+        LOG_WRN("SPI Flash Loader Boot Mode");
+        bootmode_clear();
+        zsw_rtt_flash_loader_start();
+        return 0;
+    }
+#endif
 #if defined(CONFIG_TASK_WDT) && !defined(CONFIG_BOARD_NATIVE_POSIX)
     const struct device *hw_wdt_dev = DEVICE_DT_GET(DT_ALIAS(watchdog0));
     if (!device_is_ready(hw_wdt_dev)) {
@@ -291,14 +304,14 @@ static void enable_bluetoth(void)
 #endif
 
     err = bt_enable(NULL);
-    if (err != 0) {
-        LOG_ERR("Failed to enable Bluetooth, err: %d", err);
-        return;
-    }
 
 #ifdef CONFIG_SETTINGS
     settings_load();
 #endif
+    if (err != 0) {
+        LOG_ERR("Failed to enable Bluetooth, err: %d", err);
+        return;
+    }
 
     __ASSERT_NO_MSG(ble_comm_init(on_ble_data_callback) == 0);
     bleAoaInit();

@@ -16,8 +16,6 @@ build*
 # Built Visual Studio Code Extensions
 *.vsix
 
-*.bin
-
 # Zephyr workspace
 /.west
 /bootloader

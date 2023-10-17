@@ -57,7 +57,9 @@ target_sources(app PRIVATE src/ui/notification/zsw_popup_notifcation.c)
 target_sources(app PRIVATE src/ui/popup/zsw_popup_window.c)
 target_sources(app PRIVATE src/ui/utils/zsw_ui_utils.c)
 
-target_sources(app PRIVATE src/zsw_flash.c)
+target_sources_ifdef(CONFIG_SPI_FLASH_LOADER app PRIVATE src/zsw_rtt_flash_loader.c)
+target_sources_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS app PRIVATE src/zsw_filesystem.c)
+target_sources_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS app PRIVATE src/zsw_lvgl_spi_decoder.c)
 
 if (DFU_BUILD)
     target_sources(app PRIVATE src/dfu.c)

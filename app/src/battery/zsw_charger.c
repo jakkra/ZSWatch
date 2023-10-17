@@ -40,6 +40,7 @@ static void send_chg_status_event(void)
     struct chg_state_event evt = {
         .is_charging = is_charging,
     };
+    LOG_ERR("Charging status: %d", is_charging);
     zbus_chan_pub(&chg_state_data_chan, &evt, K_MSEC(250));
 }
 

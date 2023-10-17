@@ -21,6 +21,7 @@
 / {
 	chosen {
 		nordic,pm-ext-flash = &at25sl128a;
+        zephyr,settings-partition = &settings_partition;
 	};
 
 	aliases {
@@ -144,4 +145,42 @@
 		t-exit-dpd = <3000>;
 	};
 
+};
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+		lvgl_lfs: lvgl_lfs {
+			compatible = "zephyr,fstab,littlefs";
+			mount-point = "/lvgl_lfs";
+			partition = <&lvgl_lfs_partition>;
+			automount;
+			read-size = <1024>;
+			prog-size = <512>;
+			cache-size = <4096>;
+			lookahead-size = <4096>;
+			block-cycles = <512>;
+		};
+	};
+};
+
+&at25sl128a {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		lvgl_lfs_partition: partition@0 {
+			label = "lvgl_lfs_partition";
+			reg = <0x00000000 0x00200000>;
+		};
+		lvgl_raw_partition: partition@200000 {
+			label = "lvgl_raw_partition";
+			reg = <0x00200000 0x00200000>;
+		};
+        settings_partition: partition@400000 {
+            label = "settings_partition";
+            reg = <0x400000 0x100000 >;
+        };
+	};
 };
