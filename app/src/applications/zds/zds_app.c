@@ -1,9 +1,10 @@
 #include <zds/zds_ui.h>
-#include <application_manager.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/zbus/zbus.h>
-#include <events/accel_event.h>
+
+#include "events/accel_event.h"
+#include "manager/application_manager.h"
 
 // Functions needed for all applications
 static void zds_app_start(lv_obj_t *root, lv_group_t *group);

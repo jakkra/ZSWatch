@@ -1,13 +1,15 @@
-#include <sensors_summary/sensors_summary_ui.h>
-#include <application_manager.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
-#include <zsw_pressure_sensor.h>
 #include <math.h>
-#include <zsw_env_sensor.h>
+
+#include "sensors_summary_ui.h"
+#include "sensors/zsw_env_sensor.h"
+#include "sensors/zsw_light_sensor.h"
+#include "sensors/zsw_pressure_sensor.h"
+#include "manager/application_manager.h"
 
 LOG_MODULE_REGISTER(sensors_summary_app, LOG_LEVEL_DBG);
 
@@ -62,12 +64,17 @@ static void timer_callback(lv_timer_t *timer)
     float temperature;
     float pressure;
     float humidity;
+    float light;
 
     if (zsw_env_sensor_fetch_all(&temperature, &pressure, &humidity) != 0) {
         return;
     }
 
     zsw_pressure_sensor_fetch_pressure(&pressure);
+
+    if (zsw_light_sensor_fetch(&light) == 0) {
+        sensors_summary_ui_set_light(light);
+    }
 
     sensors_summary_ui_set_pressure(pressure);
     sensors_summary_ui_set_temp(temperature);

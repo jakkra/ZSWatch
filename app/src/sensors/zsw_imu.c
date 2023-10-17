@@ -1,9 +1,10 @@
-#include <zsw_imu.h>
 #include <bmi270_port.h>
 #include <bmi270.h>
 #include <zephyr/logging/log.h>
 #include <events/accel_event.h>
 #include <zephyr/zbus/zbus.h>
+
+#include "sensors/zsw_imu.h"
 
 LOG_MODULE_REGISTER(accel, LOG_LEVEL_INF);
 

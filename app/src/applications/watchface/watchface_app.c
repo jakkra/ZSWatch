@@ -9,20 +9,21 @@
 #include <zephyr/logging/log.h>
 #include <lvgl.h>
 #include <zsw_clock.h>
-#include <zsw_imu.h>
 #include <ram_retention_storage.h>
-#include <events/ble_data_event.h>
-#include <events/accel_event.h>
-#include <notification_manager.h>
 #include <zephyr/zbus/zbus.h>
-#include <zsw_charger.h>
-#include <events/chg_event.h>
-#include <events/battery_event.h>
-#include <events/activity_event.h>
-#include <zsw_battery_manager.h>
-#include <zsw_pressure_sensor.h>
-#include <zsw_env_sensor.h>
-#include "../../watchface_app.h"
+
+#include "watchface_app.h"
+#include "battery/zsw_charger.h"
+#include "events/chg_event.h"
+#include "events/accel_event.h"
+#include "events/battery_event.h"
+#include "events/activity_event.h"
+#include "events/ble_data_event.h"
+#include "sensors/zsw_imu.h"
+#include "sensors/zsw_env_sensor.h"
+#include "sensors/zsw_pressure_sensor.h"
+#include "manager/zsw_battery_manager.h"
+#include "manager/notification_manager.h"
 
 LOG_MODULE_REGISTER(watcface_app, LOG_LEVEL_WRN);
 

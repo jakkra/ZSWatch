@@ -3,17 +3,17 @@
 #include <sys/time.h>
 #include <time.h>
 #include <zephyr/kernel.h>
+#include <zephyr/zbus/zbus.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <zephyr/logging/log.h>
 #include <errno.h>
 #include <unistd.h>
-#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
 #include <ram_retention_storage.h>
-#include <events/periodic_event.h>
-#include <zsw_periodic_event.h>
+
+#include "events/zsw_periodic_event.h"
 
 static void zbus_periodic_slow_callback(const struct zbus_channel *chan);
 

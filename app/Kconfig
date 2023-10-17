@@ -46,6 +46,38 @@ menu "ZSWatch"
         select APPLICATIONS_USE_ACCELEROMETER
     endmenu
 
+    menu "Watchface"
+        config WATCHFACE_ANALOG
+            bool
+            prompt "Add analog watchface"
+            default n
+
+        config WATCHFACE_DIGITAL
+            bool
+            prompt "Add digital watchface"
+            default y
+
+        config WATCHFACE_MINIMAL
+            bool
+            prompt "Add minimal watchface"
+            default y
+
+        choice WATCHFACE_BACKGROUND_IMG
+            bool
+            prompt "Select which watchface background imgage to use. Not all watchfaces supports this."
+            def_bool WATCHFACE_BACKGROUND_SPACE
+
+        config WATCHFACE_BACKGROUND_SPACE
+            prompt "Space themed background"
+        config WATCHFACE_BACKGROUND_FLOWER
+            prompt "Flower themed background"
+        config WATCHFACE_BACKGROUND_PLANET
+            prompt "Planet earth themed background"
+        config WATCHFACE_BACKGROUND_NONE
+            prompt "No background"
+        endchoice
+    endmenu
+
     config DISABLE_PAIRING_REQUIRED
         bool
     prompt "Disable encryption required for BLE connection (pairing/bonding)"
@@ -59,43 +91,6 @@ menu "ZSWatch"
     default n
     help
         "When screen goes idle, don't turn off the display power, just put it into sleep mode. This will consume more power, but will make the screen wake up faster."
-
-    config DEMO_BUILD
-        bool
-    prompt "Add apps and features only aimed for demo purposes."
-    default y
-    help
-        "Enabling this option will add apps and features only aimed for demo purposes. This will increase the size of the firmware (flash usage)."
-
-    config WATCHFACE_ANALOG
-        bool
-        prompt "Add analog watchface"
-        default n
-
-    config WATCHFACE_DIGITAL
-        bool
-        prompt "Add digital watchface"
-        default y
-
-    config WATCHFACE_MINIMAL
-        bool
-        prompt "Add minimal watchface"
-        default y
-
-    choice WATCHFACE_BACKGROUND_IMG
-        bool
-        prompt "Select which watchface background imgage to use. Not all watchfaces supports this."
-        def_bool WATCHFACE_BACKGROUND_SPACE
-
-    config WATCHFACE_BACKGROUND_SPACE
-        prompt "Space themed background"
-    config WATCHFACE_BACKGROUND_FLOWER
-        prompt "Flower themed background"
-    config WATCHFACE_BACKGROUND_PLANET
-        prompt "Planet earth themed background"
-    config WATCHFACE_BACKGROUND_NONE
-        prompt "No background"
-    endchoice
 
 endmenu
 

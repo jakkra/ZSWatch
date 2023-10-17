@@ -1,4 +1,4 @@
-#include <zsw_imu.h>
+#include "sensors/zsw_imu.h"
 
 struct accel_event {
     zsw_imu_evt_t data;

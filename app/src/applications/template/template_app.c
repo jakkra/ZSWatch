@@ -1,7 +1,8 @@
-#include <template/template_ui.h>
-#include <application_manager.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+
+#include "template_ui.h"
+#include "manager/application_manager.h"
 
 // Functions needed for all applications
 static void template_app_start(lv_obj_t *root, lv_group_t *group);

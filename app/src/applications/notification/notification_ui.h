@@ -2,8 +2,9 @@
 #define __NOTIFICATION_UI_H
 
 #include <inttypes.h>
-#include <notification_manager.h>
 #include <lvgl.h>
+
+#include "manager/notification_manager.h"
 
 typedef void(*on_notification_remove_cb_t)(uint32_t id);
 

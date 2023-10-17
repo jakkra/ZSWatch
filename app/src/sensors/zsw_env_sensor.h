@@ -18,6 +18,8 @@
 #ifndef ZSW_ENV_SENSOR_H_
 #define ZSW_ENV_SENSOR_H_
 
+#include <stdint.h>
+
 int zsw_env_sensor_fetch_all(float *temperature, float *pressure, float *humidity);
 
 #endif

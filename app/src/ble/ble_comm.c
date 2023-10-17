@@ -1,4 +1,3 @@
-#include <ble_comm.h>
 #include <zephyr/sys/base64.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
@@ -9,10 +8,12 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <math.h>
-#include <ble_transport.h>
-#include <events/ble_data_event.h>
 #include <zephyr/zbus/zbus.h>
-#include <zsw_popup_window.h>
+
+#include "ui/zsw_ui.h"
+#include "ble/ble_comm.h"
+#include "ble/ble_transport.h"
+#include "events/ble_data_event.h"
 
 LOG_MODULE_REGISTER(ble_comm, LOG_LEVEL_DBG);
 
@@ -475,7 +476,7 @@ static uint32_t extract_value_uint32(char *key, char *data)
         return 0;
     }
     str += strlen(key);
-    if (!isdigit((int)*str)) {
+    if (!isdigit((int) * str)) {
         return 0; // No number found
     }
     start = str;
@@ -495,7 +496,7 @@ static int32_t extract_value_int32(char *key, char *data)
         return 0;
     }
     str += strlen(key);
-    if (!isdigit((int)*str)) {
+    if (!isdigit((int) * str)) {
         return 0; // No number found
     }
     start = str;
