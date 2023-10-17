@@ -71,15 +71,15 @@ static void open_notification_popup(void *data);
 static void async_turn_off_buttons_allocation(void *unused);
 static void open_application_manager_page(void *app_name);
 
-static void on_ApplicationManager_Close(void);
-static void on_PopupNotifcation_Closed(uint32_t id);
-static void on_BLEDAta_Callback(ble_comm_cb_data_t *cb);
-static void on_zbusBLECommData_Callback(const struct zbus_channel *chan);
-static void on_InputSyubsys_Callback(struct input_event *evt);
-static void on_WatchfaceAppEvent_Callback(watchface_app_evt_t evt);
-
-// TODO: Marked for removal
-//static void on_ScreenGestureEvent_Callback(lv_event_t *e);
+static void on_application_manager_close(void);
+static void on_popup_notifcation_closed(uint32_t id);
+static void on_ble_data_callback(ble_comm_cb_data_t *cb);
+static void on_zbus_ble_data_callback(const struct zbus_channel *chan);
+static void on_input_subsys_callback(struct input_event *evt);
+static void on_watchface_app_event_callback(watchface_app_evt_t evt);
+#ifdef CONFIG_BOARD_NATIVE_POSIX
+static void on_lvgl_screen_gesture_event_callback(lv_event_t *e);
+#endif
 
 static int kernal_wdt_id;
 
@@ -101,7 +101,7 @@ K_WORK_DEFINE(init_work, run_init_work);
 K_WORK_DEFINE(input_work, run_input_work);
 
 ZBUS_CHAN_DECLARE(ble_comm_data_chan);
-ZBUS_LISTENER_DEFINE(main_ble_comm_lis, on_zbusBLECommData_Callback);
+ZBUS_LISTENER_DEFINE(main_ble_comm_lis, on_zbus_ble_data_callback);
 
 const struct device *const buttons_dev = DEVICE_DT_GET(DT_NODELABEL(buttons));
 const struct device *const longpress_dev = DEVICE_DT_GET(DT_NODELABEL(longpress));
@@ -110,15 +110,14 @@ static void run_input_work(struct k_work *item)
 {
     struct input_worker_item_t *container = CONTAINER_OF(item, struct input_worker_item_t, work);
 
-    LOG_WRN("Input worker code: %u", container->event.code);
+    LOG_DBG("Input worker code: %u", container->event.code);
 
     // Don't process the press if it caused wakeup.
     if (zsw_power_manager_reset_idle_timout()) {
         // NOTE: As soon as the touch controller wakes up the MCU through an interrupt the event is also
         // passed into LVGL (interrupt -> input subsystem -> LVGL). We don´t want any LVGL action after
         // a touch event. Also make sure that a wake up through a button doesn´t block the first input of the touch screen.
-        if(container->event.code > INPUT_KEY_4)
-        {
+        if (container->event.code > INPUT_KEY_4) {
             is_woken_by_touch = true;
         }
 
@@ -220,7 +219,7 @@ static void run_init_work(struct k_work *item)
     display_control_init();
     display_control_sleep_ctrl(true);
 
-    INPUT_CALLBACK_DEFINE(NULL, on_InputSyubsys_Callback);
+    INPUT_CALLBACK_DEFINE(NULL, on_input_subsys_callback);
 
     lv_indev_drv_init(&enc_drv);
     enc_drv.type = LV_INDEV_TYPE_ENCODER;
@@ -246,11 +245,12 @@ static void run_init_work(struct k_work *item)
     }
 
     watch_state = WATCHFACE_STATE;
-    
-    // TODO: Marked for removal
-    //lv_obj_add_event_cb(lv_scr_act(), on_ScreenGestureEvent_Callback, LV_EVENT_GESTURE, NULL);
 
-    watchface_app_start(input_group, on_WatchfaceAppEvent_Callback);
+#ifdef CONFIG_BOARD_NATIVE_POSIX
+    lv_obj_add_event_cb(lv_scr_act(), on_lvgl_screen_gesture_event_callback, LV_EVENT_GESTURE, NULL);
+#endif
+
+    watchface_app_start(input_group, on_watchface_app_event_callback);
 }
 
 void run_wdt_work(struct k_work *item)
@@ -311,7 +311,7 @@ static void enable_bluetoth(void)
     settings_load();
 #endif
 
-    __ASSERT_NO_MSG(ble_comm_init(on_BLEDAta_Callback) == 0);
+    __ASSERT_NO_MSG(ble_comm_init(on_ble_data_callback) == 0);
     bleAoaInit();
 }
 
@@ -338,7 +338,7 @@ static void open_notification_popup(void *data)
         lv_group_set_default(temp_group);
         lv_indev_set_group(enc_indev, temp_group);
         zsw_vibration_run_pattern(ZSW_VIBRATION_PATTERN_NOTIFICATION);
-        zsw_notification_popup_show(not->title, not->body, not->src, not->id, on_PopupNotifcation_Closed, 10);
+        zsw_notification_popup_show(not->title, not->body, not->src, not->id, on_popup_notifcation_closed, 10);
         is_buttons_for_lvgl = true;
     }
     pending_not_open = false;
@@ -349,7 +349,7 @@ static void open_application_manager_page(void *app_name)
     watchface_app_stop();
     is_buttons_for_lvgl = true;
     watch_state = APPLICATION_MANAGER_STATE;
-    application_manager_show(on_ApplicationManager_Close, lv_scr_act(), input_group, (char *)app_name);
+    application_manager_show(on_application_manager_close, lv_scr_act(), input_group, (char *)app_name);
 }
 
 static void close_popup_notification(lv_timer_t *timer)
@@ -377,7 +377,7 @@ static void close_popup_notification(lv_timer_t *timer)
     ble_comm_send(buf, msg_len);
 }
 
-static void on_PopupNotifcation_Closed(uint32_t id)
+static void on_popup_notifcation_closed(uint32_t id)
 {
     lv_timer_t *timer;
     // Changing back input group directly here causes LVGL
@@ -389,11 +389,11 @@ static void on_PopupNotifcation_Closed(uint32_t id)
     lv_timer_set_repeat_count(timer, 1);
 }
 
-static void on_ApplicationManager_Close(void)
+static void on_application_manager_close(void)
 {
     application_manager_delete();
     watch_state = WATCHFACE_STATE;
-    watchface_app_start(input_group, on_WatchfaceAppEvent_Callback);
+    watchface_app_start(input_group, on_watchface_app_event_callback);
     lv_async_call(async_turn_off_buttons_allocation, NULL);
 }
 
@@ -402,7 +402,7 @@ static void async_turn_off_buttons_allocation(void *unused)
     is_buttons_for_lvgl = false;
 }
 
-static void on_InputSyubsys_Callback(struct input_event *evt)
+static void on_input_subsys_callback(struct input_event *evt)
 {
     // Currently you have to define a keycode as binding between buttons and longpress. We skip this binding codes for now.
     // Also touch events will be skipped, because they are handled by LVGL.
@@ -418,6 +418,21 @@ static void on_InputSyubsys_Callback(struct input_event *evt)
     k_work_submit(&input_worker_item.work);
 }
 
+#ifdef CONFIG_BOARD_NATIVE_POSIX
+static void on_lvgl_screen_gesture_event_callback(lv_event_t *e)
+{
+    lv_dir_t  dir;
+    lv_event_code_t event = lv_event_get_code(e);
+    if (event == LV_EVENT_GESTURE) {
+        dir = lv_indev_get_gesture_dir(lv_indev_get_act());
+        if (watch_state == APPLICATION_MANAGER_STATE && dir == LV_DIR_RIGHT) {
+            // Until there is a better way to go back without access to buttons.
+            application_manager_exit_app();
+        }
+    }
+}
+#endif
+
 static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
 {
     if (!is_buttons_for_lvgl) {
@@ -428,8 +443,7 @@ static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *da
         data->key = LV_KEY_LEFT;
         data->state = LV_INDEV_STATE_PR;
         last_pressed = 2;
-    }
-    else if (last_input_event.code == INPUT_KEY_1) {
+    } else if (last_input_event.code == INPUT_KEY_1) {
         data->key = LV_KEY_ENTER;
         data->state = LV_INDEV_STATE_PR;
         last_pressed = 1;
@@ -463,7 +477,7 @@ static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *da
     last_input_event.code = 0xFF;
 }
 
-static void on_WatchfaceAppEvent_Callback(watchface_app_evt_t evt)
+static void on_watchface_app_event_callback(watchface_app_evt_t evt)
 {
     if (watch_state == WATCHFACE_STATE && !zsw_notification_popup_is_shown()) {
         switch (evt) {
@@ -487,7 +501,7 @@ static void click_feedback(struct _lv_indev_drv_t *drv, uint8_t e)
     }
 }
 
-static void on_BLEDAta_Callback(ble_comm_cb_data_t *cb)
+static void on_ble_data_callback(ble_comm_cb_data_t *cb)
 {
     not_mngr_notification_t *parsed_not;
 
@@ -515,7 +529,7 @@ static void on_BLEDAta_Callback(ble_comm_cb_data_t *cb)
     }
 }
 
-static void on_zbusBLECommData_Callback(const struct zbus_channel *chan)
+static void on_zbus_ble_data_callback(const struct zbus_channel *chan)
 {
     const struct ble_data_event *event = zbus_chan_const_msg(chan);
     switch (event->data.type) {
@@ -546,7 +560,7 @@ static void on_zbusBLECommData_Callback(const struct zbus_channel *chan)
                     application_manager_set_index(0);
                     is_buttons_for_lvgl = false;
                     watch_state = WATCHFACE_STATE;
-                    watchface_app_start(input_group, on_WatchfaceAppEvent_Callback);
+                    watchface_app_start(input_group, on_watchface_app_event_callback);
                 }
             } else {
                 // TODO: Can we rework it with triggering input events?

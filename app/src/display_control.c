@@ -9,7 +9,7 @@
 #include <zephyr/logging/log.h>
 #include "lvgl.h"
 
-LOG_MODULE_REGISTER(display_control, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(display_control, LOG_LEVEL_WRN);
 
 static void lvgl_render(struct k_work *item);
 

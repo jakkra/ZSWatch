@@ -79,7 +79,8 @@ uint32_t apds9306_last_measurement;
  *  @param value    Sensor resolution
  *  @return         Conversion time in ms
 */
-static uint32_t apds9306_get_time_for_resolution(uint8_t value) {
+static uint32_t apds9306_get_time_for_resolution(uint8_t value)
+{
     switch (value) {
         case APDS9306_RES_20:
             return 400;
