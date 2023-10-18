@@ -21,11 +21,21 @@ jobs:
           path: ZSWatch
           submodules: recursive
 
+      - name: Dependencies
+        run: |
+          sudo apt update
+          sudo apt install astyle
+
       - name: Initialize
         working-directory: ZSWatch
         run: |
           west init -l app
           west update -o=--depth=1 -n
+      
+      - name: Style
+        working-directory: ZSWatch
+        run: |
+          west format --dry-run
 
       - name: Build firmware
         working-directory: ZSWatch
