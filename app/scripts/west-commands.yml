@@ -3,4 +3,9 @@ west-commands:
     commands:
       - name: upload_fs
         class: UploadFsWestCommand
-        help: an example west extension command
+        help: Upload filesystem to external SPI flash
+  - file: scripts/astyle_format_west_command.py
+    commands:
+      - name: format
+        class: FormatCodeWestCommand
+        help: Format the code
