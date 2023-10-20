@@ -18,7 +18,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
-#include <math.h>
 
 #include "sensors/zsw_env_sensor.h"
 

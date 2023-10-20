@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(zsw_power_manager, LOG_LEVEL_INF);
 #ifdef CONFIG_BOARD_NATIVE_POSIX
 #define IDLE_TIMEOUT_SECONDS    UINT32_MAX
 #else
-#define IDLE_TIMEOUT_SECONDS    20
+#define IDLE_TIMEOUT_SECONDS    CONFIG_CONFIGURATION_IDLE_TIMEOUT_SECONDS
 #endif
 
 static void update_and_publish_state(zsw_power_manager_state_t new_state);
@@ -208,4 +208,4 @@ static int zsw_power_manager_init(void)
     return 0;
 }
 
-SYS_INIT(zsw_power_manager_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+//SYS_INIT(zsw_power_manager_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);

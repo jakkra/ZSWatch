@@ -1,1 +1,3 @@
-rsource "Kconfig.gc9a01"
+if DISPLAY
+    rsource "gc9a01/Kconfig"
+endif

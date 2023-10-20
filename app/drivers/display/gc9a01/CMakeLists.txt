@@ -1,0 +1,1 @@
+zephyr_sources(gc9a01.c)

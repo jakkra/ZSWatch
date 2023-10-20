@@ -1,9 +1,12 @@
-[submodule "app/src/ext_drivers/bmi270/BMI270-Sensor_API"]
-	path = app/src/ext_drivers/bmi270/BMI270-Sensor_API
+[submodule "app/src/ext_drivers/bmi270/BMI270-Sensor-API"]
+	path = app/src/ext_drivers/bmi270/BMI270-Sensor-API
 	url = https://github.com/boschsensortec/BMI270-Sensor-API.git
 [submodule "app/src/ext_drivers/bmp581/BMP5-Sensor-API"]
 	path = app/src/ext_drivers/bmp581/BMP5-Sensor-API
 	url = https://github.com/boschsensortec/BMP5-Sensor-API.git
+[submodule "app/src/ext_drivers/BME68x-Sensor-API"]
+	path = app/src/ext_drivers/BME68x-Sensor-API
+	url = https://github.com/boschsensortec/BME68x-Sensor-API.git
 [submodule "app/src/applications/2048/2048_lib"]
 	path = app/src/applications/2048/2048_lib
 	url = https://github.com/100askTeam/lv_lib_100ask.git

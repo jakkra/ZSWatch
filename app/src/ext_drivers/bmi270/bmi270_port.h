@@ -18,8 +18,9 @@ extern "C" {
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
-#include "BMI270-Sensor_API/bmi2.h"
-#include <bmi270.h>
+
+#include "BMI270-Sensor-API/bmi2.h"
+#include "bmi270.h"
 
 #define CONFIG_BMI270_TRIGGER
 #define CONFIG_BMI270_TRIGGER_GLOBAL_THREAD

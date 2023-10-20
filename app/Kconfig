@@ -78,6 +78,20 @@ menu "ZSWatch"
         endchoice
     endmenu
 
+    menu "External"
+        config EXTERNAL_USE_BOSCH_BSEC
+            bool
+        prompt "Enable the usage of the external Bosch BSEC 2 library."
+        default y
+    endmenu
+
+    menu "Configuration"
+        config CONFIGURATION_IDLE_TIMEOUT_SECONDS
+            int
+        prompt "Idle timeout in seconds"
+        default 20
+    endmenu
+
     config DISABLE_PAIRING_REQUIRED
         bool
     prompt "Disable encryption required for BLE connection (pairing/bonding)"
@@ -85,41 +99,35 @@ menu "ZSWatch"
     help
         "Disable encryption for BLE connection (pairing/bonding). Used only for debugging purposes."
     
-    config DISPLAY_FAST_WAKEUP
-        bool
-    prompt "Don't turn off the display power, just put it into sleep mode when going idle."
-    default n
-    help
-        "When screen goes idle, don't turn off the display power, just put it into sleep mode. This will consume more power, but will make the screen wake up faster."
+    menu "SPI RTT Flash Loader"
+        config SPI_FLASH_LOADER
+            bool
+        prompt "Enable SPI flash loader"
+        default y
+        select USE_SEGGER_RTT
+        #select SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL
+        help
+            "Enable SPI flash loader"
 
-endmenu
+        if SPI_FLASH_LOADER
+            config ERASE_PROGRESSIVELY
+                bool
+            depends on SPI_FLASH_LOADER
+            prompt "Erase sectors one by one when writing instead of full partition before starting."
+            default y
+            help
+                "If not writing to the full partition this will be faster"
 
-menu "SPI RTT Flash Loader"
-    config SPI_FLASH_LOADER
-        bool
-    prompt "Enable SPI flash loader"
-    default y
-    select USE_SEGGER_RTT
-    #select SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL
-    help
-        "Enable SPI flash loader"
-if SPI_FLASH_LOADER
-    config ERASE_PROGRESSIVELY
-        bool
-    depends on SPI_FLASH_LOADER
-    prompt "Erase sectors one by one when writing instead of full partition before starting."
-    default y
-    help
-        "If not writing to the full partition this will be faster"
-    
-    config RTT_TRANSFER_CHANNEL
-        int
-    depends on SPI_FLASH_LOADER
-    prompt "The RTT channel to use for transfer of data to and form flash"
-    default 2
-    help
-        "If RTT logging is enabled, channel 0 is used for this, hence avoid 1 in this scenario."
-endif
+            config RTT_TRANSFER_CHANNEL
+                int
+            depends on SPI_FLASH_LOADER
+            prompt "The RTT channel to use for transfer of data to and form flash"
+            default 2
+            help
+                "If RTT logging is enabled, channel 0 is used for this, hence avoid 1 in this scenario."
+        endif
+    endmenu
+
 endmenu
 
 rsource "drivers/Kconfig"
