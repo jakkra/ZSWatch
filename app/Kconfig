@@ -122,6 +122,14 @@ if SPI_FLASH_LOADER
 endif
 endmenu
 
+
+menu "ZSWatch Init Priorities"
+    config ZSW_DRIVER_INIT_PRIORITY
+        int
+        default 85
+
+endmenu
+
 rsource "drivers/Kconfig"
 
 module = APP

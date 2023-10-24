@@ -157,4 +157,4 @@ static int vibration_motor_init(void)
     return 0;
 }
 
-SYS_INIT(vibration_motor_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(vibration_motor_init, APPLICATION, CONFIG_ZSW_DRIVER_INIT_PRIORITY);
