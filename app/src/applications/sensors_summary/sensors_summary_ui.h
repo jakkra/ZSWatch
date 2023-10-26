@@ -21,6 +21,6 @@ void sensors_summary_ui_set_temp(float temp);
 
 void sensors_summary_ui_set_rel_height(float rel_height);
 
-void sensors_summary_ui_set_gas(float gas);
-
 void sensors_summary_ui_set_light(float light);
+
+void sensors_summary_ui_set_iaq(float iaq);

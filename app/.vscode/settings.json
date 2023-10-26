@@ -1,0 +1,6 @@
+{
+    "nrf-connect.debugging.bindings": {
+        "${workspaceFolder}/build": "Launch build"
+    },
+    "C_Cpp.configurationWarnings": "disabled"
+}

@@ -34,6 +34,11 @@ menu "ZSWatch"
         prompt "Activate the application 'QR-Code'"
         default y if LV_Z_USE_FILESYSTEM
 
+        config APPLICATIONS_USE_SENSORS_SUMMARY
+            bool
+        prompt "Activate the application 'Sensors Summary'"
+        default y
+
         config APPLICATIONS_USE_X_RAY
             bool
         prompt "Activate the application 'X-Ray'"
@@ -44,6 +49,12 @@ menu "ZSWatch"
         prompt "Activate the application 'ZDS'"
         default y
         select APPLICATIONS_USE_ACCELEROMETER
+
+        config APPLICATIONS_USE_IAQ
+            bool
+        prompt "Activate the application 'IAQ'"
+        depends on EXTERNAL_USE_BOSCH_BSEC && LV_Z_USE_FILESYSTEM
+        default y
     endmenu
 
     menu "Watchface"
@@ -78,6 +89,52 @@ menu "ZSWatch"
         endchoice
     endmenu
 
+    menu "Default configuration"
+        menu "Sensors Summary"
+            depends on APPLICATIONS_USE_SENSORS_SUMMARY
+
+            config DEFAULT_CONFIGURATION_SENSORS_SUMMARY_REFRESH_INTERVAL_MS
+                int
+            prompt "Refresh interval in milliseconds"
+            default 100
+        endmenu
+
+        menu "Compass"
+            depends on APPLICATIONS_USE_COMPASS
+
+            config DEFAULT_CONFIGURATION_COMPASS_REFRESH_INTERVAL_MS
+                int
+            prompt "Refresh interval in milliseconds"
+            default 50
+
+            config DEFAULT_CONFIGURATION_COMPASS_CALIBRATION_TIME_S
+                int
+            prompt "Calibration time in seconds"
+            default 10
+        endmenu
+
+        menu "Battery"
+            depends on APPLICATIONS_USE_BATTERY
+
+            config DEFAULT_CONFIGURATION_BATTERY_NUM_SAMPLES_MAX
+                int
+            prompt "Maximum number of samples"
+            default 100
+
+            config DEFAULT_CONFIGURATION_BATTERY_SAMPLE_INTERVAL_MINUTES
+                int
+            prompt "Battery sample interval in minutes"
+            default 30
+        endmenu
+
+        menu "Power Management"
+            config POWER_MANAGEMENT_IDLE_TIMEOUT_SECONDS
+                int
+            prompt "Idle timeout in seconds"
+            default 20
+        endmenu
+    endmenu
+
     menu "External"
         config EXTERNAL_USE_BOSCH_BSEC
             bool
@@ -85,19 +142,14 @@ menu "ZSWatch"
         default y
     endmenu
 
-    menu "Configuration"
-        config CONFIGURATION_IDLE_TIMEOUT_SECONDS
-            int
-        prompt "Idle timeout in seconds"
-        default 20
+    menu "BLE"
+        config BLE_DISABLE_PAIRING_REQUIRED
+            bool
+        prompt "Disable encryption required for BLE connection (pairing/bonding)"
+        default n
+        help
+            "Disable encryption for BLE connection (pairing/bonding). Used only for debugging purposes."
     endmenu
-
-    config DISABLE_PAIRING_REQUIRED
-        bool
-    prompt "Disable encryption required for BLE connection (pairing/bonding)"
-    default n
-    help
-        "Disable encryption for BLE connection (pairing/bonding). Used only for debugging purposes."
     
     menu "SPI RTT Flash Loader"
         config SPI_FLASH_LOADER
@@ -128,9 +180,10 @@ menu "ZSWatch"
         endif
     endmenu
 
+    menu "Custom drivers"
+        rsource "drivers/Kconfig"
+    endmenu
 endmenu
-
-rsource "drivers/Kconfig"
 
 module = APP
 module-str = APP

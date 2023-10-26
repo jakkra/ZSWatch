@@ -284,7 +284,7 @@ static int apds9306_sample_fetch(const struct device *p_dev, enum sensor_channel
 {
     enum pm_device_state pm_state;
 
-    (void)pm_device_state_get(p_dev, &pm_state);
+    pm_device_state_get(p_dev, &pm_state);
     if (pm_state != PM_DEVICE_STATE_ACTIVE) {
         return -EIO;
     }

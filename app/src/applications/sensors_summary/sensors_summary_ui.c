@@ -13,7 +13,7 @@ static lv_obj_t *pressure_label;
 static lv_obj_t *humidity_label;
 static lv_obj_t *temp_label;
 static lv_obj_t *rel_height_label;
-static lv_obj_t *gas_label;
+static lv_obj_t *iaq_label;
 static lv_obj_t *light_label;
 
 static void event_set_reference_button(lv_event_t *e)
@@ -64,21 +64,21 @@ static void create_ui(lv_obj_t *parent)
     lv_obj_set_align(temp_label, LV_ALIGN_LEFT_MID);
     lv_label_set_text(temp_label, "Temp:");
 
+    iaq_label = lv_label_create(parent);
+    lv_obj_set_width(iaq_label, LV_SIZE_CONTENT);
+    lv_obj_set_height(iaq_label, LV_SIZE_CONTENT);
+    lv_obj_set_x(iaq_label, 15);
+    lv_obj_set_y(iaq_label, -25);
+    lv_obj_set_align(iaq_label, LV_ALIGN_LEFT_MID);
+    lv_label_set_text(iaq_label, "IAQ:");
+
     rel_height_label = lv_label_create(parent);
     lv_obj_set_width(rel_height_label, LV_SIZE_CONTENT);
     lv_obj_set_height(rel_height_label, LV_SIZE_CONTENT);
     lv_obj_set_x(rel_height_label, 5);
-    lv_obj_set_y(rel_height_label, -25);
+    lv_obj_set_y(rel_height_label, -5);
     lv_obj_set_align(rel_height_label, LV_ALIGN_LEFT_MID);
     lv_label_set_text(rel_height_label, "Rel. height:");
-
-    gas_label = lv_label_create(parent);
-    lv_obj_set_width(gas_label, LV_SIZE_CONTENT);
-    lv_obj_set_height(gas_label, LV_SIZE_CONTENT);
-    lv_obj_set_x(gas_label, 5);
-    lv_obj_set_y(gas_label, -5);
-    lv_obj_set_align(gas_label, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(gas_label, "Gas:");
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(apds9306), okay)
     light_label = lv_label_create(parent);
@@ -87,7 +87,7 @@ static void create_ui(lv_obj_t *parent)
     lv_obj_set_x(light_label, 5);
     lv_obj_set_y(light_label, 15);
     lv_obj_set_align(light_label, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(light_label, "Light: ");
+    lv_label_set_text(light_label, "Light:");
 #endif
 
     lv_obj_add_event_cb(set_ref_btn, event_set_reference_button, LV_EVENT_CLICKED, NULL);
@@ -135,12 +135,12 @@ void sensors_summary_ui_set_rel_height(float rel_height)
     lv_label_set_text_fmt(rel_height_label, "Rel. height:\t%.2f m", rel_height);
 }
 
-void sensors_summary_ui_set_gas(float gas)
-{
-    lv_label_set_text_fmt(gas_label, "Gas:\t%.2f", gas);
-}
-
 void sensors_summary_ui_set_light(float light)
 {
     lv_label_set_text_fmt(light_label, "Light:\t%.2f", light);
+}
+
+void sensors_summary_ui_set_iaq(float iaq)
+{
+    lv_label_set_text_fmt(iaq_label, "IAQ:\t%.2f", iaq);
 }
