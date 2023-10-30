@@ -139,7 +139,7 @@ menu "ZSWatch"
         config EXTERNAL_USE_BOSCH_BSEC
             bool
         prompt "Enable the usage of the external Bosch BSEC 2 library."
-        default y
+        default n
     endmenu
 
     menu "BLE"
