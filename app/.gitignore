@@ -13,4 +13,7 @@ debug
 !.vscode/extensions.json
 !.vscode/*.code-snippets
 
-ext_drivers/
+src/ext_drivers/BME68x-Sensor-API
+src/ext_drivers/BSEC2
+src/ext_drivers/bmi270/BMI270-Sensor-API
+src/ext_drivers/bmp581/BMP5-Sensor-API
