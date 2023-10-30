@@ -191,10 +191,18 @@ menu "ZSWatch"
         endif
     endmenu
 
+    menu "ZSWatch Init Priorities"
+    config ZSW_DRIVER_INIT_PRIORITY
+        int
+        default 85
+    endmenu
+
     menu "Custom drivers"
         rsource "drivers/Kconfig"
     endmenu
 endmenu
+
+
 
 module = APP
 module-str = APP
