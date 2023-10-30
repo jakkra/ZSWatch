@@ -10,5 +10,3 @@ build*
 /tools
 /zephyr
 __pycache__
-
-hardware/
