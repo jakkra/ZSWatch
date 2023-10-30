@@ -22,11 +22,6 @@ static application_t app = {
     .stop_func = iaq_app_stop
 };
 
-static void on_close_event(void)
-{
-    zsw_app_manager_app_close_request(&app);
-}
-
 static void on_timer_event(lv_timer_t *timer)
 {
     struct sensor_value sensor_val;
@@ -50,7 +45,6 @@ static void iaq_app_start(lv_obj_t *root, lv_group_t *group)
 {
     LOG_DBG("Starting UI...");
 
-    //iaq_ui_show(root, on_close_event);
     iaq_app_ui_show(root);
 
     refresh_timer = lv_timer_create(on_timer_event, 10 * 1000UL,  NULL);

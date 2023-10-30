@@ -214,7 +214,6 @@ static void zbus_periodic_fast_callback(const struct zbus_channel *chan)
     float pressure = 0.0;
     float humidity = 0.0;
     float temperature = 0.0;
-    struct sensor_value sensor_val;
     uint8_t buf[CONFIG_BT_L2CAP_TX_MTU];
 
     f_ptr = (float *)buf;

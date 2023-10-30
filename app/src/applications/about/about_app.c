@@ -16,10 +16,6 @@ static application_t app = {
     .stop_func = about_app_stop
 };
 
-static lv_timer_t *counter_timer;
-static int timer_counter;
-static int btn_counter;
-
 static void about_app_start(lv_obj_t *root, lv_group_t *group)
 {
     about_ui_show(root);
