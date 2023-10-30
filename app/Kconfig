@@ -54,7 +54,7 @@ menu "ZSWatch"
             bool
         prompt "Activate the application 'IAQ'"
         depends on EXTERNAL_USE_BOSCH_BSEC && LV_Z_USE_FILESYSTEM
-        default y
+        default n
     endmenu
 
     menu "Watchface"
