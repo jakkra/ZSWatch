@@ -37,7 +37,8 @@ static void sensors_summary_app_start(lv_obj_t *root, lv_group_t *group)
     sensors_summary_ui_show(root, on_close_sensors_summary, on_ref_set);
     on_ref_set(); // Set inital relative pressure
     zsw_pressure_sensor_set_odr(PRESSURE_SENSOR_ODR_160_HZ); // Increase ODR since we want high accuracy here
-    refresh_timer = lv_timer_create(timer_callback, CONFIG_DEFAULT_CONFIGURATION_SENSORS_SUMMARY_REFRESH_INTERVAL_MS,  NULL);
+    refresh_timer = lv_timer_create(timer_callback, CONFIG_DEFAULT_CONFIGURATION_SENSORS_SUMMARY_REFRESH_INTERVAL_MS,
+                                    NULL);
 }
 
 static void sensors_summary_app_stop(void)

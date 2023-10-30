@@ -53,7 +53,8 @@ static void compass_app_stop(void)
 
 static void timer_callback(lv_timer_t *timer)
 {
-    if (is_calibrating && (lv_tick_elaps(cal_start_ms) >= (CONFIG_DEFAULT_CONFIGURATION_COMPASS_CALIBRATION_TIME_S * 1000UL))) {
+    if (is_calibrating &&
+        (lv_tick_elaps(cal_start_ms) >= (CONFIG_DEFAULT_CONFIGURATION_COMPASS_CALIBRATION_TIME_S * 1000UL))) {
         zsw_magnetometer_stop_calibration();
         is_calibrating = false;
         zsw_popup_remove();

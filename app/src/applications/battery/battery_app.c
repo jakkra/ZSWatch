@@ -56,8 +56,10 @@ static void battery_app_start(lv_obj_t *root, lv_group_t *group)
     battery_ui_show(root, get_num_samples() + 1);
     battery_ui_set_current_measurement(batt_mv);
     for (int i = 0; i < CONFIG_DEFAULT_CONFIGURATION_BATTERY_NUM_SAMPLES_MAX; i++) {
-        if (battery_samples[(next_battery_sample_index + i) % CONFIG_DEFAULT_CONFIGURATION_BATTERY_NUM_SAMPLES_MAX].timestamp != 0) {
-            battery_ui_add_measurement(battery_samples[(next_battery_sample_index + i) % CONFIG_DEFAULT_CONFIGURATION_BATTERY_NUM_SAMPLES_MAX].mV);
+        if (battery_samples[(next_battery_sample_index + i) % CONFIG_DEFAULT_CONFIGURATION_BATTERY_NUM_SAMPLES_MAX].timestamp !=
+            0) {
+            battery_ui_add_measurement(battery_samples[(next_battery_sample_index + i) %
+                                                                                       CONFIG_DEFAULT_CONFIGURATION_BATTERY_NUM_SAMPLES_MAX].mV);
         }
     }
 }
@@ -78,7 +80,8 @@ static void zbus_battery_sample_data_callback(const struct zbus_channel *chan)
         previous_sample_index = next_battery_sample_index - 1;
     }
     if (battery_samples[previous_sample_index].timestamp == 0 ||
-        ((k_uptime_get() - battery_samples[previous_sample_index].timestamp) >= (CONFIG_DEFAULT_CONFIGURATION_BATTERY_SAMPLE_INTERVAL_MINUTES * 60 * 1000))) {
+        ((k_uptime_get() - battery_samples[previous_sample_index].timestamp) >=
+         (CONFIG_DEFAULT_CONFIGURATION_BATTERY_SAMPLE_INTERVAL_MINUTES * 60 * 1000))) {
         battery_samples[next_battery_sample_index].mV = event->mV;
         battery_samples[next_battery_sample_index].timestamp = k_uptime_get();
         LOG_DBG("Add %d\n", battery_samples[next_battery_sample_index].mV);
