@@ -34,6 +34,11 @@ menu "ZSWatch"
         prompt "Activate the application 'QR-Code'"
         default y if LV_Z_USE_FILESYSTEM
 
+        config APPLICATIONS_USE_SENSORS_SUMMARY
+            bool
+        prompt "Activate the application 'Sensors Summary'"
+        default y
+
         config APPLICATIONS_USE_X_RAY
             bool
         prompt "Activate the application 'X-Ray'"
@@ -44,6 +49,12 @@ menu "ZSWatch"
         prompt "Activate the application 'ZDS'"
         default y
         select APPLICATIONS_USE_ACCELEROMETER
+
+        config APPLICATIONS_USE_IAQ
+            bool
+        prompt "Activate the application 'IAQ'"
+        depends on EXTERNAL_USE_BOSCH_BSEC && LV_Z_USE_FILESYSTEM
+        default n
     endmenu
 
     menu "Watchface"
@@ -78,59 +89,120 @@ menu "ZSWatch"
         endchoice
     endmenu
 
-    config DISABLE_PAIRING_REQUIRED
-        bool
-    prompt "Disable encryption required for BLE connection (pairing/bonding)"
-    default n
-    help
-        "Disable encryption for BLE connection (pairing/bonding). Used only for debugging purposes."
+    menu "Default configuration"
+        menu "Sensors Summary"
+            depends on APPLICATIONS_USE_SENSORS_SUMMARY
+
+            config DEFAULT_CONFIGURATION_SENSORS_SUMMARY_REFRESH_INTERVAL_MS
+                int
+            prompt "Refresh interval in milliseconds"
+            default 100
+        endmenu
+
+        menu "Compass"
+            depends on APPLICATIONS_USE_COMPASS
+
+            config DEFAULT_CONFIGURATION_COMPASS_REFRESH_INTERVAL_MS
+                int
+            prompt "Refresh interval in milliseconds"
+            default 50
+
+            config DEFAULT_CONFIGURATION_COMPASS_CALIBRATION_TIME_S
+                int
+            prompt "Calibration time in seconds"
+            default 10
+        endmenu
+
+        menu "Battery"
+            depends on APPLICATIONS_USE_BATTERY
+
+            config DEFAULT_CONFIGURATION_BATTERY_NUM_SAMPLES_MAX
+                int
+            prompt "Maximum number of samples"
+            default 100
+
+            config DEFAULT_CONFIGURATION_BATTERY_SAMPLE_INTERVAL_MINUTES
+                int
+            prompt "Battery sample interval in minutes"
+            default 30
+        endmenu
+
+        menu "Power Management"
+            config POWER_MANAGEMENT_IDLE_TIMEOUT_SECONDS
+                int
+            prompt "Idle timeout in seconds"
+            default 20
+        endmenu
+    endmenu
+
+    menu "External"
+        choice EXTERNAL_BOSCH_SENSOR
+            bool
+            prompt "Select the function for the Bosch environment sensor."
+            help
+                You have to disable the BME680 option in the Zephyr configuration to enable the Bosch BSEC option.
+            def_bool EXTERNAL_USE_BOSCH_BME688
+
+        config EXTERNAL_USE_BOSCH_BSEC
+            prompt "Use Bosch BSEC library"
+            depends on !BME680
+            select BME68X_IAQ
+
+        config EXTERNAL_USE_BOSCH_BME688
+            prompt "Use standard BME688 driver"
+        endchoice
+    endmenu
+
+    menu "BLE"
+        config BLE_DISABLE_PAIRING_REQUIRED
+            bool
+        prompt "Disable encryption required for BLE connection (pairing/bonding)"
+        default n
+        help
+            "Disable encryption for BLE connection (pairing/bonding). Used only for debugging purposes."
+    endmenu
     
-    config DISPLAY_FAST_WAKEUP
-        bool
-    prompt "Don't turn off the display power, just put it into sleep mode when going idle."
-    default n
-    help
-        "When screen goes idle, don't turn off the display power, just put it into sleep mode. This will consume more power, but will make the screen wake up faster."
+    menu "SPI RTT Flash Loader"
+        config SPI_FLASH_LOADER
+            bool
+        prompt "Enable SPI flash loader"
+        default y
+        select USE_SEGGER_RTT
+        #select SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL
+        help
+            "Enable SPI flash loader"
 
-endmenu
+        if SPI_FLASH_LOADER
+            config ERASE_PROGRESSIVELY
+                bool
+            depends on SPI_FLASH_LOADER
+            prompt "Erase sectors one by one when writing instead of full partition before starting."
+            default y
+            help
+                "If not writing to the full partition this will be faster"
 
-menu "SPI RTT Flash Loader"
-    config SPI_FLASH_LOADER
-        bool
-    prompt "Enable SPI flash loader"
-    default y
-    select USE_SEGGER_RTT
-    #select SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL
-    help
-        "Enable SPI flash loader"
-if SPI_FLASH_LOADER
-    config ERASE_PROGRESSIVELY
-        bool
-    depends on SPI_FLASH_LOADER
-    prompt "Erase sectors one by one when writing instead of full partition before starting."
-    default y
-    help
-        "If not writing to the full partition this will be faster"
-    
-    config RTT_TRANSFER_CHANNEL
-        int
-    depends on SPI_FLASH_LOADER
-    prompt "The RTT channel to use for transfer of data to and form flash"
-    default 2
-    help
-        "If RTT logging is enabled, channel 0 is used for this, hence avoid 1 in this scenario."
-endif
-endmenu
+            config RTT_TRANSFER_CHANNEL
+                int
+            depends on SPI_FLASH_LOADER
+            prompt "The RTT channel to use for transfer of data to and form flash"
+            default 2
+            help
+                "If RTT logging is enabled, channel 0 is used for this, hence avoid 1 in this scenario."
+        endif
+    endmenu
 
-
-menu "ZSWatch Init Priorities"
+    menu "ZSWatch Init Priorities"
     config ZSW_DRIVER_INIT_PRIORITY
         int
         default 85
+    endmenu
 
+    menu "Custom drivers"
+        rsource "drivers/Kconfig"
+    endmenu
 endmenu
 
-rsource "drivers/Kconfig"
+
 
 module = APP
 module-str = APP

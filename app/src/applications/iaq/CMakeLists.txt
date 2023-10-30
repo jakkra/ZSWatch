@@ -1,0 +1,5 @@
+if(CONFIG_APPLICATIONS_USE_IAQ)
+    FILE(GLOB app_sources *.c)
+    target_sources(app PRIVATE ${app_sources})
+    add_subdirectory(ui_export)
+endif()

@@ -9,9 +9,6 @@
 
 LOG_MODULE_REGISTER(compass_app, LOG_LEVEL_DBG);
 
-#define SENSOR_REFRESH_INTERVAL_MS  50
-#define SENSOR_CALIBRATION_TIME_MS  10000
-
 // Functions needed for all applications
 static void compass_app_start(lv_obj_t *root, lv_group_t *group);
 static void compass_app_stop(void);
@@ -35,7 +32,7 @@ static uint32_t cal_start_ms;
 static void compass_app_start(lv_obj_t *root, lv_group_t *group)
 {
     compass_ui_show(root);
-    refresh_timer = lv_timer_create(timer_callback, SENSOR_REFRESH_INTERVAL_MS,  NULL);
+    refresh_timer = lv_timer_create(timer_callback, CONFIG_DEFAULT_CONFIGURATION_COMPASS_REFRESH_INTERVAL_MS,  NULL);
     zsw_magnetometer_set_enable(true);
     zsw_magnetometer_start_calibration();
     is_calibrating = true;
@@ -56,7 +53,8 @@ static void compass_app_stop(void)
 
 static void timer_callback(lv_timer_t *timer)
 {
-    if (is_calibrating && (lv_tick_elaps(cal_start_ms) >= SENSOR_CALIBRATION_TIME_MS)) {
+    if (is_calibrating &&
+        (lv_tick_elaps(cal_start_ms) >= (CONFIG_DEFAULT_CONFIGURATION_COMPASS_CALIBRATION_TIME_S * 1000UL))) {
         zsw_magnetometer_stop_calibration();
         is_calibrating = false;
         zsw_popup_remove();

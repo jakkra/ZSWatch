@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/zbus/zbus.h>
+#include <zephyr/drivers/sensor.h>
 
 #include "events/periodic_event.h"
 #include "events/zsw_periodic_event.h"
@@ -28,10 +29,11 @@
 #include <ble/zsw_gatt_sensor_server.h>
 
 #include "sensors/zsw_imu.h"
-#include "sensors/zsw_env_sensor.h"
 #include "sensors/zsw_magnetometer.h"
 
 LOG_MODULE_REGISTER(zsw_gatt_sensor_server, LOG_LEVEL_WRN);
+
+static const struct device *const bme688 = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(bme688));
 
 static ssize_t on_read(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf, uint16_t len, uint16_t offset);
 static void on_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value);
@@ -46,7 +48,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
     .disconnected = disconnected,
 };
 
-#if CONFIG_DISABLE_PAIRING_REQUIRED
+#if CONFIG_BLE_DISABLE_PAIRING_REQUIRED
 #define ZSW_GATT_READ_WRITE_PERM    BT_GATT_PERM_READ | BT_GATT_PERM_WRITE
 #else
 #define ZSW_GATT_READ_WRITE_PERM    BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT
@@ -108,23 +110,41 @@ BT_GATT_SERVICE_DEFINE(gyro_service,
 
 static bool notif_enabled;
 
+static void sensor_server_fetch(float *temperature, float *pressure, float *humidity)
+{
+    struct sensor_value sensor_val;
+
+    if (device_is_ready(bme688)) {
+        if (sensor_sample_fetch(bme688) != 0) {
+            return;
+        }
+
+        sensor_channel_get(bme688, SENSOR_CHAN_AMBIENT_TEMP, &sensor_val);
+        *temperature = sensor_value_to_float(&sensor_val);
+
+        sensor_channel_get(bme688, SENSOR_CHAN_HUMIDITY, &sensor_val);
+        *humidity = sensor_value_to_float(&sensor_val);
+
+        sensor_channel_get(bme688, SENSOR_CHAN_PRESS, &sensor_val);
+        *pressure = sensor_value_to_float(&sensor_val);
+    }
+}
+
 static ssize_t on_read(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf, uint16_t len, uint16_t offset)
 {
     int16_t x;
     int16_t y;
     int16_t z;
     int write_len;
-    float temperature;
-    float pressure;
-    float humidity;
+    float temperature = 0.0;
+    float pressure = 0.0;
+    float humidity = 0.0;
     float *f_ptr;
 
     f_ptr = (float *)buf;
     write_len = 0;
 
-    if (zsw_env_sensor_fetch_all(&temperature, &pressure, &humidity) != 0) {
-        return 0;
-    }
+    sensor_server_fetch(&temperature, &pressure, &humidity);
 
     if (bt_gatt_attr_get_handle(attr) == bt_gatt_attr_get_handle(&temp_service.attrs[2])) {
         f_ptr[0] = temperature;
@@ -191,27 +211,26 @@ static void zbus_periodic_fast_callback(const struct zbus_channel *chan)
     int16_t z;
     int write_len;
     float *f_ptr;
-    float pressure;
-    float humidity;
-    float temperature;
+    float pressure = 0.0;
+    float humidity = 0.0;
+    float temperature = 0.0;
     uint8_t buf[CONFIG_BT_L2CAP_TX_MTU];
 
     f_ptr = (float *)buf;
 
     // TODO use bt_gatt_notify_multiple instead of many bt_gatt_notify
-    if (zsw_env_sensor_fetch_all(&temperature, &pressure, &humidity) == 0) {
-        f_ptr[0] = temperature;
-        write_len = sizeof(float);
-        bt_gatt_notify(NULL, &temp_service.attrs[1], &buf, write_len);
+    sensor_server_fetch(&temperature, &pressure, &humidity);
+    f_ptr[0] = temperature;
+    write_len = sizeof(float);
+    bt_gatt_notify(NULL, &temp_service.attrs[1], &buf, write_len);
 
-        f_ptr[0] = humidity;
-        write_len = sizeof(float);
-        bt_gatt_notify(NULL, &humidity_service.attrs[1], &buf, write_len);
+    f_ptr[0] = humidity;
+    write_len = sizeof(float);
+    bt_gatt_notify(NULL, &humidity_service.attrs[1], &buf, write_len);
 
-        f_ptr[0] = pressure;
-        write_len = sizeof(float);
-        bt_gatt_notify(NULL, &pressure_service.attrs[1], &buf, write_len);
-    }
+    f_ptr[0] = pressure;
+    write_len = sizeof(float);
+    bt_gatt_notify(NULL, &pressure_service.attrs[1], &buf, write_len);
 
     if (zsw_imu_fetch_accel(&x, &y, &z) == 0) {
         f_ptr[0] = x;

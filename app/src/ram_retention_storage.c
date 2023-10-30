@@ -159,7 +159,7 @@ bool retained_validate()
      * specification states they are not retained in that situation, and
      * that can also be observed.
      */
-    (void)ram_range_retain(&retained, RETAINED_CHECKED_SIZE, true);
+    ram_range_retain(&retained, RETAINED_CHECKED_SIZE, true);
 
     return valid;
 }

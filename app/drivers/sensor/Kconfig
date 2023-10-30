@@ -1,3 +1,4 @@
 if SENSOR
     rsource "apds9306/Kconfig"
-endif # SENSOR
+	rsource "bme68x_iaq/Kconfig"
+endif
