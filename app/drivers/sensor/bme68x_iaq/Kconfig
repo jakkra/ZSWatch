@@ -5,7 +5,7 @@
 #
 
 config BME68X_IAQ
-	bool "Use Bosch BSEC library"
+	bool "Bosch BSEC library"
 	depends on !BME680
 	depends on SETTINGS && !SETTINGS_NONE
 	depends on I2C
