@@ -15,13 +15,36 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include <zephyr/logging/log.h>
 
-#include <stdbool.h>
+#include "sensors/zsw_light_sensor.h"
 
-int zsw_magnetometer_init(void);
-int zsw_magnetometer_set_enable(bool enabled);
-double zsw_magnetometer_get_heading(void);
-int zsw_magnetometer_get_all(float *x, float *y, float *z);
-int zsw_magnetometer_start_calibration(void);
-int zsw_magnetometer_stop_calibration(void);
+LOG_MODULE_REGISTER(apds9306_light, LOG_LEVEL_DBG);
+
+static const struct device *const apds9306 = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(apds9306));
+
+int zsw_light_sensor_init(void)
+{
+    if (!device_is_ready(apds9306)) {
+        return -ENODEV;
+    }
+
+    return 0;
+}
+
+int zsw_light_sensor_fetch(float *light)
+{
+    struct sensor_value sensor_val;
+
+    if (sensor_sample_fetch(apds9306) != 0) {
+        return -ENODATA;
+    }
+
+    if (sensor_channel_get(apds9306, SENSOR_CHAN_LIGHT, &sensor_val) != 0) {
+        return -ENODATA;
+    }
+
+    *light = sensor_value_to_float(&sensor_val);
+
+    return 0;
+}

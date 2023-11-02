@@ -5,7 +5,7 @@
 
 #include "ui_export/iaq_ui.h"
 #include "managers/zsw_app_manager.h"
-#include "../drivers/sensor/bme68x_iaq/bme68x_iaq.h"
+#include "sensors/zsw_environment_sensor.h"
 
 LV_IMG_DECLARE(move);
 LOG_MODULE_REGISTER(iaq_app, LOG_LEVEL_DBG);
@@ -24,20 +24,14 @@ static application_t app = {
 
 static void on_timer_event(lv_timer_t *timer)
 {
-    struct sensor_value sensor_val;
+    float iaq;
 
-    if (device_is_ready(bme688)) {
+    if (zsw_environment_sensor_fetch_iaq(&iaq)) {
         LOG_DBG("Update UI...");
 
-        if (sensor_sample_fetch(bme688) != 0) {
-            return;
-        }
-
-        sensor_channel_get(bme688, SENSOR_CHAN_IAQ, &sensor_val);
-
-        iaq_app_ui_home_set_iaq_cursor(sensor_val.val1);
-        iaq_app_ui_home_set_iaq_label(sensor_val.val1);
-        iaq_app_ui_home_set_iaq_status(sensor_val.val1);
+        iaq_app_ui_home_set_iaq_cursor(iaq);
+        iaq_app_ui_home_set_iaq_label(iaq);
+        iaq_app_ui_home_set_iaq_status(iaq);
     }
 }
 

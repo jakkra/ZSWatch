@@ -15,8 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ZSW_IMU_H_
-#define ZSW_IMU_H_
+#pragma once
 
 #include <zephyr/drivers/sensor.h>
 #include <bmi270.h>
@@ -97,5 +96,3 @@ int zsw_imu_reset_step_count(void);
 int zsw_imu_feature_enable(zsw_imu_feature_t feature, bool int_en);
 
 int zsw_imu_feature_disable(zsw_imu_feature_t feature);
-
-#endif

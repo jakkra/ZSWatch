@@ -17,11 +17,8 @@
 
 #pragma once
 
-#include <stdbool.h>
+#include <zephyr/drivers/sensor.h>
 
-int zsw_magnetometer_init(void);
-int zsw_magnetometer_set_enable(bool enabled);
-double zsw_magnetometer_get_heading(void);
-int zsw_magnetometer_get_all(float *x, float *y, float *z);
-int zsw_magnetometer_start_calibration(void);
-int zsw_magnetometer_stop_calibration(void);
+int zsw_light_sensor_init(void);
+
+int zsw_light_sensor_fetch(float *light);

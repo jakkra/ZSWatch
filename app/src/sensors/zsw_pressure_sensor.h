@@ -15,8 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ZSW_PRESSURE_SENSOR_H_
-#define ZSW_PRESSURE_SENSOR_H_
+#pragma once
 
 #include <zephyr/drivers/sensor.h>
 #include <bmp5_defs.h>
@@ -69,5 +68,3 @@ int zsw_pressure_sensor_set_odr(uint8_t bmp5_odr);
 int zsw_pressure_sensor_fetch_pressure(float *pressure);
 
 int zsw_pressure_sensor_fetch_temperature(float *temperature);
-
-#endif
