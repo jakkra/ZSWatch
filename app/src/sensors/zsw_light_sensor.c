@@ -18,7 +18,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/zbus/zbus.h>
 
-#include "events/periodic_event.h"
+#include "events/zsw_periodic_event.h"
 #include "events/light_event.h"
 #include "sensors/zsw_light_sensor.h"
 
@@ -35,7 +35,7 @@ static void zbus_periodic_slow_callback(const struct zbus_channel *chan)
 {
     float light;
 
-    if (zsw_light_sensor_fetch_light(&light)) {
+    if (zsw_light_sensor_get_light(&light)) {
         return;
     }
 
@@ -56,7 +56,7 @@ int zsw_light_sensor_init(void)
     return 0;
 }
 
-int zsw_light_sensor_fetch_light(float *light)
+int zsw_light_sensor_get_light(float *light)
 {
     struct sensor_value sensor_val;
 

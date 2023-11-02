@@ -26,7 +26,7 @@ static void on_timer_event(lv_timer_t *timer)
 {
     float iaq;
 
-    if (zsw_environment_sensor_fetch_iaq(&iaq)) {
+    if (zsw_environment_sensor_get_iaq(&iaq)) {
         LOG_DBG("Update UI...");
 
         iaq_app_ui_home_set_iaq_cursor(iaq);

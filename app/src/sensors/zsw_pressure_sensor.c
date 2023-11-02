@@ -36,7 +36,7 @@ static void zbus_periodic_slow_callback(const struct zbus_channel *chan)
     float pressure;
     float temperature;
 
-    if (zsw_pressure_sensor_fetch_pressure(&pressure) || zsw_pressure_sensor_fetch_temperature(&temperature)) {
+    if (zsw_pressure_sensor_get_pressure(&pressure) || zsw_pressure_sensor_get_temperature(&temperature)) {
         return;
     }
 
@@ -71,7 +71,7 @@ int zsw_pressure_sensor_set_odr(uint8_t odr)
     return 0;
 }
 
-int zsw_pressure_sensor_fetch_pressure(float *pressure)
+int zsw_pressure_sensor_get_pressure(float *pressure)
 {
     struct sensor_value sensor_val;
 
@@ -88,7 +88,7 @@ int zsw_pressure_sensor_fetch_pressure(float *pressure)
     return 0;
 }
 
-int zsw_pressure_sensor_fetch_temperature(float *temperature)
+int zsw_pressure_sensor_get_temperature(float *temperature)
 {
     struct sensor_value sensor_val;
 
@@ -96,7 +96,7 @@ int zsw_pressure_sensor_fetch_temperature(float *temperature)
         return -ENODATA;
     }
 
-    if (sensor_channel_get(bmp581, SENSOR_CHAN_AMBIENT_TEMP, &sensor_val) != 0) {
+    if (sensor_channel_get(bmp581, SENSOR_CHAN_DIE_TEMP, &sensor_val) != 0) {
         return -ENODATA;
     }
 

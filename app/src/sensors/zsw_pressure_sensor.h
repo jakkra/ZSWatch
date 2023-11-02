@@ -61,6 +61,6 @@ int zsw_pressure_sensor_init(void);
 
 int zsw_pressure_sensor_set_odr(uint8_t odr);
 
-int zsw_pressure_sensor_fetch_pressure(float *pressure);
+int zsw_pressure_sensor_get_pressure(float *pressure);
 
-int zsw_pressure_sensor_fetch_temperature(float *temperature);
+int zsw_pressure_sensor_get_temperature(float *temperature);

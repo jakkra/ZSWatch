@@ -18,7 +18,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/zbus/zbus.h>
 
-#include "events/periodic_event.h"
+#include "events/zsw_periodic_event.h"
 #include "events/environment_event.h"
 #include "sensors/zsw_environment_sensor.h"
 
@@ -38,12 +38,12 @@ static void zbus_periodic_slow_callback(const struct zbus_channel *chan)
     float humidity;
     float iaq = -1.0;
 
-    if (zsw_environment_sensor_fetch(&temperature, &humidity, &pressure)) {
+    if (zsw_environment_sensor_get(&temperature, &humidity, &pressure)) {
         return;
     }
 
     // NOTE: No error check here, because IAQ is optional.
-    zsw_environment_sensor_fetch_iaq(&iaq);
+    zsw_environment_sensor_get_iaq(&iaq);
 
     struct environment_event evt = {
         .temperature = temperature,
@@ -65,7 +65,7 @@ int zsw_environment_sensor_init(void)
     return 0;
 }
 
-int zsw_environment_sensor_fetch(float *temperature, float *humidity, float *pressure)
+int zsw_environment_sensor_get(float *temperature, float *humidity, float *pressure)
 {
     struct sensor_value sensor_val;
 
@@ -91,7 +91,7 @@ int zsw_environment_sensor_fetch(float *temperature, float *humidity, float *pre
     return 0;
 }
 
-int zsw_environment_sensor_fetch_iaq(float *iaq)
+int zsw_environment_sensor_get_iaq(float *iaq)
 {
     struct sensor_value sensor_val;
 

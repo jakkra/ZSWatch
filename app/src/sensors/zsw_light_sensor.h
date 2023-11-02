@@ -21,4 +21,4 @@
 
 int zsw_light_sensor_init(void);
 
-int zsw_light_sensor_fetch_light(float *light);
+int zsw_light_sensor_get_light(float *light);

@@ -1,5 +1,2 @@
-target_sources(app PRIVATE zsw_imu.c)
-target_sources(app PRIVATE zsw_pressure_sensor.c)
-target_sources(app PRIVATE zsw_magnetometer.c)
-target_sources(app PRIVATE zsw_light_sensor.c)
-target_sources(app PRIVATE zsw_environment_sensor.c)
+FILE(GLOB sensor_sources *.c)
+target_sources(app PRIVATE ${sensor_sources})

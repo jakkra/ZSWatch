@@ -20,8 +20,7 @@
 
 #define DT_DRV_COMPAT                   bosch_bmp581
 
-LOG_MODULE_REGISTER(bmp581, LOG_LEVEL_DBG);
-//LOG_MODULE_REGISTER(bmp581, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(bmp581, CONFIG_SENSOR_LOG_LEVEL);
 
 #if(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0)
 #warning "bmp581 driver enabled without any devices"
@@ -39,11 +38,6 @@ struct bmp581_data {
 struct bmp581_config {
     struct i2c_dt_spec i2c;
 };
-
-struct sensor_worker_item_t {
-    struct k_work work;
-    const struct device *dev;
-} bmp581_worker_item;
 
 static struct bmp5_osr_odr_press_config osr_odr_press_cfg;
 static struct bmp581_data last_measurement;
@@ -91,30 +85,24 @@ static void bmp5_delay_us(uint32_t period, void *p_intf)
     k_usleep(period);
 }
 
-/** @brief
+/** @brief  
 */
-static int8_t bmp5_set_config(struct bmp5_osr_odr_press_config *osr_odr_press_cfg, struct bmp5_dev *dev)
+static int8_t bmp5_set_config(struct bmp5_osr_odr_press_config *p_osr_odr_press_cfg, struct bmp5_dev *p_dev)
 {
     int8_t rslt;
     struct bmp5_iir_config set_iir_cfg;
 
-    rslt = bmp5_set_power_mode(BMP5_POWERMODE_STANDBY, dev);
+    rslt = bmp5_set_power_mode(BMP5_POWERMODE_STANDBY, p_dev);
     if (rslt == BMP5_OK) {
-        /* Get default odr */
-        rslt = bmp5_get_osr_odr_press_config(osr_odr_press_cfg, dev);
+        rslt = bmp5_get_osr_odr_press_config(p_osr_odr_press_cfg, p_dev);
 
         if (rslt == BMP5_OK) {
-            /* Set ODR as 50Hz */
-            osr_odr_press_cfg->odr = BMP5_ODR_0_250_HZ;
+            p_osr_odr_press_cfg->odr = BMP5_ODR_0_250_HZ;
+            p_osr_odr_press_cfg->press_en = BMP5_ENABLE;
+            p_osr_odr_press_cfg->osr_t = BMP5_OVERSAMPLING_64X;
+            p_osr_odr_press_cfg->osr_p = BMP5_OVERSAMPLING_4X;
 
-            /* Enable pressure */
-            osr_odr_press_cfg->press_en = BMP5_ENABLE;
-
-            /* Set Over-sampling rate with respect to odr */
-            osr_odr_press_cfg->osr_t = BMP5_OVERSAMPLING_64X;
-            osr_odr_press_cfg->osr_p = BMP5_OVERSAMPLING_4X;
-
-            rslt = bmp5_set_osr_odr_press_config(osr_odr_press_cfg, dev);
+            rslt = bmp5_set_osr_odr_press_config(p_osr_odr_press_cfg, p_dev);
         }
 
         if (rslt == BMP5_OK) {
@@ -123,19 +111,18 @@ static int8_t bmp5_set_config(struct bmp5_osr_odr_press_config *osr_odr_press_cf
             set_iir_cfg.shdw_set_iir_t = BMP5_ENABLE;
             set_iir_cfg.shdw_set_iir_p = BMP5_ENABLE;
 
-            rslt = bmp5_set_iir_config(&set_iir_cfg, dev);
+            rslt = bmp5_set_iir_config(&set_iir_cfg, p_dev);
         }
 
-        /* Set powermode as normal */
-        rslt = bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, dev);
+        rslt = bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, p_dev);
     }
 
     return rslt;
 }
 
-/** @brief
- *  @param
- *  @return
+/** @brief  
+ *  @param  
+ *  @return 
 */
 static int bmp581_attr_set(const struct device *p_dev, enum sensor_channel channel, enum sensor_attribute attribute,
                              const struct sensor_value *p_value)
@@ -144,7 +131,7 @@ static int bmp581_attr_set(const struct device *p_dev, enum sensor_channel chann
 
     __ASSERT_NO_MSG(p_value != NULL);
 
-    if ((channel != SENSOR_CHAN_AMBIENT_TEMP) && (channel != SENSOR_CHAN_PRESS)) {
+    if ((channel != SENSOR_CHAN_DIE_TEMP) && (channel != SENSOR_CHAN_PRESS)) {
         return -ENOTSUP;
     }
 
@@ -179,11 +166,10 @@ static int bmp581_attr_get(const struct device *p_dev, enum sensor_channel chann
                              struct sensor_value *p_value)
 {
     int8_t rslt;
-    const struct bmp581_config *config = p_dev->config;
 
     __ASSERT_NO_MSG(p_value != NULL);
 
-    if ((channel != SENSOR_CHAN_ALL) && (channel != SENSOR_CHAN_AMBIENT_TEMP) && (channel != SENSOR_CHAN_PRESS)) {
+    if ((channel != SENSOR_CHAN_ALL) && (channel != SENSOR_CHAN_DIE_TEMP) && (channel != SENSOR_CHAN_PRESS)) {
         return -ENOTSUP;
     }
 
@@ -236,13 +222,11 @@ static int bmp581_sample_fetch(const struct device *p_dev, enum sensor_channel c
         return -EIO;
     }
 
-    if ((channel != SENSOR_CHAN_ALL) && (channel != SENSOR_CHAN_AMBIENT_TEMP) && (channel != SENSOR_CHAN_PRESS)) {
+    if ((channel != SENSOR_CHAN_ALL) && (channel != SENSOR_CHAN_DIE_TEMP) && (channel != SENSOR_CHAN_PRESS)) {
         return -ENOTSUP;
     }
 
-    bmp581_worker_item.dev = p_dev;
-    bmp581_worker_item.work = bmp581_work;
-    k_work_submit(&bmp581_worker_item.work);
+    k_work_submit(&bmp581_work);
 
     return 0;
 }
@@ -253,7 +237,7 @@ static int bmp581_sample_fetch(const struct device *p_dev, enum sensor_channel c
 */
 static int bmp581_channel_get(const struct device *p_dev, enum sensor_channel channel, struct sensor_value *p_value)
 {
-    if (channel == SENSOR_CHAN_AMBIENT_TEMP) {
+    if (channel == SENSOR_CHAN_DIE_TEMP) {
         p_value->val1 = last_measurement.temperature;
         p_value->val2 = 0;
     }
