@@ -14,3 +14,4 @@ debug
 !.vscode/*.code-snippets
 
 src/ext_drivers/BSEC2
+src/ext_drivers/BMP5-Sensor-API

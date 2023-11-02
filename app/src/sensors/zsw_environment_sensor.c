@@ -16,18 +16,51 @@
  */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/zbus/zbus.h>
 
+#include "events/periodic_event.h"
+#include "events/environment_event.h"
 #include "sensors/zsw_environment_sensor.h"
 
 LOG_MODULE_REGISTER(bme688_environment, LOG_LEVEL_DBG);
 
+static void zbus_periodic_slow_callback(const struct zbus_channel *chan);
+
+ZBUS_CHAN_DECLARE(environment_data_chan);
+ZBUS_CHAN_DECLARE(periodic_event_slow_chan);
+ZBUS_LISTENER_DEFINE(zsw_environment_sensor_lis, zbus_periodic_slow_callback);
 static const struct device *const bme688 = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(bme688));
+
+static void zbus_periodic_slow_callback(const struct zbus_channel *chan)
+{
+    float temperature;
+    float pressure;
+    float humidity;
+    float iaq = -1.0;
+
+    if (zsw_environment_sensor_fetch(&temperature, &humidity, &pressure)) {
+        return;
+    }
+
+    // NOTE: No error check here, because IAQ is optional.
+    zsw_environment_sensor_fetch_iaq(&iaq);
+
+    struct environment_event evt = {
+        .temperature = temperature,
+        .humidity = humidity,
+        .pressure = pressure,
+        .iaq = iaq
+    };
+    zbus_chan_pub(&environment_data_chan, &evt, K_MSEC(250));
+}
 
 int zsw_environment_sensor_init(void)
 {
     if (!device_is_ready(bme688)) {
         return -ENODEV;
     }
+
+    zsw_periodic_chan_add_obs(&periodic_event_slow_chan, &zsw_environment_sensor_lis);
 
     return 0;
 }

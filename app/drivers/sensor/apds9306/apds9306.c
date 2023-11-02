@@ -45,10 +45,12 @@
 #define APDS9306_BIT_POWER_ON_STATUS        BIT(0x05)
 
 #ifdef CONFIG_APDS9306_IS_APDS9306_065
-#define APDS_9306_CHIP_ID               0xB3
+#define APDS_9306_CHIP_ID                   0xB3
 #else
-#define APDS_9306_CHIP_ID               0xB1
+#define APDS_9306_CHIP_ID                   0xB1
 #endif
+
+#define DT_DRV_COMPAT                       avago_apds9306
 
 LOG_MODULE_REGISTER(apds9306, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -73,7 +75,7 @@ struct sensor_worker_item_t {
     const struct device *dev;
 } apds9306_worker_item;
 
-uint32_t apds9306_last_measurement;
+static struct apds9306_data last_measurement;
 
 /** @brief          Get the conversion time for a given sensor resolution.
  *  @param value    Sensor resolution
@@ -163,6 +165,48 @@ static int apds9306_attr_set(const struct device *p_dev, enum sensor_channel cha
     return 0;
 }
 
+/** @brief
+ *  @param
+ *  @return
+*/
+static int apds9306_attr_get(const struct device *p_dev, enum sensor_channel channel, enum sensor_attribute attribute,
+                             struct sensor_value *p_value)
+{
+    uint8_t mask;
+    uint8_t value;
+    uint8_t reg;
+    const struct apds9306_config *config = p_dev->config;
+
+    __ASSERT_NO_MSG(p_value != NULL);
+
+    if (channel != SENSOR_CHAN_LIGHT) {
+        return -ENOTSUP;
+    }
+
+    if (attribute == SENSOR_ATTR_SAMPLING_FREQUENCY) {
+        reg = APDS9306_REGISTER_ALS_MEAS_RATE;
+        mask = 0x00;
+    } else if (attribute == SENSOR_APDS9306_ATTR_GAIN) {
+        reg = APDS9306_REGISTER_ALS_GAIN;
+        mask = 0x00;
+    } else if (attribute == SENSOR_APDS9306_ATTR_RESOLUTION) {
+        reg = APDS9306_REGISTER_ALS_MEAS_RATE;
+        mask = 0x04;
+    } else {
+        return -ENOTSUP;
+    }
+
+    if (i2c_reg_read_byte_dt(&config->i2c, reg, &value)) {
+        LOG_ERR("Failed to read sensor attribute!");
+        return -EIO;
+    }
+
+    p_value->val1 = (value >> mask) & 0x07;
+    p_value->val2 = 0;
+
+    return 0;
+}
+
 /** @brief          Sensor worker handler.
  *  @param p_work   Pointer to worker object
 */
@@ -225,55 +269,11 @@ static void apds9306_worker(struct k_work *p_work)
         return;
     }
 
-    apds9306_last_measurement = sys_get_le24(buffer);
+    last_measurement.light = sys_get_le24(buffer);
 
-    LOG_DBG("Last measurement: %u", apds9306_last_measurement);
+    LOG_DBG("Last measurement: %u", last_measurement.light);
 
     return;
-}
-
-/** @brief
- *  @param
- *  @return
-*/
-static int apds9306_attr_get(const struct device *p_dev, enum sensor_channel channel, enum sensor_attribute attribute,
-                             struct sensor_value *p_value)
-{
-    uint8_t mask;
-    uint8_t value;
-    uint8_t reg;
-    const struct apds9306_config *config = p_dev->config;
-
-    __ASSERT_NO_MSG(p_value != NULL);
-
-    if (channel != SENSOR_CHAN_LIGHT) {
-        return -ENOTSUP;
-    }
-
-    if (attribute == SENSOR_ATTR_SAMPLING_FREQUENCY) {
-        reg = APDS9306_REGISTER_ALS_MEAS_RATE;
-        mask = 0x00;
-    } else if (attribute == SENSOR_APDS9306_ATTR_GAIN) {
-        reg = APDS9306_REGISTER_ALS_GAIN;
-        mask = 0x00;
-    } else if (attribute == SENSOR_APDS9306_ATTR_RESOLUTION) {
-        reg = APDS9306_REGISTER_ALS_MEAS_RATE;
-        mask = 0x04;
-    } else {
-        return -ENOTSUP;
-    }
-
-    if (i2c_reg_read_byte_dt(&config->i2c, reg, &value)) {
-        LOG_ERR("Failed to read sensor attribute!");
-        return -EIO;
-    }
-
-    LOG_DBG("Attribute value: %u", value);
-
-    p_value->val1 = (value >> mask) & 0x07;
-    p_value->val2 = 0;
-
-    return 0;
 }
 
 /** @brief
@@ -312,7 +312,7 @@ static int apds9306_channel_get(const struct device *p_dev, enum sensor_channel 
 
     // TODO: Conversion to lux is missing here
 
-    p_value->val1 = apds9306_last_measurement;
+    p_value->val1 = last_measurement.light;
     p_value->val2 = 0;
 
     return 0;

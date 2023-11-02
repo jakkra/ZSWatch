@@ -19,8 +19,8 @@ project(ZSWatchFW)
 
 add_subdirectory(drivers)
 add_subdirectory(src/applications)
+add_subdirectory(src/sensors)
 add_subdirectory(src/ext_drivers/bmi270)
-add_subdirectory(src/ext_drivers/bmp581)
 
 include_directories(src/)
 include_directories(src/ui)
@@ -47,12 +47,6 @@ target_sources(app PRIVATE src/ble/ble_aoa.c)
 target_sources(app PRIVATE src/ble/ble_comm.c)
 target_sources(app PRIVATE src/ble/ble_transport.c)
 target_sources(app PRIVATE src/ble/zsw_gatt_sensor_server.c)
-
-target_sources(app PRIVATE src/sensors/zsw_imu.c)
-target_sources(app PRIVATE src/sensors/zsw_pressure_sensor.c)
-target_sources(app PRIVATE src/sensors/zsw_magnetometer.c)
-target_sources(app PRIVATE src/sensors/zsw_light_sensor.c)
-target_sources(app PRIVATE src/sensors/zsw_environment_sensor.c)
 
 target_sources(app PRIVATE src/ui/notification/zsw_popup_notifcation.c)
 target_sources(app PRIVATE src/ui/popup/zsw_popup_window.c)

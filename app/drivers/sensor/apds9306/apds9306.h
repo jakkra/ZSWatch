@@ -10,8 +10,6 @@
 
 #include <zephyr/drivers/sensor.h>
 
-#define DT_DRV_COMPAT                   avago_apds9306
-
 /** @brief Attribute to set the gain range.
 */
 #define SENSOR_APDS9306_ATTR_GAIN       SENSOR_ATTR_PRIV_START + 1

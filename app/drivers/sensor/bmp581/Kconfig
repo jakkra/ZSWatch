@@ -1,0 +1,16 @@
+# APDS-9306 light sensor configuration options.
+
+# Copyright (c) 2023, Daniel Kampert
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMP581
+    bool "BMP581 Sensor"
+    default y
+    select I2C
+    help
+        Enable the driver for the BMP581 pressure sensor.
+
+if BMP581
+
+endif

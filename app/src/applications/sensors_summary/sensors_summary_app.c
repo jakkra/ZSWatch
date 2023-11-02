@@ -35,8 +35,12 @@ static float relative_pressure;
 static void sensors_summary_app_start(lv_obj_t *root, lv_group_t *group)
 {
     sensors_summary_ui_show(root, on_close_sensors_summary, on_ref_set);
-    on_ref_set(); // Set inital relative pressure
-    zsw_pressure_sensor_set_odr(PRESSURE_SENSOR_ODR_160_HZ); // Increase ODR since we want high accuracy here
+
+     // Set inital relative pressure.
+    on_ref_set();
+
+    // Increase ODR since we want high accuracy here.
+    zsw_pressure_sensor_set_odr(PRESSURE_SENSOR_ODR_160_HZ);
     refresh_timer = lv_timer_create(timer_callback, CONFIG_DEFAULT_CONFIGURATION_SENSORS_SUMMARY_REFRESH_INTERVAL_MS,
                                     NULL);
 }
@@ -67,7 +71,7 @@ static void timer_callback(lv_timer_t *timer)
     zsw_environment_sensor_fetch(&temperature, &humidity, &pressure);
     zsw_environment_sensor_fetch_iaq(&iaq);
     zsw_pressure_sensor_fetch_pressure(&pressure);
-    zsw_light_sensor_fetch(&light);
+    zsw_light_sensor_fetch_light(&light);
 
     sensors_summary_ui_set_pressure(pressure);
     sensors_summary_ui_set_temp(temperature);

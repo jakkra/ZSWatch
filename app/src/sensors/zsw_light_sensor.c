@@ -16,12 +16,34 @@
  */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/zbus/zbus.h>
 
+#include "events/periodic_event.h"
+#include "events/light_event.h"
 #include "sensors/zsw_light_sensor.h"
 
 LOG_MODULE_REGISTER(apds9306_light, LOG_LEVEL_DBG);
 
+static void zbus_periodic_slow_callback(const struct zbus_channel *chan);
+
+ZBUS_CHAN_DECLARE(light_data_chan);
+ZBUS_CHAN_DECLARE(periodic_event_slow_chan);
+ZBUS_LISTENER_DEFINE(zsw_light_sensor_lis, zbus_periodic_slow_callback);
 static const struct device *const apds9306 = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(apds9306));
+
+static void zbus_periodic_slow_callback(const struct zbus_channel *chan)
+{
+    float light;
+
+    if (zsw_light_sensor_fetch_light(&light)) {
+        return;
+    }
+
+    struct light_event evt = {
+        .light = light,
+    };
+    zbus_chan_pub(&light_data_chan, &evt, K_MSEC(250));
+}
 
 int zsw_light_sensor_init(void)
 {
@@ -29,10 +51,12 @@ int zsw_light_sensor_init(void)
         return -ENODEV;
     }
 
+    zsw_periodic_chan_add_obs(&periodic_event_slow_chan, &zsw_light_sensor_lis);
+
     return 0;
 }
 
-int zsw_light_sensor_fetch(float *light)
+int zsw_light_sensor_fetch_light(float *light)
 {
     struct sensor_value sensor_val;
 

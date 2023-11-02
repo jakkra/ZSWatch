@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include <zephyr/zbus/zbus.h>
 #include <events/periodic_event.h>
 
