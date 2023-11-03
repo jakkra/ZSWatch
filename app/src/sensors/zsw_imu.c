@@ -600,10 +600,10 @@ static int8_t configure_axis_remapping(struct bmi2_dev *bmi2_dev)
 
     // In ZSWatch the PCB is mounted upsidedown in enclosure, hence we need
     // to remap axises. BMI270 is rotated 180 degrees, hence below config.
-#if ZSWATCH_REV == 1 || ZSWATCH_REV == 2
+#if (CONFIG_ZSWATCH_PCB_REV == 1) || (CONFIG_ZSWATCH_PCB_REV == 2)
     remapped_axis.x = BMI2_NEG_X;
     remapped_axis.y = BMI2_NEG_Y;
-#elif ZSWATCH_REV >= 3
+#elif (CONFIG_ZSWATCH_PCB_REV >= 3)
     remapped_axis.x = BMI2_NEG_Y;
     remapped_axis.y = BMI2_X;
 #else

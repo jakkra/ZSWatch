@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.20.0)
 string(REGEX MATCH "zswatch_nrf5340_cpuapp(_ns)?@([0-9]+)$" ZSWATCH_BOARD "${BOARD}")
 if(ZSWATCH_BOARD)
     set(ZSWATCH_REV ${CMAKE_MATCH_2})
-    add_definitions(-DZSWATCH_REV=${ZSWATCH_REV})
     # Rev 3 and later will handle this later in a different way.
     if(${ZSWATCH_REV} EQUAL 2)
         set(DFU_BUILD true)
@@ -25,6 +24,8 @@ add_subdirectory(src/managers)
 add_subdirectory(src/drivers)
 add_subdirectory(src/ble)
 add_subdirectory(src/battery)
+add_subdirectory(src/images)
+add_subdirectory(src/images/fonts)
 add_subdirectory(src/ext_drivers/bmi270)
 
 include_directories(src/)
@@ -47,12 +48,6 @@ target_sources_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS app PRIVATE src/filesystem/zsw_
 if (DFU_BUILD)
     target_sources(app PRIVATE src/dfu.c)
 endif()
-
-FILE(GLOB img_sources src/images/*.c)
-target_sources(app PRIVATE ${img_sources})
-
-FILE(GLOB font_sources src/images/fonts/*.c)
-target_sources(app PRIVATE ${font_sources})
 
 zephyr_sources_ifdef(CONFIG_WATCHFACE_ANALOG src/ui/watchfaces/zsw_watchface_analog_ui.c)
 zephyr_sources_ifdef(CONFIG_WATCHFACE_DIGITAL src/ui/watchfaces/zsw_watchface_digital_ui.c)

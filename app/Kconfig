@@ -3,6 +3,11 @@ menu "Zephyr Kernel"
 endmenu
 
 menu "ZSWatch"
+    config ZSWATCH_PCB_REV
+            int
+    prompt "ZSWatch PCB revision"
+    default 3
+
     menu "Applications"
         config APPLICATIONS_USE_2048
             bool
@@ -201,8 +206,6 @@ menu "ZSWatch"
         rsource "drivers/Kconfig"
     endmenu
 endmenu
-
-
 
 module = APP
 module-str = APP
