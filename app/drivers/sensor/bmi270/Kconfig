@@ -1,0 +1,17 @@
+# APDS-9306 light sensor configuration options.
+
+# Copyright (c) 2023, Daniel Kampert
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMI270
+    bool "BMI270 Sensor"
+    default y
+    select I2C
+    help
+        Enable the driver for the BMI270 IMU.
+
+if BMI270
+    config BMI270_TRIGGER
+        bool
+endif

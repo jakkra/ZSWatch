@@ -19,7 +19,7 @@ extern "C" {
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 
-#include "BMI270-Sensor-API/bmi2.h"
+#include "bmi2.h"
 #include "bmi270.h"
 
 #define CONFIG_BMI270_TRIGGER

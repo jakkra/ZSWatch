@@ -4,7 +4,7 @@ endmenu
 
 menu "ZSWatch"
     config ZSWATCH_PCB_REV
-            int
+        int
     prompt "ZSWatch PCB revision"
     default 3
 

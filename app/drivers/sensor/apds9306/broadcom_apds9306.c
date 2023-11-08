@@ -15,7 +15,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "apds9306.h"
+#include "broadcom_apds9306.h"
 
 #define APDS9306_REGISTER_MAIN_CTRL         0x00
 #define APDS9306_REGISTER_ALS_MEAS_RATE     0x04
@@ -52,7 +52,7 @@
 
 #define DT_DRV_COMPAT                       avago_apds9306
 
-LOG_MODULE_REGISTER(apds9306, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(broadcom_apds9306, CONFIG_SENSOR_LOG_LEVEL);
 
 #if(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0)
 #warning "apds9306 driver enabled without any devices"
@@ -70,7 +70,7 @@ struct apds9306_config {
     struct i2c_dt_spec i2c;
 };
 
-struct sensor_worker_item_t {
+struct  apds9306_worker_item_t {
     struct k_work work;
     const struct device *dev;
 } apds9306_worker_item;
@@ -218,7 +218,7 @@ static void apds9306_worker(struct k_work *p_work)
     uint8_t resolution;
     uint16_t delay;
     uint32_t now;
-    struct sensor_worker_item_t *item = CONTAINER_OF(p_work, struct sensor_worker_item_t, work);
+    struct  apds9306_worker_item_t *item = CONTAINER_OF(p_work, struct  apds9306_worker_item_t, work);
     const struct apds9306_config *config = item->dev->config;
 
     LOG_DBG("Start a new measurement...");

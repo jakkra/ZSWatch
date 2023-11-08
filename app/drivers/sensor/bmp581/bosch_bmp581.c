@@ -16,11 +16,11 @@
 #include <zephyr/sys/byteorder.h>
 
 #include "bmp5.h"
-#include "bmp581.h"
+#include "bosch_bmp581.h"
 
 #define DT_DRV_COMPAT                   bosch_bmp581
 
-LOG_MODULE_REGISTER(bmp581, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(bosch_bmp581, CONFIG_SENSOR_LOG_LEVEL);
 
 #if(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0)
 #warning "bmp581 driver enabled without any devices"
@@ -265,13 +265,13 @@ static const struct sensor_driver_api bmp581_driver_api = {
 */
 static int bmp581_init(const struct device *p_dev)
 {
-    int8_t result;
+    int8_t rslt;
     const struct bmp581_config *config = p_dev->config;
 
     LOG_DBG("Start to initialize BMP581...");
 
     if (!device_is_ready(config->i2c.bus)) {
-        LOG_ERR("I2C bus device not ready");
+        LOG_ERR("I2C bus device not ready!");
         return -ENODEV;
     }
 
@@ -281,16 +281,16 @@ static int bmp581_init(const struct device *p_dev)
     bmp5_dev.intf = BMP5_I2C_INTF;
     bmp5_dev.delay_us = bmp5_delay_us;
 
-    result = bmp5_init(&bmp5_dev);
-    if (result == BMP5_E_POWER_UP) {
+    rslt = bmp5_init(&bmp5_dev);
+    if (rslt == BMP5_E_POWER_UP) {
         // Fails when expecting BMP5_INT_ASSERTED_POR_SOFTRESET_COMPLETE
         // being set, but it's not. Can't see any actual reset being made.
         // For now ignore, works anyway.
         // Do a soft reset just in case.
-        result = bmp5_soft_reset(&bmp5_dev);
+        rslt = bmp5_soft_reset(&bmp5_dev);
     }
 
-    if (result == BMP5_OK) {
+    if (rslt == BMP5_OK) {
         if(bmp5_set_config(&osr_odr_press_cfg, &bmp5_dev) != BMP5_OK) {
             return -EIO;
         }

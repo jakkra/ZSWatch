@@ -99,7 +99,7 @@ int zsw_environment_sensor_get_iaq(float *iaq)
         return -ENODATA;
     }
 
-    if (sensor_channel_get(bme688, (SENSOR_CHAN_PRIV_START + 1), &sensor_val) != 0) {
+    if (sensor_channel_get(bme688, SENSOR_CHAN_VOC, &sensor_val) != 0) {
         return -ENODATA;
     }
 

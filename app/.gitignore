@@ -15,3 +15,4 @@ debug
 
 src/ext_drivers/BSEC2
 src/ext_drivers/BMP5-Sensor-API
+src/ext_drivers/BMI270-Sensor-API
