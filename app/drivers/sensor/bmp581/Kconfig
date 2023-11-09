@@ -1,4 +1,4 @@
-# APDS-9306 light sensor configuration options.
+# BMP581 pressure sensor configuration options.
 
 # Copyright (c) 2023, Daniel Kampert
 #
@@ -6,6 +6,7 @@
 
 menuconfig BMP581
     bool "BMP581 Sensor"
+    depends on DT_HAS_BOSCH_BMP581_ENABLED
     default y
     select I2C
     help

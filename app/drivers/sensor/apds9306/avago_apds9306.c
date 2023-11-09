@@ -1,4 +1,4 @@
-/* apds9306.c - Driver for Avago APDS9306 light sensor. */
+/* avago_apds9306.c - Driver for Broadcom / Avago APDS9306 light sensor. */
 
 /*
  * Copyright (c) 2023, Daniel Kampert
@@ -10,12 +10,13 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "broadcom_apds9306.h"
+#include "avago_apds9306.h"
 
 #define APDS9306_REGISTER_MAIN_CTRL         0x00
 #define APDS9306_REGISTER_ALS_MEAS_RATE     0x04
@@ -68,6 +69,9 @@ struct apds9306_data {
 
 struct apds9306_config {
     struct i2c_dt_spec i2c;
+    uint8_t resolution;
+    uint8_t frequency;
+    uint8_t gain;
 };
 
 struct  apds9306_worker_item_t {
@@ -375,17 +379,30 @@ static const struct sensor_driver_api apds9306_driver_api = {
 */
 static int apds9306_init(const struct device *p_dev)
 {
+    uint8_t value;
     const struct apds9306_config *config = p_dev->config;
 
     LOG_DBG("Start to initialize APDS9306...");
 
-    if (device_is_ready(config->i2c.bus) == false) {
+    if (!device_is_ready(config->i2c.bus)) {
         LOG_ERR("Bus device is not ready");
         return -EINVAL;
     }
 
     if (apds9306_sensor_setup(p_dev) < 0) {
         LOG_ERR("Failed to setup device!");
+        return -EIO;
+    }
+
+    value = ((config->resolution & 0x07) << 4) | (config->frequency & 0x0F);
+    LOG_DBG("Write configuration 0x%x to register 0x%x", value, APDS9306_REGISTER_ALS_MEAS_RATE);
+    if (i2c_reg_write_byte_dt(&config->i2c, APDS9306_REGISTER_ALS_MEAS_RATE, value)) {
+        return -EIO;
+    }
+
+    value = config->gain;
+    LOG_DBG("Write configuration 0x%x to register 0x%x", value, APDS9306_REGISTER_ALS_GAIN);
+    if (i2c_reg_write_byte_dt(&config->i2c, APDS9306_REGISTER_ALS_GAIN, value)) {
         return -EIO;
     }
 
@@ -418,6 +435,9 @@ static int apds9306_pm_action(const struct device *p_dev, enum pm_device_action 
                                                                         \
     static const struct apds9306_config apds9306_config_##inst = {      \
         .i2c = I2C_DT_SPEC_INST_GET(inst),                              \
+        .resolution = DT_INST_PROP(inst, resolution),					\
+        .gain = DT_INST_PROP(inst, gain),					            \
+        .frequency = DT_INST_PROP(inst, frequency),					    \
     };                                                                  \
                                                                         \
     PM_DEVICE_DT_INST_DEFINE(inst, apds9306_pm_action);                 \

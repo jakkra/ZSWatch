@@ -26,7 +26,6 @@ add_subdirectory(src/ble)
 add_subdirectory(src/battery)
 add_subdirectory(src/images)
 add_subdirectory(src/images/fonts)
-add_subdirectory(src/ext_drivers/bmi270)
 
 include_directories(src/)
 include_directories(src/ui)
@@ -45,7 +44,7 @@ target_sources_ifdef(CONFIG_SPI_FLASH_LOADER app PRIVATE src/filesystem/zsw_rtt_
 target_sources_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS app PRIVATE src/filesystem/zsw_filesystem.c)
 target_sources_ifdef(CONFIG_FILE_SYSTEM_LITTLEFS app PRIVATE src/filesystem/zsw_lvgl_spi_decoder.c)
 
-if (DFU_BUILD)
+if(DFU_BUILD)
     target_sources(app PRIVATE src/dfu.c)
 endif()
 

@@ -1,13 +1,19 @@
-#include <zephyr/logging/log.h>
+/* bosch_bmi270_config.c- Driver for Bosch BMI270 IMU. */
 
-#include "bmi2.h"
-#include "bmi270.h"
+/*
+ * Copyright (c) 2023, Daniel Kampert
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/sensor.h>
+
 #include "bosch_bmi270_config.h"
 
-//LOG_MODULE_REGISTER(bmi270_config, CONFIG_SENSOR_LOG_LEVEL);
-LOG_MODULE_REGISTER(bmi270_config, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(bmi270_config, CONFIG_SENSOR_LOG_LEVEL);
 
-typedef void(*feature_config_func)(struct bmi2_sens_config *p_config);
+typedef void(*feature_config_func)(struct bmi2_sens_config *p_config, struct bmi270_data *p_data);
 
 typedef struct bosch_bmi270_feature_config_set_t {
     uint8_t                 sensor_id;
@@ -16,13 +22,13 @@ typedef struct bosch_bmi270_feature_config_set_t {
     bool                    skip_enable;
 } bosch_bmi270_feature_config_set_t;
 
-static void bmi2_configure_accel(struct bmi2_sens_config *p_config);
-static void bmi2_configure_step_counter(struct bmi2_sens_config *p_config);
-static void bmi2_configure_gyro(struct bmi2_sens_config *p_config);
-static void bmi2_configure_anymotion(struct bmi2_sens_config *p_config);
-static void bmi2_configure_gesture_detect(struct bmi2_sens_config *p_config);
-static void bmi2_configure_wrist_wakeup(struct bmi2_sens_config *p_config);
-static void bmi2_configure_no_motion(struct bmi2_sens_config *p_config);
+static void bmi2_configure_accel(struct bmi2_sens_config *p_config, struct bmi270_data *p_data);
+static void bmi2_configure_step_counter(struct bmi2_sens_config *p_config, struct bmi270_data *p_data);
+static void bmi2_configure_gyro(struct bmi2_sens_config *p_config, struct bmi270_data *p_data);
+static void bmi2_configure_anymotion(struct bmi2_sens_config *p_config, struct bmi270_data *p_data);
+static void bmi2_configure_gesture_detect(struct bmi2_sens_config *p_config, struct bmi270_data *p_data);
+static void bmi2_configure_wrist_wakeup(struct bmi2_sens_config *p_config, struct bmi270_data *p_data);
+static void bmi2_configure_no_motion(struct bmi2_sens_config *p_config, struct bmi270_data *p_data);
 
 static bosch_bmi270_feature_config_set_t bmi270_enabled_features[] = {
     { .sensor_id = BMI2_ACCEL, .cfg_func = bmi2_configure_accel},
@@ -58,12 +64,10 @@ static bool bmi2_is_sensor_feature(uint8_t sensor_id)
     }
 }
 
-int8_t bmi2_configure_enable_all(struct bmi2_dev *p_bmi2_dev)
+int8_t bmi2_configure_enable_all(struct bmi2_dev *p_bmi2, struct bmi270_data *p_data)
 {
-    int8_t result;
-
-    // INT setup
-    struct bmi2_int_pin_config int_cfg;
+    uint8_t num_features;
+    uint8_t num_enabled_features;
 
     // Structure to define all sensors and their configs
     struct bmi2_sens_config config[ARRAY_SIZE(bmi270_enabled_features)];
@@ -76,15 +80,17 @@ int8_t bmi2_configure_enable_all(struct bmi2_dev *p_bmi2_dev)
     // We map sensor INT to INT1 pin and feature ISR to INT2 pin.
     // The API needs a list of all those features to do that map.
     struct bmi2_sens_int_config all_features[ARRAY_SIZE(bmi270_enabled_features)];
-    uint8_t num_features = 0;
-    uint8_t num_enabled_features = 0;
 
-    for (int i = 0; i < ARRAY_SIZE(bmi270_enabled_features); i++) {
+    num_features = 0;
+    num_enabled_features = 0;
+
+    for (uint8_t i = 0; i < ARRAY_SIZE(bmi270_enabled_features); i++) {
         config[i].type = bmi270_enabled_features[i].sensor_id;
         if (!bmi270_enabled_features[i].skip_enable) {
             all_sensors[num_enabled_features] = bmi270_enabled_features[i].sensor_id;
             num_enabled_features++;
         }
+
         if (bmi2_is_sensor_feature(bmi270_enabled_features[i].sensor_id)) {
             all_features[num_features].type = bmi270_enabled_features[i].sensor_id;
             if (bmi270_enabled_features[i].isr_disable) {
@@ -92,55 +98,27 @@ int8_t bmi2_configure_enable_all(struct bmi2_dev *p_bmi2_dev)
             } else {
                 all_features[num_features].hw_int_pin = BMI2_INT2;
             }
+
             num_features++;
         }
     }
 
     // Get default configurations for the type of feature selected.
-    result = bmi270_get_sensor_config(config, ARRAY_SIZE(bmi270_enabled_features), p_bmi2_dev);
-    LOG_DBG("Get sensor config result: %i", result);
-
-    // Map data ready interrupt to interrupt pin.
-    // Uncomment to generate DRDY INT on INT1
-    // rslt = bmi2_map_data_int(BMI2_DRDY_INT, BMI2_INT1, bmi2_dev);
-    // bmi2_error_codes_print_result(rslt);
+    if (bmi270_get_sensor_config(config, ARRAY_SIZE(bmi270_enabled_features), p_bmi2) != BMI2_OK) {
+        return -EIO;
+    }
 
     for (int i = 0; i < ARRAY_SIZE(bmi270_enabled_features); i++) {
         if (bmi270_enabled_features[i].cfg_func) {
-            bmi270_enabled_features[i].cfg_func(&config[i]);
+            bmi270_enabled_features[i].cfg_func(&config[i], p_data);
         }
     }
 
-    if (result == BMI2_OK) {
-        /* NOTE:
-        * Accel and Gyro enable must be done after setting configurations.
-        */
-        result = bmi270_sensor_enable(all_sensors, num_enabled_features, p_bmi2_dev);
-        LOG_DBG("Sensor enable result: %i", result);
-    }
-
-    // Setup int
-    bmi2_get_int_pin_config(&int_cfg, p_bmi2_dev);
-
-    int_cfg.pin_type = BMI2_INT_BOTH;
-    int_cfg.pin_cfg[0].lvl = BMI2_INT_ACTIVE_HIGH;
-    int_cfg.pin_cfg[0].od = BMI2_INT_PUSH_PULL;
-    int_cfg.pin_cfg[0].output_en = BMI2_INT_OUTPUT_ENABLE;
-    int_cfg.pin_cfg[1].lvl = BMI2_INT_ACTIVE_HIGH;
-    int_cfg.pin_cfg[1].od = BMI2_INT_PUSH_PULL;
-    int_cfg.pin_cfg[1].output_en = BMI2_INT_OUTPUT_ENABLE;
-
-    result = bmi2_set_int_pin_config(&int_cfg, p_bmi2_dev);
-    LOG_DBG("Set pin config result: %i", result);
-
-    if (result == BMI2_OK) {
-        result = bmi270_set_sensor_config(config, ARRAY_SIZE(bmi270_enabled_features), p_bmi2_dev);
-        LOG_DBG("Set sensor config result: %i", result);
-    }
-
-    if (result == BMI2_OK) {
-        result = bmi270_map_feat_int(all_features, num_features, p_bmi2_dev);
-        LOG_DBG("Map feature result: %i", result);
+    // Accel and Gyro enable must be done after setting configurations.
+    if ((bmi270_sensor_enable(all_sensors, num_enabled_features, p_bmi2) != BMI2_OK) ||
+        (bmi270_set_sensor_config(config, ARRAY_SIZE(bmi270_enabled_features), p_bmi2) != BMI2_OK) ||
+        (bmi270_map_feat_int(all_features, num_features, p_bmi2) != BMI2_OK)) {
+        return -EIO;
     }
 
     return 0;
@@ -148,8 +126,9 @@ int8_t bmi2_configure_enable_all(struct bmi2_dev *p_bmi2_dev)
 
 /** @brief          
  *  @param p_config 
+ *  @param p_data   
 */
-static void bmi2_configure_accel(struct bmi2_sens_config *p_config)
+static void bmi2_configure_accel(struct bmi2_sens_config *p_config, struct bmi270_data *p_data)
 {
     /* NOTE: The user can change the following configuration parameters according to their requirement. */
     /* Set Output Data Rate */
@@ -175,12 +154,30 @@ static void bmi2_configure_accel(struct bmi2_sens_config *p_config)
         * For more info refer datasheet.
         */
     p_config->cfg.acc.filter_perf = BMI2_POWER_OPT_MODE;
+
+    switch(p_config->cfg.acc.range) {
+        case BMI2_ACC_RANGE_2G:
+            p_data->acc_range = 2;
+            break;
+        case BMI2_ACC_RANGE_4G:
+            p_data->acc_range = 4;
+            break;
+        case BMI2_ACC_RANGE_8G:
+            p_data->acc_range = 8;
+            break;
+        case BMI2_ACC_RANGE_16G:
+            p_data->acc_range = 16;
+            break;
+    }
+
+    p_data->acc_odr = p_config->cfg.acc.odr;
 }
 
 /** @brief          
  *  @param p_config 
+ *  @param p_data   
 */
-static void bmi2_configure_gyro(struct bmi2_sens_config *p_config)
+static void bmi2_configure_gyro(struct bmi2_sens_config *p_config, struct bmi270_data *p_data)
 {
     /* The user can change the following configuration parameters according to their requirement. */
     /* Set Output Data Rate */
@@ -206,20 +203,42 @@ static void bmi2_configure_gyro(struct bmi2_sens_config *p_config)
         *  1 -> High performance mode(Default)
         */
     p_config->cfg.gyr.filter_perf = BMI2_POWER_OPT_MODE;
+
+    switch(p_config->cfg.gyr.range) {
+        case BMI2_GYR_RANGE_2000:
+            p_data->gyr_range = 2000;
+            break;
+        case BMI2_GYR_RANGE_1000:
+            p_data->gyr_range = 1000;
+            break;
+        case BMI2_GYR_RANGE_500:
+            p_data->gyr_range = 500;
+            break;
+        case BMI2_GYR_RANGE_250:
+            p_data->gyr_range = 250;
+            break;
+        case BMI2_GYR_RANGE_125:
+            p_data->gyr_range = 125;
+            break;
+    }
+
+    p_data->gyr_odr = p_config->cfg.gyr.odr;
 }
 
 /** @brief          
  *  @param p_config 
+ *  @param p_data   
 */
-static void bmi2_configure_step_counter(struct bmi2_sens_config *p_config)
+static void bmi2_configure_step_counter(struct bmi2_sens_config *p_config, struct bmi270_data *p_data)
 {
     p_config->cfg.step_counter.watermark_level = 1;
 }
 
 /** @brief          
  *  @param p_config 
+ *  @param p_data   
 */
-static void bmi2_configure_anymotion(struct bmi2_sens_config *p_config)
+static void bmi2_configure_anymotion(struct bmi2_sens_config *p_config, struct bmi270_data *p_data)
 {
     /* 1LSB equals 20ms. Default is 100ms, setting to 80ms. */
     p_config->cfg.any_motion.duration = 0x04;
@@ -230,13 +249,18 @@ static void bmi2_configure_anymotion(struct bmi2_sens_config *p_config)
 
 /** @brief          
  *  @param p_config 
+ *  @param p_data   
 */
-static void bmi2_configure_gesture_detect(struct bmi2_sens_config *p_config)
+static void bmi2_configure_gesture_detect(struct bmi2_sens_config *p_config, struct bmi270_data *p_data)
 {
     p_config->cfg.wrist_gest.wearable_arm = BMI2_ARM_LEFT;
 }
 
-static void bmi2_configure_wrist_wakeup(struct bmi2_sens_config *p_config)
+/** @brief          
+ *  @param p_config 
+ *  @param p_data   
+*/
+static void bmi2_configure_wrist_wakeup(struct bmi2_sens_config *p_config, struct bmi270_data *p_data)
 {
     p_config->cfg.wrist_gest_w.device_position = BMI2_ARM_LEFT;
     // TODO many things to bmi2_configure here
@@ -244,8 +268,9 @@ static void bmi2_configure_wrist_wakeup(struct bmi2_sens_config *p_config)
 
 /** @brief          
  *  @param p_config 
+ *  @param p_data   
 */
-static void bmi2_configure_no_motion(struct bmi2_sens_config *p_config)
+static void bmi2_configure_no_motion(struct bmi2_sens_config *p_config, struct bmi270_data *p_data)
 {
     // 1LSB equals 20ms. Default is 100ms, setting to 80ms.
     // Max value is 163 seconds, hence below calc. We want max.
@@ -254,54 +279,266 @@ static void bmi2_configure_no_motion(struct bmi2_sens_config *p_config)
 
 int bmi2_set_accel_range(const struct device *p_dev, const struct sensor_value *p_range)
 {
-	struct bmi270_data *data = p_dev->data;
-	uint8_t range;
-    uint8_t reg;
+    uint8_t config;
+    struct bmi270_data *data = p_dev->data;
 
-    // TODO
+    if (p_range->val1 > BOSCH_BMI270_ACC_RANGE_16G) {
+        return -ENOTSUP;
+    }
 
-	/* range->val2 is unused */
-	switch (p_range->val1) {
-	case 2:
-		reg = BOSCH_BMI270_ACC_RANGE_2G;
-		data->acc_range = 2;
-		break;
-	case 4:
-		reg = BOSCH_BMI270_ACC_RANGE_4G;
-		data->acc_range = 4;
-		break;
-	case 8:
-		reg = BOSCH_BMI270_ACC_RANGE_8G;
-		data->acc_range = 8;
-		break;
-	case 16:
-		reg = BOSCH_BMI270_ACC_RANGE_16G;
-		data->acc_range = 16;
-		break;
-	default:
-		return -ENOTSUP;
-	}
+    if (data->bmi2.read(BOSCH_BMI270_REG_ACC_RANGE, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
+        return -EIO;
+    }
 
-	return 0;
+    LOG_DBG("Set ACC range to %u", p_range->val1);
+
+    config &= ~0x03;
+
+    switch (p_range->val1) {
+    case BOSCH_BMI270_ACC_RANGE_2G:
+        config |= BOSCH_BMI270_ACC_RANGE_2G;
+        data->acc_range = 2;
+        break;
+    case BOSCH_BMI270_ACC_RANGE_4G:
+        config |= BOSCH_BMI270_ACC_RANGE_4G;
+        data->acc_range = 4;
+        break;
+    case BOSCH_BMI270_ACC_RANGE_8G:
+        config |= BOSCH_BMI270_ACC_RANGE_8G;
+        data->acc_range = 8;
+        break;
+    case BOSCH_BMI270_ACC_RANGE_16G:
+        config |= BOSCH_BMI270_ACC_RANGE_16G;
+        data->acc_range = 16;
+        break;
+    default:
+        return -ENOTSUP;
+    }
+
+    if (data->bmi2.write(BOSCH_BMI270_REG_ACC_RANGE, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
+        return -EIO;
+    }
+
+    return 0;
 }
 
-int bmi2_set_accel_odr_osr(const struct device *p_dev, const struct sensor_value *p_odr, const struct sensor_value *p_osr)
+int bmi2_set_accel_odr(const struct device *p_dev, const struct sensor_value *p_odr)
 {
-	// TODO
+    struct bmi270_data *data = p_dev->data;
+    uint8_t config;
+    uint8_t pwr_ctrl;
 
-	return 0;
+    if ((p_odr->val1 == 0) || (p_odr->val1 > BOSCH_BMI270_ACC_ODR_1600_HZ)) {
+        return -ENOTSUP;
+    }
+
+    if ((data->bmi2.read(BOSCH_BMI270_REG_ACC_CONF, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) ||
+        (data->bmi2.read(BOSCH_BMI270_REG_PWR_CTRL, &pwr_ctrl, 1, data->bmi2.intf_ptr) != BMI2_OK)) {
+        return -EIO;
+    }
+
+    LOG_DBG("Set ACC ODR to %u", p_odr->val1);
+
+    config &= ~0x0F;
+    config |= p_odr->val1;
+
+    // Value 0 disables the ACC.
+    if (p_odr->val1) {
+        pwr_ctrl |= 0x01 << 0x02;
+    } else {
+        pwr_ctrl &= ~(0x01 << 0x02);
+    }
+
+    // If the Sampling frequency is higher than 100Hz, enter performance mode else, power optimized.
+    if (p_odr->val1 >= BOSCH_BMI270_ACC_ODR_100_HZ) {
+        config |= (0x01 << 0x07);     
+    } else {
+        config &= ~(0x01 << 0x07);
+    }
+
+    data->acc_odr = p_odr->val1;
+
+    if (data->bmi2.write(BOSCH_BMI270_REG_ACC_CONF, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
+        return -EIO;
+    }
+
+    // Assuming we have advance power save enabled.
+    k_usleep(450);
+
+    pwr_ctrl &= 0x0F;
+    if (data->bmi2.write(BOSCH_BMI270_REG_PWR_CTRL, &pwr_ctrl, 1, data->bmi2.intf_ptr) != BMI2_OK) {
+        return -EIO;
+    }
+
+    return 0;
+}
+
+int bmi2_set_accel_osr(const struct device *p_dev, const struct sensor_value *p_osr)
+{
+    struct bmi270_data *data = p_dev->data;
+    uint8_t config;
+    uint8_t pwr_ctrl;
+
+    if (p_osr->val1 > BOSCH_BMI270_AVG128) {
+        return -ENOTSUP;
+    }
+
+    if ((data->bmi2.read(BOSCH_BMI270_REG_ACC_CONF, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) ||
+        (data->bmi2.read(BOSCH_BMI270_REG_PWR_CTRL, &pwr_ctrl, 1, data->bmi2.intf_ptr) != BMI2_OK)) {
+        return -EIO;
+    }
+
+    LOG_DBG("Set ACC OSR to %u", p_osr->val1);
+
+    config &= ~(0x07 << 0x04);
+
+    if (data->acc_odr >= BOSCH_BMI270_ACC_ODR_100_HZ) {
+        LOG_DBG("Performance mode active");
+
+        switch (p_osr->val1) {
+        case BOSCH_BMI_270_OSR4:
+            config |= (0x00 << 0x04);
+            break;
+        case BOSCH_BMI_270_OSR2:
+            config |= (0x01 << 0x04);
+            break;
+        case BOSCH_BMI_270_OSR1:
+            config |= (0x02 << 0x04);
+            break;
+        default:
+            config |= (0x03 << 0x04);
+            break;
+        }
+    } else {
+        LOG_DBG("Low-Power mode active");
+
+        switch (p_osr->val1) {
+        case BOSCH_BMI270_AVG1:
+            config |= (0x00 << 0x04);
+            break;
+        case BOSCH_BMI270_AVG2:
+            config |= (0x01 << 0x04);
+            break;
+        case BOSCH_BMI270_AVG4:
+            config |= (0x02 << 0x04);
+            break;
+        case BOSCH_BMI270_AVG8:
+            config |= (0x03 << 0x04);
+            break;
+        case BOSCH_BMI270_AVG16:
+            config |= (0x04 << 0x04);
+            break;
+        case BOSCH_BMI270_AVG32:
+            config |= (0x05 << 0x04);
+            break;
+        case BOSCH_BMI270_AVG64:
+            config |= (0x06 << 0x04);
+            break;
+        case BOSCH_BMI270_AVG128:
+            config |= (0x07 << 0x04);
+            break;
+        default:
+            return -ENOTSUP;
+        }
+    }
+
+    data->acc_odr = p_osr->val1;
+
+    if (data->bmi2.write(BOSCH_BMI270_REG_ACC_CONF, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
+        return -EIO;
+    }
+
+    // Assuming we have advance power save enabled.
+    k_usleep(450);
+
+    pwr_ctrl &= 0x0F;
+    if (data->bmi2.write(BOSCH_BMI270_REG_PWR_CTRL, &pwr_ctrl, 1, data->bmi2.intf_ptr) != BMI2_OK) {
+        return -EIO;
+    }
+
+    return 0;
 }
 
 int bmi2_set_gyro_range(const struct device *p_dev, const struct sensor_value *p_range)
 {
-	// TODO
+    uint8_t config;
+    struct bmi270_data *data = p_dev->data;
 
-	return 0;
+    if (p_range->val1 > BOSCH_BMI270_GYR_RANGE_125) {
+        return -ENOTSUP;
+    }
+
+    if (data->bmi2.read(BOSCH_BMI270_REG_GYR_RANGE, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
+        return -EIO;
+    }
+
+    LOG_DBG("Set GYR range to %u", p_range->val1);
+
+    config &= ~0x07;
+
+    switch (p_range->val1) {
+    case BOSCH_BMI270_GYR_RANGE_2000:
+        config |= BOSCH_BMI270_GYR_RANGE_2000;
+        data->gyr_range = 2000;
+        break;
+    case BOSCH_BMI270_GYR_RANGE_1000:
+        config |= BOSCH_BMI270_GYR_RANGE_1000;
+        data->gyr_range = 1000;
+        break;
+    case BOSCH_BMI270_GYR_RANGE_500:
+        config |= BOSCH_BMI270_GYR_RANGE_500;
+        data->gyr_range = 500;
+        break;
+    case BOSCH_BMI270_GYR_RANGE_250:
+        config |= BOSCH_BMI270_GYR_RANGE_250;
+        data->gyr_range = 250;
+        break;
+    case BOSCH_BMI270_GYR_RANGE_125:
+        config |= BOSCH_BMI270_GYR_RANGE_125;
+        data->gyr_range = 125;
+        break;
+    default:
+        return -ENOTSUP;
+    }
+
+    if (data->bmi2.write(BOSCH_BMI270_REG_GYR_RANGE, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
+        return -EIO;
+    }
+
+    return 0;
 }
 
-int bmi2_set_gyro_odr_osr(const struct device *p_dev, const struct sensor_value *p_odr, const struct sensor_value *p_osr)
+int bmi2_set_gyro_odr(const struct device *p_dev, const struct sensor_value *p_odr)
 {
-	// TODO
+    struct bmi270_data *data = p_dev->data;
+    uint8_t config;
 
-	return 0;
+    if ((p_odr->val1 < BOSCH_BMI270_GYR_ODR_25_HZ) ||
+        (p_odr->val1 > BOSCH_BMI270_GYR_ODR_3200_HZ)) {
+        return -ENOTSUP;
+    }
+
+    if (data->bmi2.read(BOSCH_BMI270_REG_GYR_CONF, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
+        return -EIO;
+    }
+
+    LOG_DBG("Set GYR ODR to %u", p_odr->val1);
+
+    config &= ~0x0F;
+    config |= p_odr->val1;
+
+    data->gyr_odr = p_odr->val1;
+
+    if (data->bmi2.write(BOSCH_BMI270_REG_GYR_CONF, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
+        return -EIO;
+    }
+
+    return 0;
+}
+
+int bmi2_set_gyro_osr(const struct device *p_dev, const struct sensor_value *p_osr)
+{
+    // TODO
+
+    return 0;
 }

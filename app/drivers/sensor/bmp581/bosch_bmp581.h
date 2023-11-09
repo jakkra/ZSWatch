@@ -1,4 +1,4 @@
-/* bmp581.h - Driver for Bosch BMP581 pressure sensor. */
+/* bosch_bmp581.h - Driver for Bosch BMP581 pressure sensor. */
 
 /*
  * Copyright (c) 2023, Daniel Kampert

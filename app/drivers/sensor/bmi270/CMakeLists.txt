@@ -10,8 +10,8 @@ zephyr_library_include_directories(${PROJECT_SOURCE_DIR}/src/ext_drivers/BMI270-
 zephyr_sources(${PROJECT_SOURCE_DIR}/src/ext_drivers/BMI270-Sensor-API/bmi2.c)
 zephyr_sources(${PROJECT_SOURCE_DIR}/src/ext_drivers/BMI270-Sensor-API/bmi270.c)
 
-if(CONFIG_BMI270_TRIGGER)
-    zephyr_sources(bosch_bmi270_interrupt.c)
+if(CONFIG_BMI270_PLUS_TRIGGER)
+    zephyr_sources(trigger/bosch_bmi270_interrupt.c)
 endif()
 
 zephyr_sources(bosch_bmi270.c private/bosch_bmi270_config.c)

@@ -22,7 +22,7 @@
 #include "events/zsw_periodic_event.h"
 #include "sensors/zsw_pressure_sensor.h"
 
-LOG_MODULE_REGISTER(bmp581_pressure, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(zsw_pressure_sensor, LOG_LEVEL_DBG);
 
 static void zbus_periodic_slow_callback(const struct zbus_channel *chan);
 

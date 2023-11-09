@@ -12,7 +12,6 @@ LOG_MODULE_REGISTER(iaq_app, LOG_LEVEL_DBG);
 
 static void iaq_app_start(lv_obj_t *root, lv_group_t *group);
 static void iaq_app_stop(void);
-static const struct device *const bme688 = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(bme688));
 
 static lv_timer_t *refresh_timer;
 static application_t app = {

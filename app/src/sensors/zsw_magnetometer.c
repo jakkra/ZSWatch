@@ -13,7 +13,7 @@
 #include "events/magnetometer_event.h"
 #include "sensors/zsw_magnetometer.h"
 
-LOG_MODULE_REGISTER(magnetometer, LOG_LEVEL_WRN);
+LOG_MODULE_REGISTER(zsw_magnetometer, LOG_LEVEL_WRN);
 
 #ifndef M_PI
 #define M_PI        3.14159265358979323846

@@ -87,7 +87,7 @@ int zsw_imu_fetch_accel(int16_t *x, int16_t *y, int16_t *z);
 
 int zsw_imu_fetch_gyro(int16_t *x, int16_t *y, int16_t *z);
 
-int zsw_imu_fetch_temperature(struct sensor_value *temperature);
+int zsw_imu_fetch_temperature(float *temperature);
 
 int zsw_imu_fetch_num_steps(uint32_t *num_steps);
 
