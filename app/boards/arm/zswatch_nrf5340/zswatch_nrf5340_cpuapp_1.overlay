@@ -1,5 +1,4 @@
 / {
-
     longpress: longpress {
         input = <&buttons>;
         compatible = "zephyr,input-longpress";

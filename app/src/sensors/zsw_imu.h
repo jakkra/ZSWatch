@@ -18,7 +18,8 @@
 #pragma once
 
 #include <zephyr/drivers/sensor.h>
-#include <bmi270.h>
+
+#include "bmi270.h"
 
 typedef enum zsw_imu_feature_t {
     ZSW_IMU_FEATURE_ACCEL = BMI2_ACCEL,
