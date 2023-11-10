@@ -57,6 +57,7 @@ static void zbus_periodic_slow_callback(const struct zbus_channel *chan)
 int zsw_environment_sensor_init(void)
 {
     if (!device_is_ready(bme688)) {
+        LOG_ERR("No environment sensor found!");
         return -ENODEV;
     }
 

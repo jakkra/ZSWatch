@@ -48,6 +48,8 @@ static void zbus_periodic_slow_callback(const struct zbus_channel *chan)
 int zsw_light_sensor_init(void)
 {
     if (!device_is_ready(apds9306)) {
+        LOG_ERR("No light sensor found!");
+
         return -ENODEV;
     }
 

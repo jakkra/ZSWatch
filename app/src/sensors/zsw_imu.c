@@ -31,7 +31,7 @@ static void zbus_periodic_slow_callback(const struct zbus_channel *chan);
 ZBUS_CHAN_DECLARE(accel_data_chan);
 ZBUS_CHAN_DECLARE(periodic_event_slow_chan);
 ZBUS_LISTENER_DEFINE(zsw_imu_lis, zbus_periodic_slow_callback);
-static const struct device *const bmi270 = DEVICE_DT_GET(DT_NODELABEL(bmi270));
+static const struct device *const bmi270 = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(bmi270));
 static struct sensor_trigger bmi270_trigger;
 
 static void zbus_periodic_slow_callback(const struct zbus_channel *chan)
@@ -123,6 +123,7 @@ static void bmi270_trigger_handler(const struct device *dev, const struct sensor
 int zsw_imu_init(void)
 {
     if (!device_is_ready(bmi270)) {
+        LOG_ERR("No IMU found!");
         return -ENODEV;
     }
 

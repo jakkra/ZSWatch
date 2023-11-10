@@ -1,5 +1,3 @@
-# SPDX-License-Identifier: Apache-2.0
-
 description: |
     The BMI270 is an inertial measurement unit. See more info at:
     https://www.bosch-sensortec.com/products/motion-sensors/imus/bmi270.html

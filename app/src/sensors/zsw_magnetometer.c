@@ -127,7 +127,7 @@ static void lis2mdl_trigger_handler(const struct device *dev,
 int zsw_magnetometer_init(void)
 {
     if (!device_is_ready(magnetometer)) {
-        LOG_ERR("Device magnetometer is not ready\n");
+        LOG_ERR("Device magnetometer is not ready");
         return -ENODEV;
     }
 
@@ -138,8 +138,8 @@ int zsw_magnetometer_init(void)
     odr_attr.val2 = 0;
 
     if (sensor_attr_set(magnetometer, SENSOR_CHAN_ALL,
-                        SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
-        LOG_ERR("Cannot set sampling frequency for LIS2MDL\n");
+                        SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) != 0) {
+        LOG_ERR("Cannot set sampling frequency for LIS2MDL");
         return -EFAULT;
     }
 
@@ -148,8 +148,10 @@ int zsw_magnetometer_init(void)
     sensor_trigger_set(magnetometer, &trig, lis2mdl_trigger_handler);
 
     // TODO handle power save, enable/disable etc. to save power
-    int rc = pm_device_action_run(magnetometer, PM_DEVICE_ACTION_SUSPEND);
-    __ASSERT(rc == 0, "Failed to suspend LIS2MDL: %d\n", rc);
+    if (pm_device_action_run(magnetometer, PM_DEVICE_ACTION_SUSPEND) != 0) {
+        LOG_ERR("Failed to suspend LIS2MDL!");
+        return -EFAULT;
+    }
 
     zsw_periodic_chan_add_obs(&periodic_event_slow_chan, &zsw_magnetometer_lis);
 
@@ -159,16 +161,22 @@ int zsw_magnetometer_init(void)
 int zsw_magnetometer_set_enable(bool enabled)
 {
     if (!device_is_ready(magnetometer)) {
+        LOG_ERR("No magnetometer found!");
         return -ENODEV;
     }
-    int rc;
+
     if (enabled) {
-        rc = pm_device_action_run(magnetometer, PM_DEVICE_ACTION_RESUME);
-        __ASSERT(rc == 0 || rc == -EALREADY, "Failed to resume LIS2MDL: %d\n", rc);
+        if (pm_device_action_run(magnetometer, PM_DEVICE_ACTION_RESUME) != 0) {
+            LOG_ERR("Failed to resume LIS2MDL!");
+            return -EFAULT;
+        }
     } else {
-        rc = pm_device_action_run(magnetometer, PM_DEVICE_ACTION_SUSPEND);
-        __ASSERT(rc == 0 || rc == -EALREADY, "Failed to suspend LIS2MDL: %d\n", rc);
+        if (pm_device_action_run(magnetometer, PM_DEVICE_ACTION_SUSPEND) != 0) {
+            LOG_ERR("Failed to suspend LIS2MDL!");
+            return -EFAULT;
+        }
     }
+
     return 0;
 }
 

@@ -140,7 +140,7 @@ static int bmp581_attr_set(const struct device *p_dev, enum sensor_channel chann
     }
 
     if (bmp5_get_osr_odr_press_config(&bmp5_osr_odr_press_cfg, &bmp5_dev) != BMP5_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     if (attribute == SENSOR_ATTR_OVERSAMPLING) {
@@ -171,7 +171,7 @@ static int bmp581_attr_set(const struct device *p_dev, enum sensor_channel chann
 
     if (bmp5_set_osr_odr_press_config(&bmp5_osr_odr_press_cfg, &bmp5_dev) != BMP5_OK) {
         LOG_ERR("Failed to set sensor attribute!");
-        return -EIO;
+        return -EFAULT;
     }
 
     return 0;
@@ -201,7 +201,7 @@ static int bmp581_attr_get(const struct device *p_dev, enum sensor_channel chann
 
     if (bmp5_get_osr_odr_press_config(&bmp5_osr_odr_press_cfg, &bmp5_dev) != BMP5_OK) {
         LOG_ERR("Failed to read sensor attribute!");
-        return -EIO;
+        return -EFAULT;
     }
 
     if (attribute == SENSOR_ATTR_OVERSAMPLING) {
@@ -254,7 +254,7 @@ static int bmp581_sample_fetch(const struct device *p_dev, enum sensor_channel c
 
     pm_device_state_get(p_dev, &pm_state);
     if (pm_state != PM_DEVICE_STATE_ACTIVE) {
-        return -EIO;
+        return -EFAULT;
     }
 
     if ((channel != SENSOR_CHAN_ALL) && (channel != SENSOR_CHAN_AMBIENT_TEMP) && (channel != SENSOR_CHAN_PRESS)) {
@@ -336,7 +336,7 @@ static int bmp581_init(const struct device *p_dev)
 
     if (rslt == BMP5_OK) {
         if (bmp5_set_config(&bmp5_osr_odr_press_cfg, &bmp5_dev) != BMP5_OK) {
-            return -EIO;
+            return -EFAULT;
         }
     }
     else {
@@ -372,7 +372,7 @@ static int bmp581_pm_action(const struct device *p_dev, enum pm_device_action ac
     }
 
     if (rslt != BMP5_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     return 0;

@@ -12,7 +12,7 @@
 #include "../bosch_bmi270.h"
 #include "../private/bosch_bmi270_config.h"
 
-LOG_MODULE_REGISTER(bosch_bmi270_trigger, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(bosch_bmi270_trigger, LOG_LEVEL_DBG);
 
 #ifdef CONFIG_BMI270_PLUS_TRIGGER_OWN_THREAD
 static K_KERNEL_STACK_DEFINE(bmi2_thread_stack, CONFIG_BMI270_PLUS_THREAD_STACK_SIZE);
@@ -68,16 +68,15 @@ static void bmi2_gpio_on_interrupt_callback(const struct device *p_dev, struct g
 */
 static void bmi2_process_int(const struct device *p_dev)
 {
+    uint16_t int_status;
+
     struct bmi270_data *data = p_dev->data;
     struct bmi2_feat_sensor_data sensor_data;
     struct sensor_trigger* trigger = (struct sensor_trigger*)data->trig;
 
-    uint16_t int_status;
-
     memset(&sensor_data, 0, sizeof(sensor_data));
 
-    if (bmi2_get_int_status(&int_status, &data->bmi2) != BMI2_OK)
-    {
+    if (bmi2_get_int_status(&int_status, &data->bmi2) != BMI2_OK) {
         LOG_ERR("Can not fetch status from IMU!");
         return;
     }
@@ -187,7 +186,7 @@ int bmi2_init_interrupt(const struct device *p_dev)
     }
 
     if (gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT)) {
-        return -EIO;
+        return -EFAULT;
     }
 
     data->dev = p_dev;
@@ -205,11 +204,11 @@ int bmi2_init_interrupt(const struct device *p_dev)
     gpio_init_callback(&data->gpio_handler, bmi2_gpio_on_interrupt_callback, BIT(config->int_gpio.pin));
 
     if (gpio_add_callback(config->int_gpio.port, &data->gpio_handler)) {
-        return -EIO;
+        return -EFAULT;
     }
 
     if (bmi2_get_int_pin_config(&int_cfg, &data->bmi2) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     //Uncomment when both int pins should get used
@@ -227,7 +226,7 @@ int bmi2_init_interrupt(const struct device *p_dev)
     int_cfg.pin_cfg[1].output_en = BMI2_INT_OUTPUT_ENABLE;
 
     if (bmi2_set_int_pin_config(&int_cfg, &data->bmi2) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     LOG_DBG("Interrupts ready!");
@@ -266,6 +265,8 @@ int bmi270_trigger_set(const struct device *p_dev, const struct sensor_trigger *
     if (handler != NULL) {
         bmi2_enable_int(p_dev, true);
     }
+
+    LOG_DBG("Trigger for channel %u installed", p_trig->chan);
 
     return 0;  
 }

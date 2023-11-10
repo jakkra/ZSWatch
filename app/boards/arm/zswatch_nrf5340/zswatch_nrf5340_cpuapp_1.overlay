@@ -59,6 +59,7 @@
     bmi270: bmi270@68 {
         compatible = "bosch,bmi270-plus";
         reg = <0x68>;
+        status = "okay";
         int-gpios = <&gpio0 21 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
         invert-x;
         invert-y;

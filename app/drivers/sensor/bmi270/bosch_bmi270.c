@@ -105,14 +105,13 @@ static void bmi2_raw2gyro_convert(struct sensor_value *p_val, int64_t raw_val, u
 */
 static int bmi2_configure_axis_remapping(const struct device *p_dev)
 {
-    int8_t rslt;
     struct bmi2_remap remapped_axis;
     struct bmi2_remap remapped_axis_read;
     struct bmi270_data *data = p_dev->data;
     const struct bmi270_config *config = p_dev->config;
 
     if (bmi2_get_remap_axes(&remapped_axis, &data->bmi2) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     // Initialize 
@@ -145,7 +144,7 @@ static int bmi2_configure_axis_remapping(const struct device *p_dev)
 
     if ((bmi2_set_remap_axes(&remapped_axis, &data->bmi2) != BMI2_OK) ||
         (bmi2_get_remap_axes(&remapped_axis_read, &data->bmi2) != BMI2_OK)) {
-        return -EIO;
+        return -EFAULT;
     }
 
     if (!((remapped_axis.x == remapped_axis_read.x) && (remapped_axis.y == remapped_axis_read.y) &&
@@ -214,11 +213,10 @@ static int bmi270_sample_fetch(const struct device *p_dev, enum sensor_channel c
     enum pm_device_state pm_state;
     struct bmi270_data *data = p_dev->data;
     struct bmi2_sens_data sensor_data;
-    const struct bmi270_config *config = p_dev->config;
 
     pm_device_state_get(p_dev, &pm_state);
     if (pm_state != PM_DEVICE_STATE_ACTIVE) {
-        return -EIO;
+        return -EFAULT;
     }
 
     if ((channel != SENSOR_CHAN_ALL) && (channel != SENSOR_CHAN_ACCEL_XYZ) && (channel != SENSOR_CHAN_GYRO_XYZ) &&
@@ -231,12 +229,12 @@ static int bmi270_sample_fetch(const struct device *p_dev, enum sensor_channel c
     LOG_DBG("Start fetching new data...");
 
     if (bmi2_get_sensor_data(&sensor_data, &data->bmi2) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     if ((channel == SENSOR_CHAN_ALL) || (channel == SENSOR_CHAN_AMBIENT_TEMP)) {
         if (bmi2_get_temperature_data(&temp, &data->bmi2) != BMI2_OK) {
-            return -EIO;
+            return -EFAULT;
         }
 
         data->temp = temp;
@@ -297,7 +295,7 @@ static int bmi270_channel_get(const struct device *p_dev, enum sensor_channel ch
 
         sensor_data.type = BMI2_STEP_COUNTER;
         if (bmi270_get_feature_data(&sensor_data, 1, &data->bmi2) != BMI2_OK) {
-            return -EIO;
+            return -EFAULT;
         }
 
         p_value->val1 = sensor_data.sens_data.step_counter_output;
@@ -306,7 +304,7 @@ static int bmi270_channel_get(const struct device *p_dev, enum sensor_channel ch
 
         sensor_data.type = BMI2_STEP_ACTIVITY;
         if (bmi270_get_feature_data(&sensor_data, 1, &data->bmi2) != BMI2_OK) {
-            return -EIO;
+            return -EFAULT;
         }
 
         p_value->val1 = sensor_data.sens_data.activity_output;
@@ -315,7 +313,7 @@ static int bmi270_channel_get(const struct device *p_dev, enum sensor_channel ch
 
         sensor_data.type = BMI2_WRIST_GESTURE;
         if (bmi270_get_feature_data(&sensor_data, 1, &data->bmi2) != BMI2_OK) {
-            return -EIO;
+            return -EFAULT;
         }
 
         p_value->val1 = sensor_data.sens_data.wrist_gesture_output;
@@ -365,11 +363,11 @@ static int bmi270_sensor_init(const struct device *p_dev)
 
     if (bmi270_init(&data->bmi2) != BMI2_OK) {
         LOG_ERR("Can not initialize BMI270!");
-        return -EIO;
+        return -EFAULT;
     }
 
     if (bmi2_soft_reset(&data->bmi2) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     // Initialize with reset values from the datasheet.
@@ -379,17 +377,21 @@ static int bmi270_sensor_init(const struct device *p_dev)
     data->gyr_range = 2000;
 
     if (bmi2_configure_enable_all(&data->bmi2, data) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
 #ifdef CONFIG_BMI270_PLUS_TRIGGER
     if (config->int_gpio.port) {
         if (bmi2_init_interrupt(p_dev)) {
             LOG_ERR("Could not initialize interrupts!");
-            return -EIO;
+            return -EFAULT;
         }
     }
 #endif
+
+    if (bmi2_configure_axis_remapping(p_dev) != BMI2_OK) {
+        return -EFAULT;
+    }
 
     LOG_DBG("Initialization successful");
 
@@ -423,7 +425,7 @@ static int bmi270_pm_action(const struct device *p_dev, enum pm_device_action ac
     }
 
     if (rslt != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     return 0;
