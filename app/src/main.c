@@ -106,7 +106,6 @@ static lv_indev_t *enc_indev;
 static uint8_t last_pressed;
 
 static bool pending_not_open;
-static bool is_woken_by_touch;
 static bool is_buttons_for_lvgl = false;
 
 static ui_state_t watch_state = INIT_STATE;
@@ -126,13 +125,6 @@ static void run_input_work(struct k_work *item)
 
     // Don't process the press if it caused wakeup.
     if (zsw_power_manager_reset_idle_timout()) {
-        // NOTE: As soon as the touch controller wakes up the MCU through an interrupt the event is also
-        // passed into LVGL (interrupt -> input subsystem -> LVGL). We don´t want any LVGL action after
-        // a touch event. Also make sure that a wake up through a button doesn´t block the first input of the touch screen.
-        if (container->event.code > INPUT_KEY_4) {
-            is_woken_by_touch = true;
-        }
-
         return;
     }
 
@@ -160,20 +152,14 @@ static void run_input_work(struct k_work *item)
 
             break;
         }
-        case INPUT_KEY_4: {
-            if (watch_state == WATCHFACE_STATE) {
+        case INPUT_KEY_1: {
+            if ((watch_state == WATCHFACE_STATE) && !zsw_notification_popup_is_shown()) {
                 zsw_vibration_run_pattern(ZSW_VIBRATION_PATTERN_CLICK);
                 lv_async_call(open_application_manager_page, NULL);
             }
 
             break;
         }
-    }
-
-    if (is_buttons_for_lvgl) {
-        // Handled by LVGL
-        last_input_event.code = container->event.code;
-        return;
     }
 
     // Handle the input events. We have to take care about the screen orientation for the touch events.
@@ -201,6 +187,12 @@ static void run_input_work(struct k_work *item)
         }
     }
 
+    if (is_buttons_for_lvgl && (gesture_code == LV_DIR_NONE)) {
+        // Handled by LVGL
+        last_input_event.code = container->event.code;
+        return;
+    }
+
     if (gesture_code != LV_DIR_NONE) {
         handle_screen_gesture(gesture_code);
     }
@@ -213,9 +205,6 @@ static void run_init_work(struct k_work *item)
     load_retention_ram();
     zsw_notification_manager_init();
     enable_bluetoth();
-    //uint32_t br = 1337;
-    //int rc = settings_save_one("settings/brightness", &br, sizeof(br));
-    //printk("RC: %d\n", rc);
     zsw_imu_init();
     zsw_magnetometer_init();
     zsw_pressure_sensor_init();
@@ -620,9 +609,6 @@ static void on_zbus_ble_data_callback(const struct zbus_channel *chan)
     }
 }
 
-#if defined(CONFIG_WATCHDOG) && !defined(CONFIG_RESET_ON_FATAL_ERROR)
-extern void sys_arch_reboot(int type);
-
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
     ARG_UNUSED(esf);
@@ -631,8 +617,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
     LOG_PANIC();
 
     LOG_ERR("Resetting system");
-    sys_arch_reboot(0);
+    sys_reboot(SYS_REBOOT_COLD);
 
     CODE_UNREACHABLE;
 }
-#endif

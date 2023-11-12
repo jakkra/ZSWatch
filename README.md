@@ -5,11 +5,11 @@
 [![discord](https://img.shields.io/badge/chat-discord-blue?logo=discord&logoColor=white)](https://discord.gg/8XfNBmDfbY)
 
 <p float="left">
-<img src=".github/images/in_use.jpg" width="62.8%" object-fit="cover"/>
-<img src=".github/images/v3_case.jpg" width="35%" object-fit="cover"/>
+<img src=".github/images/in_use.jpg" width="67.5%" object-fit="cover"/>
+<img src=".github/images/v3_case.jpg" width="31%" object-fit="cover"/>
 </p>
 <sub>
-  ZSWatch v2 (left) and v3 (right)
+  ZSWatch v3 CNC:ed Stainless Steel (left), Clear Resin 3D print (right)
 </sub>
 </div>
 <br/>
@@ -21,7 +21,7 @@ Smartwatch built from scratch, both hardware and software. Built on the [Zephyrâ
 
 <kbd><img title="Overview" src=".github/images/many_in_row.jpg"/></kbd><br/>
 
-<kbd><img title="Overview" src=".github/images/v2_overview.jpg"/></kbd><br/>
+<kbd><img title="Overview" src=".github/images/overview.jpg"/></kbd><br/>
 
 **Synced remote control over BLE**
 
@@ -38,9 +38,7 @@ Head over to the hardware repos https://github.com/jakkra/ZSWatch-HW and https:/
 
 Some things are still in progress:
 - Documentation such as building instructions.
-- Final watch casing.
 - Dock casing.
-- CNC:ed casing in metal.
 
 **I'll also build a few initial kits** (assembled) for those who don't want or can build ZSWatch themselves.<br/>
 In addition to assembled ZSWatch and dock you will get the following compared to if you build it yourself:
@@ -99,7 +97,7 @@ See more at https://github.com/jakkra/ZSWatch-Dock
 </p>
 
 ## Enclosure/Casing
-3D printed casing with 3D printed buttons. CNC:able casing in metal is in progress.
+3D printed casing with 3D printed buttons, option CNC:able casing in metal.
 
 ## Software Features
 - Bluetooth LE communications with [GadgetBridge](https://codeberg.org/Freeyourgadget/Gadgetbridge) Android app.

@@ -39,6 +39,7 @@ At this point it's not possible to use nRF Connect SDK as features and fixes not
 ## Cloning source code
 ```
 git clone https://github.com/jakkra/ZSWatch.git
+cd ZSWatch/
 git submodule update --init --recursive
 cd app
 west init -l .
