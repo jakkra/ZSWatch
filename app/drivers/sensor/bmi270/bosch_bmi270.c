@@ -105,6 +105,7 @@ static void bmi2_raw2gyro_convert(struct sensor_value *p_val, int64_t raw_val, u
 */
 static int bmi2_configure_axis_remapping(const struct device *p_dev)
 {
+    int8_t rslt;
     struct bmi2_remap remapped_axis;
     struct bmi2_remap remapped_axis_read;
     struct bmi270_data *data = p_dev->data;
@@ -117,8 +118,10 @@ static int bmi2_configure_axis_remapping(const struct device *p_dev)
     // Initialize 
     // x -> x
     // y -> y
+    // z -> z
     remapped_axis.x = BMI2_X;
     remapped_axis.y = BMI2_Y;
+    remapped_axis.z = BMI2_Z;
 
     // Invert x
     // x -> !x
@@ -138,8 +141,12 @@ static int bmi2_configure_axis_remapping(const struct device *p_dev)
     // x -> y
     // y -> x
     if (config->swap_xy) {
+        uint8_t temp;
+
+        temp = remapped_axis.x;
+
         remapped_axis.x = remapped_axis.y;
-        remapped_axis.y = remapped_axis.x;
+        remapped_axis.y = temp;
     }
 
     if ((bmi2_set_remap_axes(&remapped_axis, &data->bmi2) != BMI2_OK) ||
@@ -150,6 +157,7 @@ static int bmi2_configure_axis_remapping(const struct device *p_dev)
     if (!((remapped_axis.x == remapped_axis_read.x) && (remapped_axis.y == remapped_axis_read.y) &&
           (remapped_axis.z == remapped_axis_read.z))) {
         LOG_ERR("Wrong axis remapping read after setting");
+        return -EFAULT;
     }
 
     return 0;

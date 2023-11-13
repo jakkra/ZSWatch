@@ -79,6 +79,8 @@ static void timer_callback(lv_timer_t *timer)
     sensors_summary_ui_set_iaq(iaq);
     sensors_summary_ui_set_light(light);
     sensors_summary_ui_set_rel_height(get_relative_height_m(relative_pressure, pressure, temperature));
+
+    LOG_DBG("Sensor Summary update");
 }
 
 static void on_close_sensors_summary(void)

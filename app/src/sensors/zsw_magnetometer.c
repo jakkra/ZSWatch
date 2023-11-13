@@ -56,6 +56,7 @@ static void zbus_periodic_slow_callback(const struct zbus_channel *chan)
         .y = y,
         .z = z
     };
+
     zbus_chan_pub(&magnetometer_data_chan, &evt, K_MSEC(250));
 }
 

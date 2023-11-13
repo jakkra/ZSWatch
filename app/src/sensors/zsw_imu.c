@@ -117,7 +117,7 @@ static void bmi270_trigger_handler(const struct device *dev, const struct sensor
         }
     }
 
-    //zbus_chan_pub(&accel_data_chan, &evt, K_MSEC(250));
+    zbus_chan_pub(&accel_data_chan, &evt, K_MSEC(250));
 }
 
 int zsw_imu_init(void)

@@ -154,7 +154,7 @@ menu "ZSWatch"
             select BME68X_IAQ
 
         config EXTERNAL_USE_BOSCH_BME688
-            prompt "Use standard BME688 driver"
+            prompt "Use standard BME680 driver from Zephyr"
         endchoice
     endmenu
 

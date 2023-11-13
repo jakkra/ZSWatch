@@ -288,11 +288,17 @@ static int apds9306_sample_fetch(const struct device *p_dev, enum sensor_channel
     LOG_DBG("Measurement resolution: %u", resolution);
     LOG_DBG("Wait for %u ms", delay);
 
-    apds9306_worker_item.dev = p_dev;
-    k_work_init_delayable(&apds9306_worker_item.dwork, apds9306_worker);
-
     // We add a bit more delay to cover the startup time etc.
-    k_work_schedule(&apds9306_worker_item.dwork, K_MSEC(delay + 100));
+    if (!k_work_delayable_is_pending(&apds9306_worker_item.dwork)) {
+        LOG_DBG("Schedule new work");
+
+        apds9306_worker_item.dev = p_dev;
+        k_work_init_delayable(&apds9306_worker_item.dwork, apds9306_worker);
+        k_work_schedule(&apds9306_worker_item.dwork, K_MSEC(delay + 100));
+    }
+    else {
+        LOG_DBG("Work pending. Wait for completion.");
+    }
 
     return 0;
 }
