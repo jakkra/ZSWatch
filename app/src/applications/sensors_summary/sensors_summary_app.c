@@ -2,7 +2,6 @@
 #include <zephyr/init.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/logging/log.h>
 #include <math.h>
 
 #include "sensors_summary_ui.h"
@@ -10,8 +9,6 @@
 #include "sensors/zsw_light_sensor.h"
 #include "sensors/zsw_environment_sensor.h"
 #include "managers/zsw_app_manager.h"
-
-LOG_MODULE_REGISTER(sensors_summary_app, LOG_LEVEL_DBG);
 
 static void sensors_summary_app_start(lv_obj_t *root, lv_group_t *group);
 static void sensors_summary_app_stop(void);
@@ -79,8 +76,6 @@ static void timer_callback(lv_timer_t *timer)
     sensors_summary_ui_set_iaq(iaq);
     sensors_summary_ui_set_light(light);
     sensors_summary_ui_set_rel_height(get_relative_height_m(relative_pressure, pressure, temperature));
-
-    LOG_DBG("Sensor Summary update");
 }
 
 static void on_close_sensors_summary(void)

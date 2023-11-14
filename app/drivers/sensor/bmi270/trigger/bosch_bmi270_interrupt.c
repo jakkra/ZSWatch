@@ -12,7 +12,8 @@
 #include "../bosch_bmi270.h"
 #include "../private/bosch_bmi270_config.h"
 
-LOG_MODULE_REGISTER(bosch_bmi270_trigger, CONFIG_SENSOR_LOG_LEVEL);
+//LOG_MODULE_REGISTER(bosch_bmi270_trigger, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(bosch_bmi270_trigger, LOG_LEVEL_DBG);
 
 #ifdef CONFIG_BMI270_PLUS_TRIGGER_OWN_THREAD
 static K_KERNEL_STACK_DEFINE(bmi2_thread_stack, CONFIG_BMI270_PLUS_THREAD_STACK_SIZE);
@@ -68,7 +69,7 @@ static void bmi2_gpio_on_interrupt_callback(const struct device *p_dev, struct g
 */
 static void bmi2_process_int(const struct device *p_dev)
 {
-    uint16_t int_status;
+    uint8_t status;
 
     struct bmi270_data *data = p_dev->data;
     struct bmi2_feat_sensor_data sensor_data;
@@ -76,65 +77,95 @@ static void bmi2_process_int(const struct device *p_dev)
 
     memset(&sensor_data, 0, sizeof(sensor_data));
 
-    if (bmi2_get_int_status(&int_status, &data->bmi2) != BMI2_OK) {
+    if (bmi2_get_status(&status, &data->bmi2) != BMI2_OK) {
         LOG_ERR("Can not fetch status from IMU!");
         return;
     }
 
-    if (int_status & BMI270_SIG_MOT_STATUS_MASK) {
+    if (status & BMI270_SIG_MOT_STATUS_MASK) {
         LOG_DBG("BMI270_SIG_MOT_STATUS_MASK");
 
         trigger->type = SENSOR_TRIG_SIG_MOTION;
+
+        if (data->sig_motion) {
+            data->sig_motion(p_dev, trigger);
+        }
     }
 
     // TODO: For some reason step count ISR is nor firing, for now
     // just poll it whenever there is another event.
-    if (true || int_status & BMI270_STEP_CNT_STATUS_MASK) {
-        if (int_status & BMI270_STEP_CNT_STATUS_MASK) {
+    if (true || status & BMI270_STEP_CNT_STATUS_MASK) {
+        if (status & BMI270_STEP_CNT_STATUS_MASK) {
             LOG_DBG("BMI270_STEP_CNT_STATUS_MASK");
             
         }
 
         trigger->type = SENSOR_TRIG_STEP;
+
+        if (data->step) {
+            data->step(p_dev, trigger);
+        }
     }
 
-    if (int_status & BMI270_STEP_ACT_STATUS_MASK) {
+    if (status & BMI270_STEP_ACT_STATUS_MASK) {
         LOG_DBG("BMI270_STEP_ACT_STATUS_MASK");
 
         sensor_data.type = BMI2_STEP_ACTIVITY;
         bmi270_get_feature_data(&sensor_data, 1, &data->bmi2);
 
         trigger->type = SENSOR_TRIG_ACTIVITY;
+
+        if (data->activity) {
+            data->activity(p_dev, trigger);
+        }
     }
 
-    if (int_status & BMI270_WRIST_WAKE_UP_STATUS_MASK) {
+    if (status & BMI270_WRIST_WAKE_UP_STATUS_MASK) {
         LOG_DBG("BMI270_WRIST_WAKE_UP_STATUS_MASK");
 
         trigger->type = SENSOR_TRIG_WRIST_WAKE;
+
+        if (data->wake) {
+            data->wake(p_dev, trigger);
+        }
     }
 
-    if (int_status & BMI270_WRIST_GEST_STATUS_MASK) {
+    if (status & BMI270_WRIST_GEST_STATUS_MASK) {
         LOG_DBG("BMI270_WRIST_GEST_STATUS_MASK");
+
         sensor_data.type = BMI2_WRIST_GESTURE;
         bmi270_get_feature_data(&sensor_data, 1, &data->bmi2);
 
         trigger->type = SENSOR_TRIG_WRIST_GESTURE;
+
+        if (data->gesture) {
+            data->gesture(p_dev, trigger);
+        }
+    }
+
+    if (status & BMI270_ANY_MOT_STATUS_MASK) {
+        trigger->type = SENSOR_TRIG_MOTION;
+
+        if (data->motion) {
+            data->motion(p_dev, trigger);
+        }
     }
 
     // After a NO_MOTION INT and the INT status is cleared, then
     // when any other INT is triggered, also NO_MOTION status bit is set once more.
     // To workaround that, only care about NO_MOTION
     // when the INT was only for NO_MOTION.
-    if (int_status == BMI270_NO_MOT_STATUS_MASK) {
+    if (status == BMI270_NO_MOT_STATUS_MASK) {
         trigger->type = SENSOR_TRIG_STATIONARY;
+
+        if (data->stationary) {
+            data->stationary(p_dev, trigger);
+        }
     }
 
-    if (int_status & BMI270_ANY_MOT_STATUS_MASK) {
-        trigger->type = SENSOR_TRIG_MOTION;
-    }
-
-    if (data->trigger_handler) {
-        data->trigger_handler(p_dev, trigger);
+    // The global handler is called every time.
+    if (data->global) {
+        data->global(p_dev, trigger);
         bmi2_enable_int(p_dev, true);
     }
 }
@@ -239,28 +270,45 @@ int bmi270_trigger_set(const struct device *p_dev, const struct sensor_trigger *
     struct bmi270_data *data = p_dev->data;
     const struct bmi270_config *config = p_dev->config;
 
-    if ((!config->int_gpio.port) || (p_trig->chan != SENSOR_CHAN_ACTION)) {
+    if ((!config->int_gpio.port) || (p_trig->chan != SENSOR_CHAN_GESTURE) || (p_trig->chan != SENSOR_CHAN_ALL)) {
         return -ENOTSUP;
     }
 
-/*
-    switch (p_trig->type) {
-        case SENSOR_TRIG_SIG_MOTION:
-        case SENSOR_TRIG_STEP:
-        case SENSOR_TRIG_ACTIVITY:
-        case SENSOR_TRIG_WRIST_WAKE:
-        case SENSOR_TRIG_WRIST_GESTURE:
-        case SENSOR_TRIG_STATIONARY:
-        case SENSOR_TRIG_MOTION:
-        default:
-            return -ENOTSUP;
+    data->trig = p_trig;
+
+    // The global handler is used when all channels are selected.
+    if (p_trig->chan == SENSOR_CHAN_ALL) {
+        data->global = handler;
     }
-*/
+    else {
+        switch ((uint8_t)p_trig->type) {
+            case SENSOR_TRIG_SIG_MOTION:
+                data->sig_motion = handler;
+                break;
+            case SENSOR_TRIG_STEP:
+                data->step = handler;
+                break;
+            case SENSOR_TRIG_ACTIVITY:
+                data->activity = handler;
+                break;
+            case SENSOR_TRIG_WRIST_WAKE:
+                data->wake = handler;
+                break;
+            case SENSOR_TRIG_WRIST_GESTURE:
+                data->gesture = handler;
+                break;
+            case SENSOR_TRIG_STATIONARY:
+                data->stationary = handler;
+                break;
+            case SENSOR_TRIG_MOTION:
+                data->motion = handler;
+                break;
+            default:
+                return -ENOTSUP;
+        }
+    }
 
     bmi2_enable_int(p_dev, false);
-
-    data->trig = p_trig;
-    data->trigger_handler = handler;
 
     if (handler != NULL) {
         bmi2_enable_int(p_dev, true);

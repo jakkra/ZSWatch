@@ -20,10 +20,6 @@
 */
 #define SENSOR_CHAN_GESTURE             (SENSOR_CHAN_PRIV_START + 3)
 
-/** @brief 
-*/
-#define SENSOR_CHAN_ACTION              (SENSOR_CHAN_PRIV_START + 4)
-
 /** @brief Wrist gesture detection like flick in/out, push arm down(pivot up, wrist jiggle/shake).
 */
 #define SENSOR_TRIG_WRIST_GESTURE       (SENSOR_TRIG_PRIV_START + 1)

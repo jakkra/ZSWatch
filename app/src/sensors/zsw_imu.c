@@ -45,7 +45,7 @@ static void bmi270_trigger_handler(const struct device *dev, const struct sensor
 {
     zsw_imu_evt_t evt;
 
-    LOG_DBG("BMI270 trigger handler");
+    LOG_DBG("BMI270 trigger handler. Type: %u", trig->type);
 
     switch ((int)trig->type) {
         case SENSOR_TRIG_SIG_MOTION: {
@@ -127,13 +127,61 @@ int zsw_imu_init(void)
         return -ENODEV;
     }
 
-    // TODO: Check which channels and trigger are needed in driver. This is only a test for now.
-    bmi270_trigger.type = SENSOR_TRIG_THRESHOLD;
-    bmi270_trigger.chan = SENSOR_CHAN_ACTION;
+    // The type doesn´t care when all channels were selected.
+    // We use the global handler here, because we don´t want to
+    // separate the callbacks for now.
+    //bmi270_trigger.type = SENSOR_TRIG_MOTION;
+    bmi270_trigger.chan = SENSOR_CHAN_ALL;
 
     sensor_trigger_set(bmi270, &bmi270_trigger, bmi270_trigger_handler);
 
     zsw_periodic_chan_add_obs(&periodic_event_slow_chan, &zsw_imu_lis);
+
+    return 0;
+}
+
+int zsw_imu_fetch_accel_f(float *x, float *y, float *z)
+{
+    struct sensor_value x_temp;
+    struct sensor_value y_temp;
+    struct sensor_value z_temp;
+
+    if (sensor_sample_fetch_chan(bmi270, SENSOR_CHAN_ALL) != 0) {
+        return -ENODATA;
+    }
+
+    if ((sensor_channel_get(bmi270, SENSOR_CHAN_ACCEL_X, &x_temp) != 0) ||
+        (sensor_channel_get(bmi270, SENSOR_CHAN_ACCEL_Y, &y_temp) != 0) ||
+        (sensor_channel_get(bmi270, SENSOR_CHAN_ACCEL_Z, &z_temp) != 0)) {
+        return -ENODATA;
+    }
+
+    *x = sensor_value_to_float(&x_temp);
+    *y = sensor_value_to_float(&y_temp);
+    *z = sensor_value_to_float(&z_temp);
+
+    return 0;
+}
+
+int zsw_imu_fetch_gyro_f(float *x, float *y, float *z)
+{
+    struct sensor_value x_temp;
+    struct sensor_value y_temp;
+    struct sensor_value z_temp;
+
+    if (sensor_sample_fetch_chan(bmi270, SENSOR_CHAN_ALL) != 0) {
+        return -ENODATA;
+    }
+
+    if ((sensor_channel_get(bmi270, SENSOR_CHAN_GYRO_X, &x_temp) != 0) ||
+        (sensor_channel_get(bmi270, SENSOR_CHAN_GYRO_Y, &y_temp) != 0) ||
+        (sensor_channel_get(bmi270, SENSOR_CHAN_GYRO_Z, &z_temp) != 0)) {
+        return -ENODATA;
+    }
+
+    *x = sensor_value_to_float(&x_temp);
+    *y = sensor_value_to_float(&y_temp);
+    *z = sensor_value_to_float(&z_temp);
 
     return 0;
 }

@@ -92,7 +92,6 @@
         status = "okay";
         int-gpios = <&gpio0 14 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
         swap-xy;
-        invert-y;
     };
 
     apds9306: apds9306@52 {

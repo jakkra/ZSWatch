@@ -26,7 +26,8 @@
 #define DT_DRV_COMPAT                   bosch_bmi270_plus
 #define BMI2_READ_WRITE_LEN             UINT8_C(46)
 
-LOG_MODULE_REGISTER(bmi270, CONFIG_SENSOR_LOG_LEVEL);
+//LOG_MODULE_REGISTER(bmi270, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(bmi270, LOG_LEVEL_DBG);
 
 #if(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0)
 #warning "bmi270 driver enabled without any devices"
@@ -105,7 +106,6 @@ static void bmi2_raw2gyro_convert(struct sensor_value *p_val, int64_t raw_val, u
 */
 static int bmi2_configure_axis_remapping(const struct device *p_dev)
 {
-    int8_t rslt;
     struct bmi2_remap remapped_axis;
     struct bmi2_remap remapped_axis_read;
     struct bmi270_data *data = p_dev->data;
@@ -175,7 +175,8 @@ static int bmi270_attr_set(const struct device *p_dev, enum sensor_channel chann
 {
     __ASSERT_NO_MSG(p_value != NULL);
 
-    if ((channel == SENSOR_CHAN_ACCEL_X) || (channel == SENSOR_CHAN_ACCEL_Y) || (channel == SENSOR_CHAN_ACCEL_Z) || (channel == SENSOR_CHAN_ACCEL_XYZ)) {
+    if ((channel == SENSOR_CHAN_ACCEL_X) || (channel == SENSOR_CHAN_ACCEL_Y) || (channel == SENSOR_CHAN_ACCEL_Z) ||
+        (channel == SENSOR_CHAN_ACCEL_XYZ)) {
         switch (attribute) {
             case SENSOR_ATTR_SAMPLING_FREQUENCY:
                 return bmi2_set_accel_odr(p_dev, p_value);
@@ -194,7 +195,8 @@ static int bmi270_attr_set(const struct device *p_dev, enum sensor_channel chann
             default:
                 return -ENOTSUP;
         }
-    } else if ((channel == SENSOR_CHAN_GYRO_X) || (channel == SENSOR_CHAN_GYRO_Y) || (channel == SENSOR_CHAN_GYRO_Z) || (channel == SENSOR_CHAN_GYRO_XYZ)) {
+    } else if ((channel == SENSOR_CHAN_GYRO_X) || (channel == SENSOR_CHAN_GYRO_Y) || (channel == SENSOR_CHAN_GYRO_Z) ||
+               (channel == SENSOR_CHAN_GYRO_XYZ)) {
         switch (attribute) {
             case SENSOR_ATTR_SAMPLING_FREQUENCY:
                 return bmi2_set_gyro_odr(p_dev, p_value);
@@ -202,6 +204,13 @@ static int bmi270_attr_set(const struct device *p_dev, enum sensor_channel chann
                 return bmi2_set_gyro_osr(p_dev, p_value);
             case SENSOR_ATTR_FULL_SCALE:
                 return bmi2_set_gyro_range(p_dev, p_value);
+            default:
+                return -ENOTSUP;
+        }
+    } else if (channel == SENSOR_CHAN_STEPS) {
+        switch (attribute) {
+            case SENSOR_ATTR_OFFSET:
+
             default:
                 return -ENOTSUP;
         }
@@ -298,7 +307,6 @@ static int bmi270_channel_get(const struct device *p_dev, enum sensor_channel ch
         sensor_value_from_float(p_value, temperature);
     }
     else if (channel == SENSOR_CHAN_STEPS) {
-        // TODO: Shall we move this into the "fetch" call?
         struct bmi2_feat_sensor_data sensor_data;
 
         sensor_data.type = BMI2_STEP_COUNTER;

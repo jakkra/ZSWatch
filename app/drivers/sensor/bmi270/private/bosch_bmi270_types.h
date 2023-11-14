@@ -35,9 +35,16 @@ struct bmi270_data {
 	struct gpio_callback gpio_handler;
 
 	const struct device *dev;
-
 	const struct sensor_trigger *trig;
-	sensor_trigger_handler_t trigger_handler;
+
+	sensor_trigger_handler_t global;
+	sensor_trigger_handler_t sig_motion;
+	sensor_trigger_handler_t step;
+	sensor_trigger_handler_t activity;
+	sensor_trigger_handler_t wake;
+	sensor_trigger_handler_t gesture;
+	sensor_trigger_handler_t stationary;
+	sensor_trigger_handler_t motion;
 #endif
 
 #ifdef CONFIG_BMI270_PLUS_TRIGGER_OWN_THREAD
