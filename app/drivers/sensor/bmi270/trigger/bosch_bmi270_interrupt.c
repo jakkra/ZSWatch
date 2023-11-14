@@ -69,7 +69,7 @@ static void bmi2_gpio_on_interrupt_callback(const struct device *p_dev, struct g
 */
 static void bmi2_process_int(const struct device *p_dev)
 {
-    uint8_t status;
+    uint16_t status;
 
     struct bmi270_data *data = p_dev->data;
     struct bmi2_feat_sensor_data sensor_data;
@@ -77,10 +77,12 @@ static void bmi2_process_int(const struct device *p_dev)
 
     memset(&sensor_data, 0, sizeof(sensor_data));
 
-    if (bmi2_get_status(&status, &data->bmi2) != BMI2_OK) {
+    if (bmi2_get_int_status(&status, &data->bmi2) != BMI2_OK) {
         LOG_ERR("Can not fetch status from IMU!");
         return;
     }
+
+    LOG_DBG("Status: %u", status);
 
     if (status & BMI270_SIG_MOT_STATUS_MASK) {
         LOG_DBG("BMI270_SIG_MOT_STATUS_MASK");
@@ -166,8 +168,9 @@ static void bmi2_process_int(const struct device *p_dev)
     // The global handler is called every time.
     if (data->global) {
         data->global(p_dev, trigger);
-        bmi2_enable_int(p_dev, true);
     }
+
+    bmi2_enable_int(p_dev, true);
 }
 
 #ifdef CONFIG_BMI270_PLUS_TRIGGER_OWN_THREAD
@@ -270,7 +273,7 @@ int bmi270_trigger_set(const struct device *p_dev, const struct sensor_trigger *
     struct bmi270_data *data = p_dev->data;
     const struct bmi270_config *config = p_dev->config;
 
-    if ((!config->int_gpio.port) || (p_trig->chan != SENSOR_CHAN_GESTURE) || (p_trig->chan != SENSOR_CHAN_ALL)) {
+    if ((!config->int_gpio.port) || ((p_trig->chan != SENSOR_CHAN_GESTURE) && (p_trig->chan != SENSOR_CHAN_ALL))) {
         return -ENOTSUP;
     }
 
