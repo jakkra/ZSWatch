@@ -212,6 +212,8 @@
 	};
 };
 
+/delete-node/ &storage_partition;
+
 &mx25r64 {
 	partitions {
 		compatible = "fixed-partitions";
@@ -226,8 +228,8 @@
 			label = "lvgl_raw_partition";
 			reg = <0x00200000 0x00200000>;
 		};
-        settings_partition: partition@400000 {
-            label = "settings_partition";
+        storage_partition: partition@400000 {
+            label = "storage_partition";
             reg = <0x400000 0x100000 >;
         };
 	};
