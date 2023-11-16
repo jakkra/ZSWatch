@@ -605,6 +605,7 @@ static void on_zbus_ble_data_callback(const struct zbus_channel *chan)
     }
 }
 
+#ifndef CONFIG_RESET_ON_FATAL_ERROR
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
     ARG_UNUSED(esf);
@@ -617,3 +618,4 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 
     CODE_UNREACHABLE;
 }
+#endif
