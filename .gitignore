@@ -2,6 +2,7 @@ build
 build*
 *.code-workspace
 *__pycache__*
+nrf/
 
 # Zephyr workspace
 /.west

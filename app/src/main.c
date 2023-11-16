@@ -54,6 +54,10 @@
 #include "applications/watchface/watchface_app.h"
 #include <filesystem/zsw_rtt_flash_loader.h>
 
+#ifdef CONFIG_BLE_USES_AMS
+#include "ble/ble_ams.h"
+#endif
+
 LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
 
 #define TASK_WDT_FEED_INTERVAL_MS  3000
@@ -314,6 +318,10 @@ static void enable_bluetoth(void)
 
     __ASSERT_NO_MSG(ble_comm_init(on_ble_data_callback) == 0);
     bleAoaInit();
+
+#ifdef CONFIG_BLE_USES_AMS
+    ble_ams_init();
+#endif
 }
 
 static bool load_retention_ram(void)
