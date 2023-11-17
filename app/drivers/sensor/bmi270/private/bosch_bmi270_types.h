@@ -66,5 +66,6 @@ struct bmi270_data {
     uint8_t acc_odr;
 	uint16_t gyr_range;
     uint8_t gyr_odr;
+    uint8_t gyr_osr;
 	struct bmi2_dev bmi2;
 };

@@ -22,7 +22,7 @@
 #include "events/light_event.h"
 #include "sensors/zsw_light_sensor.h"
 
-LOG_MODULE_REGISTER(zsw_light_sensor, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(zsw_light_sensor, CONFIG_ZSW_SENSORS_LOG_LEVEL);
 
 static void zbus_periodic_slow_callback(const struct zbus_channel *chan);
 

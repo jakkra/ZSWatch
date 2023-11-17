@@ -205,8 +205,12 @@ menu "ZSWatch"
     menu "Custom drivers"
         rsource "drivers/Kconfig"
     endmenu
-endmenu
 
-module = APP
-module-str = APP
-source "subsys/logging/Kconfig.template.log_config"
+    menu "Logging"
+        module = APP
+        module-str = APP
+        source "subsys/logging/Kconfig.template.log_config"
+
+        rsource "src/sensors/Kconfig"
+    endmenu
+endmenu

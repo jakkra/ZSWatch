@@ -64,10 +64,11 @@ static bool bmi2_is_sensor_feature(uint8_t sensor_id)
     }
 }
 
-int8_t bmi2_configure_enable_all(struct bmi2_dev *p_bmi2, struct bmi270_data *p_data)
+int8_t bmi2_configure_enable_all(const struct device *p_dev, struct bmi270_data *p_data)
 {
     uint8_t num_features;
     uint8_t num_enabled_features;
+    struct bmi270_data *data = p_dev->data;
 
     // Structure to define all sensors and their configs
     struct bmi2_sens_config config[ARRAY_SIZE(bmi270_enabled_features)];
@@ -104,8 +105,8 @@ int8_t bmi2_configure_enable_all(struct bmi2_dev *p_bmi2, struct bmi270_data *p_
     }
 
     // Get default configurations for the type of feature selected.
-    if (bmi270_get_sensor_config(config, ARRAY_SIZE(bmi270_enabled_features), p_bmi2) != BMI2_OK) {
-        return -EIO;
+    if (bmi270_get_sensor_config(config, ARRAY_SIZE(bmi270_enabled_features), &data->bmi2) != BMI2_OK) {
+        return -EFAULT;
     }
 
     for (int i = 0; i < ARRAY_SIZE(bmi270_enabled_features); i++) {
@@ -115,10 +116,10 @@ int8_t bmi2_configure_enable_all(struct bmi2_dev *p_bmi2, struct bmi270_data *p_
     }
 
     // Accel and Gyro enable must be done after setting configurations.
-    if ((bmi270_sensor_enable(all_sensors, num_enabled_features, p_bmi2) != BMI2_OK) ||
-        (bmi270_set_sensor_config(config, ARRAY_SIZE(bmi270_enabled_features), p_bmi2) != BMI2_OK) ||
-        (bmi270_map_feat_int(all_features, num_features, p_bmi2) != BMI2_OK)) {
-        return -EIO;
+    if ((bmi270_sensor_enable(all_sensors, num_enabled_features, &data->bmi2) != BMI2_OK) ||
+        (bmi270_set_sensor_config(config, ARRAY_SIZE(bmi270_enabled_features), &data->bmi2) != BMI2_OK) ||
+        (bmi270_map_feat_int(all_features, num_features, &data->bmi2) != BMI2_OK)) {
+        return -EFAULT;
     }
 
     return 0;
@@ -287,7 +288,7 @@ int bmi2_set_accel_range(const struct device *p_dev, const struct sensor_value *
     }
 
     if (data->bmi2.read(BOSCH_BMI270_REG_ACC_RANGE, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     LOG_DBG("Set ACC range to %u", p_range->val1);
@@ -316,7 +317,7 @@ int bmi2_set_accel_range(const struct device *p_dev, const struct sensor_value *
     }
 
     if (data->bmi2.write(BOSCH_BMI270_REG_ACC_RANGE, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     return 0;
@@ -334,7 +335,7 @@ int bmi2_set_accel_odr(const struct device *p_dev, const struct sensor_value *p_
 
     if ((data->bmi2.read(BOSCH_BMI270_REG_ACC_CONF, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) ||
         (data->bmi2.read(BOSCH_BMI270_REG_PWR_CTRL, &pwr_ctrl, 1, data->bmi2.intf_ptr) != BMI2_OK)) {
-        return -EIO;
+        return -EFAULT;
     }
 
     LOG_DBG("Set ACC ODR to %u", p_odr->val1);
@@ -359,7 +360,7 @@ int bmi2_set_accel_odr(const struct device *p_dev, const struct sensor_value *p_
     data->acc_odr = p_odr->val1;
 
     if (data->bmi2.write(BOSCH_BMI270_REG_ACC_CONF, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     // Assuming we have advance power save enabled.
@@ -367,7 +368,7 @@ int bmi2_set_accel_odr(const struct device *p_dev, const struct sensor_value *p_
 
     pwr_ctrl &= 0x0F;
     if (data->bmi2.write(BOSCH_BMI270_REG_PWR_CTRL, &pwr_ctrl, 1, data->bmi2.intf_ptr) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     return 0;
@@ -385,7 +386,7 @@ int bmi2_set_accel_osr(const struct device *p_dev, const struct sensor_value *p_
 
     if ((data->bmi2.read(BOSCH_BMI270_REG_ACC_CONF, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) ||
         (data->bmi2.read(BOSCH_BMI270_REG_PWR_CTRL, &pwr_ctrl, 1, data->bmi2.intf_ptr) != BMI2_OK)) {
-        return -EIO;
+        return -EFAULT;
     }
 
     LOG_DBG("Set ACC OSR to %u", p_osr->val1);
@@ -396,13 +397,13 @@ int bmi2_set_accel_osr(const struct device *p_dev, const struct sensor_value *p_
         LOG_DBG("Performance mode active");
 
         switch (p_osr->val1) {
-        case BOSCH_BMI_270_OSR4:
+        case BOSCH_BMI270_ACC_OSR4:
             config |= (0x00 << 0x04);
             break;
-        case BOSCH_BMI_270_OSR2:
+        case BOSCH_BMI270_ACC_OSR2:
             config |= (0x01 << 0x04);
             break;
-        case BOSCH_BMI_270_OSR1:
+        case BOSCH_BMI270_ACC_OSR1:
             config |= (0x02 << 0x04);
             break;
         default:
@@ -445,7 +446,7 @@ int bmi2_set_accel_osr(const struct device *p_dev, const struct sensor_value *p_
     data->acc_odr = p_osr->val1;
 
     if (data->bmi2.write(BOSCH_BMI270_REG_ACC_CONF, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     // Assuming we have advance power save enabled.
@@ -453,7 +454,7 @@ int bmi2_set_accel_osr(const struct device *p_dev, const struct sensor_value *p_
 
     pwr_ctrl &= 0x0F;
     if (data->bmi2.write(BOSCH_BMI270_REG_PWR_CTRL, &pwr_ctrl, 1, data->bmi2.intf_ptr) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     return 0;
@@ -469,7 +470,7 @@ int bmi2_set_gyro_range(const struct device *p_dev, const struct sensor_value *p
     }
 
     if (data->bmi2.read(BOSCH_BMI270_REG_GYR_RANGE, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     LOG_DBG("Set GYR range to %u", p_range->val1);
@@ -502,7 +503,7 @@ int bmi2_set_gyro_range(const struct device *p_dev, const struct sensor_value *p
     }
 
     if (data->bmi2.write(BOSCH_BMI270_REG_GYR_RANGE, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     return 0;
@@ -519,7 +520,7 @@ int bmi2_set_gyro_odr(const struct device *p_dev, const struct sensor_value *p_o
     }
 
     if (data->bmi2.read(BOSCH_BMI270_REG_GYR_CONF, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     LOG_DBG("Set GYR ODR to %u", p_odr->val1);
@@ -530,7 +531,7 @@ int bmi2_set_gyro_odr(const struct device *p_dev, const struct sensor_value *p_o
     data->gyr_odr = p_odr->val1;
 
     if (data->bmi2.write(BOSCH_BMI270_REG_GYR_CONF, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
-        return -EIO;
+        return -EFAULT;
     }
 
     return 0;
@@ -538,7 +539,82 @@ int bmi2_set_gyro_odr(const struct device *p_dev, const struct sensor_value *p_o
 
 int bmi2_set_gyro_osr(const struct device *p_dev, const struct sensor_value *p_osr)
 {
-    // TODO
+    struct bmi270_data *data = p_dev->data;
+    uint8_t config;
+
+    if (p_osr->val1 > BOSCH_BMI270_GYR_OSR1) {
+        return -ENOTSUP;
+    }
+
+    if (data->bmi2.read(BOSCH_BMI270_REG_GYR_CONF, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
+        return -EFAULT;
+    }
+
+    LOG_DBG("Set GYR OSR to %u", p_osr->val1);
+
+    config &= ~(0x03 << 4);
+    config |= p_osr->val1 << 4;
+
+    data->gyr_osr = p_osr->val1;
+
+    if (data->bmi2.write(BOSCH_BMI270_REG_GYR_CONF, &config, 1, data->bmi2.intf_ptr) != BMI2_OK) {
+        return -EFAULT;
+    }
+
+    return 0;
+}
+
+int bmi2_disable_feature(const struct device *p_dev, uint8_t feature)
+{
+    uint16_t int_status;
+    uint8_t feature_disable;
+    struct bmi270_data *data = p_dev->data;
+
+    LOG_DBG("Disable feature: %u", feature);
+
+    feature_disable = feature;
+    if (bmi270_sensor_disable(&feature_disable, 1, &data->bmi2) != BMI2_OK) {
+        return -EFAULT;
+    }
+
+    // Clear int_status register.
+    if (bmi2_get_int_status(&int_status, &data->bmi2) != BMI2_OK) {
+        return -EFAULT;
+    }
+
+    return 0;
+}
+
+int bmi2_enable_feature(const struct device *p_dev, uint8_t feature, bool int_en)
+{
+    uint16_t int_status;
+    uint8_t feature_disable;
+    struct bmi2_sens_int_config cfg;
+    struct bmi270_data *data = p_dev->data;
+
+    LOG_DBG("Enable feature: %u", feature);
+    LOG_DBG("Use interrupts: %u", int_en);
+
+    feature_disable = feature;
+    if (bmi270_sensor_enable(&feature_disable, 1, &data->bmi2) != BMI2_OK) {
+        return -EFAULT;
+    }
+
+    // Clear int_status register.
+    if (bmi2_get_int_status(&int_status, &data->bmi2) != BMI2_OK) {
+        return -EFAULT;
+    }
+
+    if (int_en) {
+        cfg.hw_int_pin = BMI2_INT2;
+    } else {
+        cfg.hw_int_pin = BMI2_INT_NONE;
+    }
+    cfg.type = feature;
+
+    if (bmi270_map_feat_int(&cfg, 1, &data->bmi2) != BMI2_OK) {
+        return -EFAULT;
+    }
 
     return 0;
 }

@@ -176,6 +176,10 @@ static int bmi270_attr_set(const struct device *p_dev, enum sensor_channel chann
 
     if ((channel == SENSOR_CHAN_ACCEL_X) || (channel == SENSOR_CHAN_ACCEL_Y) || (channel == SENSOR_CHAN_ACCEL_Z) ||
         (channel == SENSOR_CHAN_ACCEL_XYZ)) {
+        // Accelerometer configuration channel. Supported options:
+        //  - Sampling frequency
+        //  - Oversampling rate
+        //  - Measurement range
         switch (attribute) {
             case SENSOR_ATTR_SAMPLING_FREQUENCY:
                 return bmi2_set_accel_odr(p_dev, p_value);
@@ -196,6 +200,10 @@ static int bmi270_attr_set(const struct device *p_dev, enum sensor_channel chann
         }
     } else if ((channel == SENSOR_CHAN_GYRO_X) || (channel == SENSOR_CHAN_GYRO_Y) || (channel == SENSOR_CHAN_GYRO_Z) ||
                (channel == SENSOR_CHAN_GYRO_XYZ)) {
+        // Gyroscope configuration channel. Supported options:
+        //  - Sampling frequency
+        //  - Oversampling rate
+        //  - Measurement range
         switch (attribute) {
             case SENSOR_ATTR_SAMPLING_FREQUENCY:
                 return bmi2_set_gyro_odr(p_dev, p_value);
@@ -210,6 +218,32 @@ static int bmi270_attr_set(const struct device *p_dev, enum sensor_channel chann
         switch (attribute) {
             case SENSOR_ATTR_OFFSET:
 
+            default:
+                return -ENOTSUP;
+        }
+    } else if (channel == SENSOR_CHAN_FEATURE) {
+        // Feature configuration channel. Supported options:
+        //  - Configuration
+        //      p_value.val1:
+        //          - BMI270 feature
+        //      p_value.val2 Bit 0:
+        //          - 1 - Enable the feature
+        //          - 0 - Disable the feature
+        //      p_value.val2 Bit 1:
+        //          - 1 - Enable interrupts (only when Bit 0 is set)
+        //          - 0 - Disable interrupts (only when Bit 0 is set)
+        switch (attribute) {
+            case SENSOR_ATTR_CONFIGURATION:
+                if ((p_value->val2 & 0x01) == 0) {
+                    if (bmi2_disable_feature(p_dev, p_value->val1 & 0xFF) != BMI2_OK) {
+                        return -EFAULT;
+                    }
+                }
+                else if ((p_value->val2 & 0x01) == 1) {
+                    if (bmi2_enable_feature(p_dev, p_value->val1, (p_value->val2 >> 1) & 0x01) != BMI2_OK) {
+                        return -EFAULT;
+                    }
+                }
             default:
                 return -ENOTSUP;
         }
@@ -391,7 +425,7 @@ static int bmi270_sensor_init(const struct device *p_dev)
     data->gyr_odr = BOSCH_BMI270_GYR_ODR_200_HZ;
     data->gyr_range = 2000;
 
-    if (bmi2_configure_enable_all(&data->bmi2, data) != BMI2_OK) {
+    if (bmi2_configure_enable_all(p_dev, data) != BMI2_OK) {
         return -EFAULT;
     }
 

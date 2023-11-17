@@ -24,7 +24,7 @@
 #include "events/accel_event.h"
 #include "sensors/zsw_imu.h"
 
-LOG_MODULE_REGISTER(zsw_imu, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(zsw_imu, CONFIG_ZSW_SENSORS_LOG_LEVEL);
 
 static void zbus_periodic_slow_callback(const struct zbus_channel *chan);
 
@@ -56,7 +56,7 @@ static void bmi270_trigger_handler(const struct device *dev, const struct sensor
         case SENSOR_TRIG_STEP: {
             struct sensor_value sensor_val;
 
-            if ((sensor_sample_fetch_chan(bmi270, SENSOR_CHAN_ALL) == 0) &&
+            if ((sensor_sample_fetch_chan(bmi270, SENSOR_CHAN_STEPS) == 0) &&
                 (sensor_channel_get(bmi270, SENSOR_CHAN_STEPS, &sensor_val) == 0)) {
 
                 evt.type = ZSW_IMU_EVT_TYPE_STEP;
@@ -70,7 +70,7 @@ static void bmi270_trigger_handler(const struct device *dev, const struct sensor
         case SENSOR_TRIG_ACTIVITY: {
             struct sensor_value sensor_val;
 
-            if ((sensor_sample_fetch_chan(bmi270, SENSOR_CHAN_ALL) == 0) &&
+            if ((sensor_sample_fetch_chan(bmi270, SENSOR_CHAN_ACTIVITY) == 0) &&
                 (sensor_channel_get(bmi270, SENSOR_CHAN_ACTIVITY, &sensor_val) == 0)) {
 
                 evt.type = ZSW_IMU_EVT_TYPE_STEP_ACTIVITY;
@@ -90,7 +90,7 @@ static void bmi270_trigger_handler(const struct device *dev, const struct sensor
         case SENSOR_TRIG_WRIST_GESTURE: {
             struct sensor_value sensor_val;
 
-            if ((sensor_sample_fetch_chan(bmi270, SENSOR_CHAN_ALL) == 0) &&
+            if ((sensor_sample_fetch_chan(bmi270, SENSOR_CHAN_GESTURE) == 0) &&
                 (sensor_channel_get(bmi270, SENSOR_CHAN_GESTURE, &sensor_val) == 0)) {
 
                 evt.type = ZSW_IMU_EVT_TYPE_GESTURE;
@@ -273,10 +273,28 @@ int zsw_imu_reset_step_count(void)
 
 int zsw_imu_feature_disable(zsw_imu_feature_t feature)
 {
+    struct sensor_value value;
+
+    value.val1 = feature;
+    value.val2 = BOSCH_BMI270_FEAT_DISABLE;
+
+    if (sensor_attr_set(bmi270, SENSOR_CHAN_FEATURE, SENSOR_ATTR_CONFIGURATION, &value) != 0) {
+        return -EFAULT;
+    }
+
     return 0;
 }
 
 int zsw_imu_feature_enable(zsw_imu_feature_t feature, bool int_en)
 {
+    struct sensor_value value;
+
+    value.val1 = feature;
+    value.val2 = (int_en << 1) | BOSCH_BMI270_FEAT_ENABLE;
+
+    if (sensor_attr_set(bmi270, SENSOR_CHAN_FEATURE, SENSOR_ATTR_CONFIGURATION, &value) != 0) {
+        return -EFAULT;
+    }
+
     return 0;
 }

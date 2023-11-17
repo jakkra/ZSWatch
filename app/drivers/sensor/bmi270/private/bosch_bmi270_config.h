@@ -68,57 +68,66 @@
 #define BOSCH_BMI270_REG_PWR_CTRL        0x7D
 #define BOSCH_BMI270_REG_CMD             0x7E
 
-/** @brief              
- *  @param p_bmi2_dev   
- *  @param p_data       
- *  @return             0 when successful
+/** @brief          
+ *  @param p_dev    
+ *  @param p_data   
+ *  @return         0 when successful
 */
-int8_t bmi2_configure_enable_all(struct bmi2_dev *p_bmi2_dev, struct bmi270_data *p_data);
+int8_t bmi2_configure_enable_all(const struct device *p_dev, struct bmi270_data *p_data);
 
-/** @brief              
- *  @param p_dev        
- *  @param p_range      
- *  @param p_bmi2_dev   
- *  @return             
+/** @brief          
+ *  @param p_dev    
+ *  @param p_range  
+ *  @return         0 when successful
 */
 int bmi2_set_accel_range(const struct device *p_dev, const struct sensor_value *p_range);
 
-/** @brief              
- *  @param p_dev        
- *  @param p_odr        
- *  @param p_bmi2_dev   
- *  @return             
+/** @brief          
+ *  @param p_dev    
+ *  @param p_odr    
+ *  @return         0 when successful
 */
 int bmi2_set_accel_odr(const struct device *p_dev, const struct sensor_value *p_odr);
 
-/** @brief              
- *  @param p_dev        
- *  @param p_osr        
- *  @param p_bmi2_dev   
- *  @return             
+/** @brief          
+ *  @param p_dev    
+ *  @param p_osr    
+ *  @return         0 when successful
 */
 int bmi2_set_accel_osr(const struct device *p_dev, const struct sensor_value *p_osr);
 
-/** @brief              
- *  @param p_dev        
- *  @param p_range      
- *  @param p_bmi2_dev   
- *  @return             
+/** @brief          
+ *  @param p_dev    
+ *  @param p_range  
+ *  @return         0 when successful
 */
 int bmi2_set_gyro_range(const struct device *p_dev, const struct sensor_value *p_range);
 
-/** @brief              
- *  @param p_dev        
- *  @param p_odr        
- *  @param p_bmi2_dev   
- *  @return             
+/** @brief          
+ *  @param p_dev    
+ *  @param p_odr    
+ *  @return         0 when successful
 */
 int bmi2_set_gyro_odr(const struct device *p_dev, const struct sensor_value *p_odr);
 
-/** @brief              
- *  @param p_dev        
- *  @param p_osr        
- *  @param p_bmi2_dev   
- *  @return             
+/** @brief          
+ *  @param p_dev    
+ *  @param p_osr     
+ *  @return         0 when successful
 */
 int bmi2_set_gyro_osr(const struct device *p_dev, const struct sensor_value *p_osr);
+
+/** @brief          
+ *  @param p_dev    
+ *  @param feature  
+ *  @return         0 when successful
+*/
+int bmi2_disable_feature(const struct device *p_dev, uint8_t feature);
+
+/** @brief          
+ *  @param p_dev    
+ *  @param feature  
+ *  @param int_en   
+ *  @return         0 when successful
+*/
+int bmi2_enable_feature(const struct device *p_dev, uint8_t feature, bool int_en);

@@ -20,6 +20,10 @@
 */
 #define SENSOR_CHAN_GESTURE             (SENSOR_CHAN_PRIV_START + 3)
 
+/** @brief Feature configuration channel.
+*/
+#define SENSOR_CHAN_FEATURE             (SENSOR_CHAN_PRIV_START + 4)
+
 /** @brief Wrist gesture detection like flick in/out, push arm down(pivot up, wrist jiggle/shake).
 */
 #define SENSOR_TRIG_WRIST_GESTURE       (SENSOR_TRIG_PRIV_START + 1)
@@ -42,6 +46,50 @@
 */
 #define SENSOR_TRIG_SIG_MOTION          (SENSOR_TRIG_PRIV_START + 5)
 
+/** @brief
+*/
+#define BOSCH_BMI270_FEAT_ENABLE        (0x01 << 0x00)
+
+/** @brief
+*/
+#define BOSCH_BMI270_FEAT_DISABLE       (0x00 << 0x00)
+
+/** @brief
+*/
+#define BOSCH_BMI270_FEAT_ACCEL         0
+
+/** @brief
+*/
+#define BOSCH_BMI270_FEAT_GYRO          1
+
+/** @brief
+*/
+#define BOSCH_BMI270_FEAT_SIG_MOTION    3
+
+/** @brief
+*/
+#define BOSCH_BMI270_FEAT_ANY_MOTION    4
+
+/** @brief
+*/
+#define BOSCH_BMI270_FEAT_NO_MOTION     5
+
+/** @brief
+*/
+#define BOSCH_BMI270_FEAT_STEP_COUNTER  7
+
+/** @brief
+*/
+#define BOSCH_BMI270_FEAT_STEP_ACTIVITY 8
+
+/** @brief
+*/
+#define BOSCH_BMI270_FEAT_WRIST_GESTURE 19
+
+/** @brief
+*/
+#define BOSCH_BMI270_FEAT_WEAR_WAKE_UP  20
+
 #define BOSCH_BMI270_ACC_ODR_25D32_HZ   0x01
 #define BOSCH_BMI270_ACC_ODR_25D16_HZ   0x02
 #define BOSCH_BMI270_ACC_ODR_25D8_HZ    0x03
@@ -60,9 +108,9 @@
 #define BOSCH_BMI270_ACC_RANGE_8G       0x02
 #define BOSCH_BMI270_ACC_RANGE_16G      0x03
 
-#define BOSCH_BMI_270_OSR1              0x01
-#define BOSCH_BMI_270_OSR2              0x02
-#define BOSCH_BMI_270_OSR4              0x04
+#define BOSCH_BMI270_ACC_OSR1           0x01
+#define BOSCH_BMI270_ACC_OSR2           0x02
+#define BOSCH_BMI270_ACC_OSR4           0x04
 
 #define BOSCH_BMI270_AVG1               0x01
 #define BOSCH_BMI270_AVG2               0x02
@@ -87,3 +135,7 @@
 #define BOSCH_BMI270_GYR_ODR_800_HZ     0x0B
 #define BOSCH_BMI270_GYR_ODR_1600_HZ    0x0C
 #define BOSCH_BMI270_GYR_ODR_3200_HZ    0x0D
+
+#define BOSCH_BMI270_GYR_OSR4           0x00
+#define BOSCH_BMI270_GYR_OSR2           0x01
+#define BOSCH_BMI270_GYR_OSR1           0x02

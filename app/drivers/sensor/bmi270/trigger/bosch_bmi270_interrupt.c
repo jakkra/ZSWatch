@@ -12,8 +12,7 @@
 #include "../bosch_bmi270.h"
 #include "../private/bosch_bmi270_config.h"
 
-//LOG_MODULE_REGISTER(bosch_bmi270_trigger, CONFIG_SENSOR_LOG_LEVEL);
-LOG_MODULE_REGISTER(bosch_bmi270_trigger, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(bosch_bmi270_trigger, CONFIG_SENSOR_LOG_LEVEL);
 
 #ifdef CONFIG_BMI270_PLUS_TRIGGER_OWN_THREAD
 static K_KERNEL_STACK_DEFINE(bmi2_thread_stack, CONFIG_BMI270_PLUS_THREAD_STACK_SIZE);
@@ -253,6 +252,8 @@ int bmi2_init_interrupt(const struct device *p_dev)
     int_cfg.pin_cfg[0].od = BMI2_INT_PUSH_PULL;
     int_cfg.pin_cfg[0].output_en = BMI2_INT_OUTPUT_ENABLE;
 */
+
+    int_cfg.pin_cfg[0].output_en = BMI2_INT_NONE;
 
     int_cfg.pin_type = BMI2_INT2;
     int_cfg.pin_cfg[1].lvl = BMI2_INT_ACTIVE_HIGH;
