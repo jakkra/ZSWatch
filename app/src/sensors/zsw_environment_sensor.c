@@ -70,6 +70,10 @@ int zsw_environment_sensor_get(float *temperature, float *humidity, float *press
 {
     struct sensor_value sensor_val;
 
+    if (!device_is_ready(bme688)) {
+        return -ENODEV;
+    }
+
     if (sensor_sample_fetch(bme688) != 0) {
         return -ENODATA;
     }
@@ -95,6 +99,10 @@ int zsw_environment_sensor_get(float *temperature, float *humidity, float *press
 int zsw_environment_sensor_get_iaq(float *iaq)
 {
     struct sensor_value sensor_val;
+
+    if (!device_is_ready(bme688)) {
+        return -ENODEV;
+    }
 
     if (sensor_sample_fetch(bme688) != 0) {
         return -ENODATA;

@@ -56,6 +56,11 @@
 #include "applications/watchface/watchface_app.h"
 #include <filesystem/zsw_rtt_flash_loader.h>
 
+#ifdef CONFIG_BLE_USES_IOS
+#include "ble/ble_ams.h"
+#include "ble/ble_ancs.h"
+#endif
+
 LOG_MODULE_REGISTER(main, LOG_LEVEL_WRN);
 
 #define TASK_WDT_FEED_INTERVAL_MS  3000
@@ -318,6 +323,11 @@ static void enable_bluetoth(void)
 
     __ASSERT_NO_MSG(ble_comm_init(on_ble_data_callback) == 0);
     bleAoaInit();
+
+#ifdef CONFIG_BLE_USES_IOS
+    ble_ams_init();
+    ble_ancs_init(on_ble_data_callback);
+#endif
 }
 
 static bool load_retention_ram(void)
@@ -609,6 +619,7 @@ static void on_zbus_ble_data_callback(const struct zbus_channel *chan)
     }
 }
 
+#ifndef CONFIG_RESET_ON_FATAL_ERROR
 void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 {
     ARG_UNUSED(esf);
@@ -621,3 +632,4 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
 
     CODE_UNREACHABLE;
 }
+#endif

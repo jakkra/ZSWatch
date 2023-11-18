@@ -20,7 +20,7 @@
 
 #include <zephyr/kernel.h>
 
-#define MAX_MUSIC_FIELD_LENGTH          25
+#define MAX_MUSIC_FIELD_LENGTH          100
 #define MAX_WEATHER_REPORT_TEXT_LENGTH  25
 
 typedef enum ble_comm_data_type {
@@ -28,8 +28,8 @@ typedef enum ble_comm_data_type {
     BLE_COMM_DATA_TYPE_NOTIFY_REMOVE,
     BLE_COMM_DATA_TYPE_SET_TIME,
     BLE_COMM_DATA_TYPE_WEATHER,
-    BLE_COMM_DATA_TYPE_MUSTIC_INFO,
-    BLE_COMM_DATA_TYPE_MUSTIC_STATE,
+    BLE_COMM_DATA_TYPE_MUSIC_INFO,
+    BLE_COMM_DATA_TYPE_MUSIC_STATE,
     BLE_COMM_DATA_TYPE_REMOTE_CONTROL,
     BLE_COMM_DATA_TYPE_EMPTY
 } ble_comm_data_type_t;
