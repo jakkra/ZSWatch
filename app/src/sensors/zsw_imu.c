@@ -146,6 +146,10 @@ int zsw_imu_fetch_accel_f(float *x, float *y, float *z)
     struct sensor_value y_temp;
     struct sensor_value z_temp;
 
+    if (!device_is_ready(bmi270)) {
+        return -ENODEV;
+    }
+
     if (sensor_sample_fetch_chan(bmi270, SENSOR_CHAN_ALL) != 0) {
         return -ENODATA;
     }
@@ -168,6 +172,10 @@ int zsw_imu_fetch_gyro_f(float *x, float *y, float *z)
     struct sensor_value x_temp;
     struct sensor_value y_temp;
     struct sensor_value z_temp;
+
+    if (!device_is_ready(bmi270)) {
+        return -ENODEV;
+    }
 
     if (sensor_sample_fetch_chan(bmi270, SENSOR_CHAN_ALL) != 0) {
         return -ENODATA;
@@ -192,6 +200,10 @@ int zsw_imu_fetch_accel(int16_t *x, int16_t *y, int16_t *z)
     struct sensor_value y_temp;
     struct sensor_value z_temp;
 
+    if (!device_is_ready(bmi270)) {
+        return -ENODEV;
+    }
+
     if (sensor_sample_fetch_chan(bmi270, SENSOR_CHAN_ALL) != 0) {
         return -ENODATA;
     }
@@ -215,6 +227,10 @@ int zsw_imu_fetch_gyro(int16_t *x, int16_t *y, int16_t *z)
     struct sensor_value y_temp;
     struct sensor_value z_temp;
 
+    if (!device_is_ready(bmi270)) {
+        return -ENODEV;
+    }
+
     if (sensor_sample_fetch_chan(bmi270, SENSOR_CHAN_ALL) != 0) {
         return -ENODATA;
     }
@@ -236,6 +252,10 @@ int zsw_imu_fetch_num_steps(uint32_t *num_steps)
 {
     struct sensor_value sensor_val;
 
+    if (!device_is_ready(bmi270)) {
+        return -ENODEV;
+    }
+
     if (sensor_sample_fetch_chan(bmi270, SENSOR_CHAN_ALL) != 0) {
         return -ENODATA;
     }
@@ -252,6 +272,10 @@ int zsw_imu_fetch_num_steps(uint32_t *num_steps)
 int zsw_imu_fetch_temperature(float *temperature)
 {
     struct sensor_value sensor_val;
+
+    if (!device_is_ready(bmi270)) {
+        return -ENODEV;
+    }
 
     if (sensor_sample_fetch_chan(bmi270, SENSOR_CHAN_AMBIENT_TEMP) != 0) {
         return -ENODATA;
@@ -275,6 +299,10 @@ int zsw_imu_feature_disable(zsw_imu_feature_t feature)
 {
     struct sensor_value value;
 
+    if (!device_is_ready(bmi270)) {
+        return -ENODEV;
+    }
+
     value.val1 = feature;
     value.val2 = BOSCH_BMI270_FEAT_DISABLE;
 
@@ -288,6 +316,10 @@ int zsw_imu_feature_disable(zsw_imu_feature_t feature)
 int zsw_imu_feature_enable(zsw_imu_feature_t feature, bool int_en)
 {
     struct sensor_value value;
+
+    if (!device_is_ready(bmi270)) {
+        return -ENODEV;
+    }
 
     value.val1 = feature;
     value.val2 = (int_en << 1) | BOSCH_BMI270_FEAT_ENABLE;

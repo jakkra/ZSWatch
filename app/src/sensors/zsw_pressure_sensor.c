@@ -62,6 +62,10 @@ int zsw_pressure_sensor_set_odr(uint8_t odr)
 {
     struct sensor_value value;
 
+    if (!device_is_ready(bmp581)) {
+        return -ENODEV;
+    }
+
     value.val1 = odr;
 
     if (sensor_attr_set(bmp581, SENSOR_CHAN_ALL, SENSOR_ATTR_SAMPLING_FREQUENCY, &value) != 0) {
@@ -74,6 +78,10 @@ int zsw_pressure_sensor_set_odr(uint8_t odr)
 int zsw_pressure_sensor_get_pressure(float *pressure)
 {
     struct sensor_value sensor_val;
+
+    if (!device_is_ready(bmp581)) {
+        return -ENODEV;
+    }
 
     if (sensor_sample_fetch(bmp581) != 0) {
         return -ENODATA;
@@ -91,6 +99,10 @@ int zsw_pressure_sensor_get_pressure(float *pressure)
 int zsw_pressure_sensor_get_temperature(float *temperature)
 {
     struct sensor_value sensor_val;
+
+    if (!device_is_ready(bmp581)) {
+        return -ENODEV;
+    }
 
     if (sensor_sample_fetch(bmp581) != 0) {
         return -ENODATA;

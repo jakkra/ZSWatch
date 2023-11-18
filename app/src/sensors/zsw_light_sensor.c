@@ -62,6 +62,10 @@ int zsw_light_sensor_get_light(float *light)
 {
     struct sensor_value sensor_val;
 
+    if (!device_is_ready(apds9306)) {
+        return -ENODEV;
+    }
+
     if (sensor_sample_fetch(apds9306) != 0) {
         return -ENODATA;
     }
