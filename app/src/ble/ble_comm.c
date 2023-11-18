@@ -32,6 +32,11 @@
 #include "ble/ble_transport.h"
 #include "events/ble_data_event.h"
 
+#ifdef CONFIG_BT_AMS_CLIENT
+#include <bluetooth/services/ams_client.h>
+#include <bluetooth/services/ancs_client.h>
+#endif
+
 LOG_MODULE_REGISTER(ble_comm, LOG_LEVEL_DBG);
 
 #define BLE_COMM_LONG_INT_MIN_MS   (400 / 1.25)
@@ -73,7 +78,10 @@ static const struct bt_data ad[] = {
                   (CONFIG_BT_DEVICE_APPEARANCE >> 8) & 0xff),
     BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
     BT_DATA_BYTES(BT_DATA_UUID16_ALL,
-                  BT_UUID_16_ENCODE(BT_UUID_DIS_VAL))
+                  BT_UUID_16_ENCODE(BT_UUID_DIS_VAL)),
+#ifdef CONFIG_BT_AMS_CLIENT
+    BT_DATA_BYTES(BT_DATA_SOLICIT128, BT_UUID_ANCS_VAL),
+#endif
 };
 
 static const struct bt_data ad_nus[] = {
@@ -774,7 +782,7 @@ static int parse_musicinfo(char *data, int len)
     ble_comm_cb_data_t cb;
     memset(&cb, 0, sizeof(cb));
 
-    cb.type = BLE_COMM_DATA_TYPE_MUSTIC_INFO;
+    cb.type = BLE_COMM_DATA_TYPE_MUSIC_INFO;
     cb.data.music_info.duration = extract_value_int32("\"dur\":", data);
     cb.data.music_info.track_count = extract_value_int32("\"c\":", data);
     cb.data.music_info.track_num = extract_value_int32("\"n\":", data);
@@ -798,7 +806,7 @@ static int parse_musicstate(char *data, int len)
     ble_comm_cb_data_t cb;
     memset(&cb, 0, sizeof(cb));
 
-    cb.type = BLE_COMM_DATA_TYPE_MUSTIC_STATE;
+    cb.type = BLE_COMM_DATA_TYPE_MUSIC_STATE;
     cb.data.music_state.position = extract_value_int32("\"position\":", data);
     cb.data.music_state.shuffle = extract_value_int32("\"shuffle\":", data);
     cb.data.music_state.repeat = extract_value_int32("\"repeat\":", data);

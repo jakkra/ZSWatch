@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.20.0)
 
+# Apply patches before build
+file(GLOB_RECURSE files RELATIVE ${CMAKE_SOURCE_DIR} "patches/*.patch")
+foreach(file ${files})
+    execute_process(COMMAND 
+                    patch -p1 -d ../zephyr/ -i ${CMAKE_CURRENT_SOURCE_DIR}/${file} -r - --no-backup-if-mismatch)
+endforeach()
+
 string(REGEX MATCH "zswatch_nrf5340_cpuapp(_ns)?@([0-9]+)$" ZSWATCH_BOARD "${BOARD}")
 if(ZSWATCH_BOARD)
     set(ZSWATCH_REV ${CMAKE_MATCH_2})
@@ -9,7 +16,13 @@ if(ZSWATCH_BOARD)
         set(PM_STATIC_YML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/partition.yml)
         set(OVERLAY_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/boards/dfu.conf)
         set(mcuboot_DTC_OVERLAY_FILE ${CMAKE_CURRENT_SOURCE_DIR}/overlays/mcuboot.overlay)
+    else()
+        set(PM_STATIC_YML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/partition_zs.yml)
     endif()
+endif()
+
+if("nrf5340dk_nrf5340_cpuapp" STREQUAL "${BOARD}")
+    set(PM_STATIC_YML_FILE ${CMAKE_CURRENT_SOURCE_DIR}/partition_zs.yml)
 endif()
 
 set(BOARD_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
@@ -51,5 +64,8 @@ endif()
 zephyr_sources_ifdef(CONFIG_WATCHFACE_ANALOG src/ui/watchfaces/zsw_watchface_analog_ui.c)
 zephyr_sources_ifdef(CONFIG_WATCHFACE_DIGITAL src/ui/watchfaces/zsw_watchface_digital_ui.c)
 zephyr_sources_ifdef(CONFIG_WATCHFACE_MINIMAL src/ui/watchfaces/zsw_watchface_minimal_ui.c)
+
+FILE(GLOB events_sources src/events/*.c)
+target_sources(app PRIVATE ${events_sources})
 
 add_compile_definitions(LV_LVGL_H_INCLUDE_SIMPLE)

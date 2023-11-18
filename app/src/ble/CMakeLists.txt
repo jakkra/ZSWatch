@@ -1,2 +1,5 @@
-FILE(GLOB ble_sources *.c)
-target_sources(app PRIVATE ${ble_sources})
+target_sources(app PRIVATE ble_aoa.c)
+target_sources(app PRIVATE ble_comm.c)
+target_sources(app PRIVATE ble_transport.c)
+target_sources_ifdef(CONFIG_BLE_USES_IOS app PRIVATE ble_ams.c)
+target_sources_ifdef(CONFIG_BLE_USES_IOS app PRIVATE ble_ancs.c)
