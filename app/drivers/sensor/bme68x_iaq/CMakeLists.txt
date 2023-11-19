@@ -17,8 +17,8 @@ if(CONFIG_EXTERNAL_USE_BOSCH_BSEC)
     zephyr_sources(bosch_bme68x_iaq.c)
 
     # Add the Bosch BSEC2 library to the project.
-    zephyr_include_directories(${PROJECT_SOURCE_DIR}/src/ext_drivers/BSEC2/algo/normal_version/inc)
-    set(LIB_DIR ${PROJECT_SOURCE_DIR}/src/ext_drivers/BSEC2/algo/normal_version/bin/gcc/Cortex_M4)
+    zephyr_include_directories(${PROJECT_SOURCE_DIR}/src/ext_drivers/BSEC2/src/inc)
+    set(LIB_DIR ${PROJECT_SOURCE_DIR}/src/ext_drivers/BSEC2/src/cortex-m4)
     add_library(libalgobsec STATIC IMPORTED PRIVATE)
     set_target_properties(libalgobsec PROPERTIES IMPORTED_LOCATION ${LIB_DIR}/libalgobsec.a)
     target_link_libraries(app PUBLIC libalgobsec)
