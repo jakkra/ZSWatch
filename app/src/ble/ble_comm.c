@@ -701,6 +701,11 @@ static void convert_to_encoded_text(char *data, int len, char *out_data, int out
             j++;
         }
     }
+    // Copy the rest of the data
+    for (; i < len; i++) {
+        out_data[j] = data[i];
+        j++;
+    }
     out_data[j] = '\0';
 }
 
@@ -829,6 +834,7 @@ static int parse_data(char *data, int len)
     char *type;
     uint8_t input_data_utf8[MAX_GB_PACKET_LENGTH];
 
+    memset(input_data_utf8, 0, sizeof(input_data_utf8));
     // Convert data from Gadgetbridge into properly encoded text.
     convert_to_encoded_text(data, len, input_data_utf8, sizeof(input_data_utf8));
     data = input_data_utf8;
