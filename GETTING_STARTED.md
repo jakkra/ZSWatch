@@ -53,7 +53,7 @@ By downloading (running below commands) you approve this [License](https://www.b
 west config manifest.group-filter +bsec2
 west update
 ```
-To enable the feature add below to prj.conf or use Kconfig to enable it.
+To enable the feature add below to prj.conf or build with boards/bsec.conf or use Kconfig to enable it.
 ```
 CONFIG_BME680=n
 CONFIG_EXTERNAL_USE_BOSCH_BSEC=y
