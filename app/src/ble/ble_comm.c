@@ -38,10 +38,10 @@
 #include <bluetooth/services/ancs_client.h>
 #endif
 
-LOG_MODULE_REGISTER(ble_comm, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ble_comm, CONFIG_ZSW_BLE_LOG_LEVEL);
 
-#define BLE_COMM_LONG_INT_MIN_MS   (400 / 1.25)
-#define BLE_COMM_LONG_INT_MAX_MS   (500 / 1.25)
+#define BLE_COMM_LONG_INT_MIN_MS            (400 / 1.25)
+#define BLE_COMM_LONG_INT_MAX_MS            (500 / 1.25)
 
 #define BLE_COMM_CONN_INT_UPDATE_TIMEOUT_MS    5000
 
@@ -755,21 +755,26 @@ static int parse_notify(char *data, int len)
     cb.data.notify.src = extract_value_str("\"src\":", data, &cb.data.notify.src_len);
     cb.data.notify.sender = extract_value_str("\"sender\":", data, &cb.data.notify.sender_len);
     cb.data.notify.title = extract_value_str("\"title\":", data, &cb.data.notify.title_len);
+    cb.data.notify.subject = extract_value_str("\"subject\":", data, &cb.data.notify.subject_len);
     cb.data.notify.body = extract_value_str("\"body\":", data, &cb.data.notify.body_len);
 
     // Little hack since we know it's JSON, we can terminate all values in the data
     // which saves us some hassle and we can just pass all values null terminated
     // to the callback. Make sure to do it after finish parsing!
-    if (cb.data.notify.src_len > 0) {
+    if (cb.data.notify.src) {
         cb.data.notify.src[cb.data.notify.src_len] = '\0';
     }
-    if (cb.data.notify.sender_len > 0) {
+    if (cb.data.notify.sender) {
         cb.data.notify.sender[cb.data.notify.sender_len] = '\0';
     }
-    if (cb.data.notify.title_len > 0) {
+    if (cb.data.notify.title) {
         cb.data.notify.title[cb.data.notify.title_len] = '\0';
     }
-    if (cb.data.notify.body_len > 0) {
+
+    if (cb.data.notify.subject) {
+        cb.data.notify.subject[cb.data.notify.subject_len] = '\0';
+    }
+    if (cb.data.notify.body) {
         cb.data.notify.body[cb.data.notify.body_len] = '\0';
     }
 

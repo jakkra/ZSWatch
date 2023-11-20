@@ -31,7 +31,7 @@
 #include "ble/ble_comm.h"
 #include "events/ble_data_event.h"
 
-LOG_MODULE_REGISTER(ble_ancs, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(ble_ancs, CONFIG_ZSW_BLE_LOG_LEVEL);
 
 enum {
     DISCOVERY_ANCS_ONGOING,

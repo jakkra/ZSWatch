@@ -15,8 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __BLE_COMM_H
-#define __BLE_COMM_H
+#pragma once
 
 #include <zephyr/kernel.h>
 
@@ -44,6 +43,8 @@ typedef struct ble_comm_notify {
     int title_len;
     char *src;
     int src_len;
+    char *subject;
+    int subject_len;
 } ble_comm_notify_t;
 
 typedef struct ble_comm_notify_remove {
@@ -98,10 +99,30 @@ typedef struct ble_comm_cb_data {
 
 typedef void(*on_data_cb_t)(ble_comm_cb_data_t *data);
 
+/** @brief
+ *  @return 0 when successful
+*/
 int ble_comm_init(on_data_cb_t data_cb);
-int ble_comm_send(uint8_t *data, uint16_t len);
-void ble_comm_set_pairable(bool pairable);
-int ble_comm_short_connection_interval(void);
-int ble_comm_long_connection_interval(void);
 
-#endif
+/** @brief
+ *  @param data
+ *  @param len
+ *  @return     0 when successful
+*/
+int ble_comm_send(uint8_t *data, uint16_t len);
+
+/** @brief
+ *  @param pairable
+ *  @return         0 when successful
+*/
+void ble_comm_set_pairable(bool pairable);
+
+/** @brief
+ *  @return 0 when successful
+*/
+int ble_comm_short_connection_interval(void);
+
+/** @brief
+ *  @return 0 when successful
+*/
+int ble_comm_long_connection_interval(void);
