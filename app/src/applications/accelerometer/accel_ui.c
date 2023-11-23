@@ -1,8 +1,6 @@
 #include <accelerometer/accel_ui.h>
 #include <lvgl.h>
 
-static void close_button_pressed(lv_event_t *e);
-
 static lv_obj_t *root_page = NULL;
 
 static lv_obj_t *bar_acc_x;
@@ -63,19 +61,6 @@ void accel_ui_show(lv_obj_t *root, on_close_cb_t close_cb)
     acc_z_label = lv_label_create(root_page);
     lv_label_set_text(acc_z_label, "0 g");
     lv_obj_align_to(acc_z_label, bar_acc_z, LV_ALIGN_CENTER, 0, -15);
-
-    // TODO add a close button which have focus by default so we can exit back to app manager.
-
-    lv_obj_t *float_btn = lv_btn_create(root_page);
-    lv_obj_set_size(float_btn, 50, 50);
-    lv_obj_add_flag(float_btn, LV_OBJ_FLAG_FLOATING);
-    lv_obj_align(float_btn, LV_ALIGN_BOTTOM_RIGHT, 0, -lv_obj_get_style_pad_right(root_page, LV_PART_MAIN));
-    lv_obj_add_event_cb(float_btn, close_button_pressed, LV_EVENT_PRESSED, root_page);
-    lv_obj_set_style_radius(float_btn, LV_RADIUS_CIRCLE, 0);
-    lv_obj_set_style_bg_img_src(float_btn, LV_SYMBOL_CLOSE, 0);
-    lv_obj_set_style_text_font(float_btn, lv_theme_get_font_large(float_btn), 0);
-
-    lv_group_focus_obj(float_btn);
 }
 
 void accel_ui_remove(void)
