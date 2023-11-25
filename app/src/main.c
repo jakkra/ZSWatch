@@ -55,7 +55,6 @@
 #include "managers/zsw_notification_manager.h"
 #include "applications/watchface/watchface_app.h"
 #include <filesystem/zsw_rtt_flash_loader.h>
-
 #include "ble/ble_ams.h"
 #include "ble/ble_ancs.h"
 #include "ble/ble_cts.h"
@@ -263,11 +262,12 @@ void run_wdt_work(struct k_work *item)
 int main(void)
 {
 #ifdef CONFIG_SPI_FLASH_LOADER
-    if (bootmode_check(0xA)) {
+    if (bootmode_check(ZSW_BOOT_MODE_RTT_FLASH_LOADER)) {
         LOG_WRN("SPI Flash Loader Boot Mode");
-        bootmode_clear();
         zsw_rtt_flash_loader_start();
         return 0;
+    } else if (bootmode_check(ZSW_BOOT_MODE_FLASH_ERASE)) {
+        zsw_rtt_flash_loader_erase_external();
     }
 #endif
 #if defined(CONFIG_TASK_WDT) && !defined(CONFIG_BOARD_NATIVE_POSIX)
