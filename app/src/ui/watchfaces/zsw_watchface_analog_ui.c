@@ -437,7 +437,7 @@ static void watchface_set_date(int day_of_week, int date)
     lv_label_set_text(date_label, buf);
 }
 
-static void watchface_set_watch_env_sensors(int temperature, int humidity, int pressure)
+static void watchface_set_watch_env_sensors(int temperature, int humidity, int pressure, float iaq, float co2)
 {
     if (!root_page) {
         return;

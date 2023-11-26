@@ -30,8 +30,13 @@ static void arc_event_pressed(lv_event_t *e);
 
 static lv_obj_t *root_page = NULL;
 static lv_obj_t *ui_digital_watchface;
-static lv_obj_t *ui_pressure_arc;
+static lv_obj_t *ui_iaq_or_pressure_arc;
+#ifdef CONFIG_EXTERNAL_USE_BOSCH_BSEC
+static lv_obj_t *ui_co2_arc;
+static lv_obj_t *ui_iaq_co2_text_image;
+#else
 static lv_obj_t *ui_pressure_image;
+#endif
 static lv_obj_t *ui_humidity_arc;
 static lv_obj_t *ui_humidity_icon;
 static lv_obj_t *ui_watch_temperature_label;
@@ -56,6 +61,7 @@ static lv_obj_t *ui_bt_icon;
 static lv_obj_t *ui_weather_temperature_label;
 static lv_obj_t *ui_weather_icon;
 
+LV_IMG_DECLARE(ui_img_iaq_co2_text);    // assets/air_quality.png
 LV_IMG_DECLARE(ui_img_pressure_png);    // assets/pressure.png
 LV_IMG_DECLARE(ui_img_temperatures_png);    // assets/temperatures.png
 LV_IMG_DECLARE(ui_img_charging_png);    // assets/charging.png
@@ -96,28 +102,70 @@ static void watchface_show(watchface_app_evt_listener evt_cb)
 
     lv_obj_clear_flag(ui_digital_watchface, LV_OBJ_FLAG_SCROLLABLE);
 
-    ui_pressure_arc = lv_arc_create(ui_digital_watchface);
-    lv_obj_set_width(ui_pressure_arc, 240);
-    lv_obj_set_height(ui_pressure_arc, 240);
-    lv_obj_set_align(ui_pressure_arc, LV_ALIGN_CENTER);
-    lv_obj_add_flag(ui_pressure_arc, LV_OBJ_FLAG_EVENT_BUBBLE);
-    lv_obj_clear_flag(ui_pressure_arc, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE |
+    ui_iaq_or_pressure_arc = lv_arc_create(ui_digital_watchface);
+    lv_obj_set_width(ui_iaq_or_pressure_arc, 240);
+    lv_obj_set_height(ui_iaq_or_pressure_arc, 240);
+    lv_obj_set_align(ui_iaq_or_pressure_arc, LV_ALIGN_CENTER);
+
+    lv_obj_add_flag(ui_iaq_or_pressure_arc, LV_OBJ_FLAG_EVENT_BUBBLE);
+    lv_obj_clear_flag(ui_iaq_or_pressure_arc, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE |
                       LV_OBJ_FLAG_SNAPPABLE | LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC | LV_OBJ_FLAG_SCROLL_MOMENTUM |
                       LV_OBJ_FLAG_SCROLL_CHAIN);
-    lv_arc_set_value(ui_pressure_arc, 70);
-    lv_arc_set_bg_angles(ui_pressure_arc, 195, 245);
-    lv_arc_set_rotation(ui_pressure_arc, 1);
-    lv_arc_set_range(ui_pressure_arc, 950, 1050);
-    lv_obj_set_style_arc_width(ui_pressure_arc, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_arc_set_value(ui_iaq_or_pressure_arc, 70);
+    lv_arc_set_bg_angles(ui_iaq_or_pressure_arc, 195, 245);
+    lv_arc_set_rotation(ui_iaq_or_pressure_arc, 1);
+    lv_obj_set_style_arc_width(ui_iaq_or_pressure_arc, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+#ifdef CONFIG_EXTERNAL_USE_BOSCH_BSEC
+    lv_arc_set_range(ui_iaq_or_pressure_arc, 0, 351);
+#else
+    lv_arc_set_range(ui_iaq_or_pressure_arc, 950, 1050);
+#endif
+    lv_obj_set_style_arc_color(ui_iaq_or_pressure_arc, lv_color_hex(0x4AC73F), LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    lv_obj_set_style_arc_opa(ui_iaq_or_pressure_arc, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    lv_obj_set_style_arc_width(ui_iaq_or_pressure_arc, 5, LV_PART_INDICATOR | LV_STATE_DEFAULT);
 
-    lv_obj_set_style_arc_color(ui_pressure_arc, lv_color_hex(0x4AC73F), LV_PART_INDICATOR | LV_STATE_DEFAULT);
-    lv_obj_set_style_arc_opa(ui_pressure_arc, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
-    lv_obj_set_style_arc_width(ui_pressure_arc, 5, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui_iaq_or_pressure_arc, lv_color_hex(0xFFFFFF), LV_PART_KNOB | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_iaq_or_pressure_arc, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
 
-    lv_obj_set_style_bg_color(ui_pressure_arc, lv_color_hex(0xFFFFFF), LV_PART_KNOB | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_pressure_arc, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
+#ifdef CONFIG_EXTERNAL_USE_BOSCH_BSEC
+    ui_co2_arc = lv_arc_create(ui_digital_watchface);
+    lv_obj_set_width(ui_co2_arc, 240);
+    lv_obj_set_height(ui_co2_arc, 240);
+    lv_obj_set_align(ui_co2_arc, LV_ALIGN_CENTER);
+    lv_obj_set_pos(ui_co2_arc, 5, 5);
+    lv_obj_add_flag(ui_co2_arc, LV_OBJ_FLAG_EVENT_BUBBLE);
+    lv_obj_clear_flag(ui_co2_arc, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE |
+                      LV_OBJ_FLAG_SNAPPABLE | LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC | LV_OBJ_FLAG_SCROLL_MOMENTUM |
+                      LV_OBJ_FLAG_SCROLL_CHAIN);
+    lv_arc_set_value(ui_co2_arc, 70);
+    lv_arc_set_bg_angles(ui_co2_arc, 197, 243);
+    lv_arc_set_rotation(ui_co2_arc, 1);
+    lv_arc_set_range(ui_co2_arc, 0, 2000);
+    lv_obj_set_style_arc_width(ui_co2_arc, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    ui_pressure_image = lv_img_create(ui_pressure_arc);
+    lv_obj_set_style_arc_color(ui_co2_arc, lv_color_hex(0x4AC73F), LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    lv_obj_set_style_arc_opa(ui_co2_arc, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    lv_obj_set_style_arc_width(ui_co2_arc, 5, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+
+    lv_obj_set_style_bg_color(ui_co2_arc, lv_color_hex(0xFFFFFF), LV_PART_KNOB | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui_co2_arc, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
+
+    ui_iaq_co2_text_image = lv_img_create(ui_co2_arc);
+    lv_img_set_src(ui_iaq_co2_text_image, &ui_img_pressure_png);
+    lv_obj_set_width(ui_iaq_co2_text_image, LV_SIZE_CONTENT);
+    lv_obj_set_height(ui_iaq_co2_text_image, LV_SIZE_CONTENT);
+    lv_obj_set_pos(ui_iaq_co2_text_image, -80, -70);
+    lv_obj_set_align(ui_iaq_co2_text_image, LV_ALIGN_CENTER);
+    lv_img_set_src(ui_iaq_co2_text_image, &ui_img_iaq_co2_text);
+    lv_img_set_angle(ui_iaq_co2_text_image, 300);
+    lv_obj_add_flag(ui_iaq_co2_text_image, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_clear_flag(ui_iaq_co2_text_image,
+                      LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC |
+                      LV_OBJ_FLAG_SCROLL_MOMENTUM | LV_OBJ_FLAG_SCROLL_CHAIN);
+    lv_obj_set_style_img_recolor(ui_iaq_co2_text_image, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_img_recolor_opa(ui_iaq_co2_text_image, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+#else
+    ui_pressure_image = lv_img_create(ui_iaq_or_pressure_arc);
     lv_img_set_src(ui_pressure_image, &ui_img_pressure_png);
     lv_obj_set_width(ui_pressure_image, LV_SIZE_CONTENT);
     lv_obj_set_height(ui_pressure_image, LV_SIZE_CONTENT);
@@ -130,6 +178,8 @@ static void watchface_show(watchface_app_evt_listener evt_cb)
                       LV_OBJ_FLAG_SCROLL_MOMENTUM | LV_OBJ_FLAG_SCROLL_CHAIN);
     lv_obj_set_style_img_recolor(ui_pressure_image, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_img_recolor_opa(ui_pressure_image, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+#endif
+
 
     ui_humidity_arc = lv_arc_create(ui_digital_watchface);
     lv_obj_set_width(ui_humidity_arc, 240);
@@ -549,7 +599,47 @@ static void watchface_set_date(int day_of_week, int date)
     lv_label_set_text_fmt(ui_date_label, "%d", date);
 }
 
-static void watchface_set_watch_env_sensors(int temperature, int humidity, int pressure)
+#ifdef CONFIG_EXTERNAL_USE_BOSCH_BSEC
+static lv_color_t color_from_iaq(int iaq)
+{
+    lv_color_t color = lv_palette_main(LV_PALETTE_INDIGO);
+    if (iaq < 51) {
+        color = lv_color_hex(0x00E400);
+    } else if (iaq < 101) {
+        color = lv_color_hex(0x92D050);
+    } else if (iaq < 151) {
+        color = lv_color_hex(0xFFFF00);
+    } else if (iaq < 201) {
+        color = lv_color_hex(0xFF7E00);
+    } else if (iaq < 251) {
+        color = lv_color_hex(0xFF0000);
+    } else if (iaq < 351) {
+        color = lv_color_hex(0x99004C);
+    } else {
+        color = lv_color_hex(0x663300);
+    }
+    return color;
+}
+
+static lv_color_t color_from_co2(int iaq)
+{
+    lv_color_t color = lv_palette_main(LV_PALETTE_INDIGO);
+    if (iaq < 600) {
+        color = lv_color_hex(0x1CB149);
+    } else if (iaq < 900) {
+        color = lv_color_hex(0x97C93A);
+    } else if (iaq < 1600) {
+        color = lv_color_hex(0xF9C510);
+    } else if (iaq < 2000) {
+        color = lv_color_hex(0xF39027);
+    } else {
+        color = lv_color_hex(0xEB1E27);
+    }
+    return color;
+}
+#endif
+
+static void watchface_set_watch_env_sensors(int temperature, int humidity, int pressure, float iaq, float co2)
 {
     if (!root_page) {
         return;
@@ -557,8 +647,18 @@ static void watchface_set_watch_env_sensors(int temperature, int humidity, int p
 
     // Compensate for ui_humidity_arc is using REVERSE mode, hence lv_arc_get_max_value is needed
     lv_arc_set_value(ui_humidity_arc, lv_arc_get_max_value(ui_humidity_arc) - humidity);
-    lv_arc_set_value(ui_pressure_arc, pressure / 100);
     lv_label_set_text_fmt(ui_watch_temperature_label, "%d°", temperature);
+
+#ifdef CONFIG_EXTERNAL_USE_BOSCH_BSEC
+    lv_arc_set_value(ui_iaq_or_pressure_arc, iaq);
+    lv_obj_set_style_arc_color(ui_iaq_or_pressure_arc, color_from_iaq(iaq), LV_PART_INDICATOR | LV_STATE_DEFAULT);
+
+    lv_arc_set_value(ui_co2_arc, co2);
+    lv_obj_set_style_arc_color(ui_co2_arc, color_from_co2(co2), LV_PART_INDICATOR | LV_STATE_DEFAULT);
+#else
+    lv_arc_set_range(ui_iaq_or_pressure_arc, 950, 1050);
+    lv_arc_set_value(ui_iaq_or_pressure_arc, pressure / 100);
+#endif
 }
 
 static void watchface_ui_invalidate_cached(void)
