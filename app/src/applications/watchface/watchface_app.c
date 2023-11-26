@@ -37,6 +37,7 @@
 #include "events/activity_event.h"
 #include "events/ble_data_event.h"
 #include "sensors/zsw_imu.h"
+#include "sensors/zsw_environment_sensor.h"
 #include "sensors/zsw_pressure_sensor.h"
 #include "managers/zsw_battery_manager.h"
 #include "managers/zsw_notification_manager.h"
@@ -117,8 +118,6 @@ static uint8_t num_watchfaces;
 static uint8_t current_watchface;
 
 static watchface_app_evt_listener watchface_evt_cb;
-
-static const struct device *const bme688 = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(bme688));
 
 static int watchface_app_init(void)
 {
@@ -214,29 +213,19 @@ static void general_work(struct k_work *item)
         case UPDATE_SLOW_VALUES: {
             float pressure = 0.0;
             float temperature = 0.0;
-            int humidity = 0.0;
-            struct sensor_value sensor_val;
+            float humidity = 0.0;
+            float iaq = 0.0;
+            float co2 = 0.0;
             struct tm *time = zsw_clock_get_time();
 
-            if (device_is_ready(bme688)) {
-                if (sensor_sample_fetch(bme688) != 0) {
-                    return;
-                }
-
-                sensor_channel_get(bme688, SENSOR_CHAN_AMBIENT_TEMP, &sensor_val);
-                temperature = sensor_value_to_float(&sensor_val);
-
-                sensor_channel_get(bme688, SENSOR_CHAN_HUMIDITY, &sensor_val);
-                humidity = sensor_value_to_float(&sensor_val);
-
-                sensor_channel_get(bme688, SENSOR_CHAN_PRESS, &sensor_val);
-                pressure = sensor_value_to_float(&sensor_val);
-            }
+            zsw_environment_sensor_get(&temperature, &humidity, &pressure);
+            zsw_environment_sensor_get_co2(&co2);
+            zsw_environment_sensor_get_iaq(&iaq);
 
             watchfaces[current_watchface]->set_date(time->tm_wday, time->tm_mday);
 
             zsw_pressure_sensor_get_pressure(&pressure);
-            watchfaces[current_watchface]->set_watch_env_sensors((int)temperature, (int)humidity, (int)pressure);
+            watchfaces[current_watchface]->set_watch_env_sensors((int)temperature, (int)humidity, (int)pressure, iaq, co2);
 
             __ASSERT(0 <= k_work_schedule(&date_work.work, SLOW_UPDATE_INTERVAL), "FAIL date_work");
         }
