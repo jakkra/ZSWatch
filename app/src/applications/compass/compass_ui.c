@@ -7,8 +7,20 @@ static lv_obj_t *compass_panel;
 static lv_obj_t *compass_img;
 static lv_obj_t *compass_label;
 
+static on_start_calibraion_cb_t start_cal;
+
+static void calibrate_button_event_cb(lv_event_t *e)
+{
+    if (start_cal) {
+        start_cal();
+    }
+}
+
 static void create_ui(lv_obj_t *parent)
 {
+    lv_obj_t *cal_btn;
+    lv_obj_t *cal_btn_label;
+
     LV_IMG_DECLARE(cardinal_point)
     compass_panel = lv_obj_create(parent);
     lv_obj_set_width(compass_panel, 240);
@@ -18,6 +30,16 @@ static void create_ui(lv_obj_t *parent)
     lv_obj_set_style_radius(compass_panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(compass_panel, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_width(compass_panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    cal_btn = lv_btn_create(compass_panel);
+    lv_obj_set_style_pad_all(cal_btn, 3, LV_PART_MAIN);
+    lv_obj_set_align(cal_btn, LV_ALIGN_CENTER);
+    lv_obj_set_pos(cal_btn, 0, 80);
+    lv_obj_set_size(cal_btn, 70, 25);
+    lv_obj_set_style_bg_color(cal_btn, lv_palette_main(LV_PALETTE_ORANGE), LV_PART_MAIN | LV_STATE_DEFAULT);
+    cal_btn_label = lv_label_create(cal_btn);
+    lv_label_set_text(cal_btn_label, "Calibrate");
+    lv_obj_add_event_cb(cal_btn, calibrate_button_event_cb, LV_EVENT_CLICKED, NULL);
 
     compass_img = lv_img_create(compass_panel);
     lv_img_set_src(compass_img, &cardinal_point);
@@ -36,7 +58,7 @@ static void create_ui(lv_obj_t *parent)
     lv_obj_set_style_text_opa(compass_label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
-void compass_ui_show(lv_obj_t *root)
+void compass_ui_show(lv_obj_t *root, on_start_calibraion_cb_t start_cal_cb)
 {
     assert(root_page == NULL);
 
@@ -47,6 +69,8 @@ void compass_ui_show(lv_obj_t *root)
     // Make root container fill the screen
     lv_obj_set_size(root_page, LV_PCT(100), LV_PCT(100));
     lv_obj_clear_flag(root_page, LV_OBJ_FLAG_SCROLLABLE);
+
+    start_cal = start_cal_cb;
 
     create_ui(root_page);
 }

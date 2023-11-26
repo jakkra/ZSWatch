@@ -3,7 +3,9 @@
 #include <inttypes.h>
 #include <lvgl.h>
 
-void compass_ui_show(lv_obj_t *root);
+typedef void(*on_start_calibraion_cb_t)(void);
+
+void compass_ui_show(lv_obj_t *root, on_start_calibraion_cb_t start_cal_cb);
 
 void compass_ui_remove(void);
 

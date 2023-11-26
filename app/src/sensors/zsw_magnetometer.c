@@ -1,6 +1,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/settings/settings.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
@@ -19,6 +20,16 @@ LOG_MODULE_REGISTER(zsw_magnetometer, CONFIG_ZSW_SENSORS_LOG_LEVEL);
 #define M_PI        3.14159265358979323846
 #endif
 
+#define SETTINGS_NAME_MAGN              "magn"
+#define SETTINGS_KEY_CALIB              "calibr"
+#define SETTINGS_MAGN_CALIB             SETTINGS_NAME_MAGN "/" SETTINGS_KEY_CALIB
+
+typedef struct {
+    float offset_x;
+    float offset_y;
+    float offset_z;
+} magn_calib_data_t;
+
 static double last_heading;
 static double last_x;
 static double last_y;
@@ -30,9 +41,7 @@ static double min_x;
 static double min_y;
 static double min_z;
 static bool is_calibrating;
-static float offset_x;
-static float offset_y;
-static float offset_z;
+static magn_calib_data_t calibration_data;
 
 static void zbus_periodic_slow_callback(const struct zbus_channel *chan);
 
@@ -116,13 +125,31 @@ static void lis2mdl_trigger_handler(const struct device *dev,
         }
     }
 
-    last_x = last_x - offset_x;
-    last_y = last_y - offset_y;
-    last_z = last_z - offset_z;
+    last_x = last_x - calibration_data.offset_x;
+    last_y = last_y - calibration_data.offset_y;
+    last_z = last_z - calibration_data.offset_z;
 
     last_heading = xyz_to_rotation(last_x, last_y, last_z);
 
     LOG_DBG("Rotation: %f", last_heading);
+}
+
+static int magn_cal_load(const char *p_key, size_t len,
+                         settings_read_cb read_cb, void *p_cb_arg, void *p_param)
+{
+    ARG_UNUSED(p_key);
+
+    if (len != sizeof(magn_calib_data_t)) {
+        LOG_ERR("Invalid length of magn calibration data");
+        return -EINVAL;
+    }
+
+    if (read_cb(p_cb_arg, &calibration_data, len) != sizeof(magn_calib_data_t)) {
+        LOG_ERR("Error reading magn calibration data");
+        return -EIO;
+    }
+
+    return 0;
 }
 
 int zsw_magnetometer_init(void)
@@ -130,6 +157,16 @@ int zsw_magnetometer_init(void)
     if (!device_is_ready(magnetometer)) {
         LOG_ERR("Device magnetometer is not ready");
         return -ENODEV;
+    }
+
+    if (settings_subsys_init()) {
+        LOG_ERR("Error during settings_subsys_init!");
+        return -EFAULT;
+    }
+
+    if (settings_load_subtree_direct(SETTINGS_MAGN_CALIB, magn_cal_load, NULL)) {
+        LOG_ERR("Error during settings_load_subtree!");
+        return -EFAULT;
     }
 
     struct sensor_trigger trig;
@@ -205,9 +242,11 @@ int zsw_magnetometer_stop_calibration(void)
     }
 
     is_calibrating = false;
-    offset_x = (max_x + min_x) / 2;
-    offset_y = (max_y + min_y) / 2;
-    offset_z = (max_z + min_z) / 2;
+    calibration_data.offset_x = (max_x + min_x) / 2;
+    calibration_data.offset_y = (max_y + min_y) / 2;
+    calibration_data.offset_z = (max_z + min_z) / 2;
+
+    settings_save_one(SETTINGS_MAGN_CALIB, &calibration_data, sizeof(magn_calib_data_t));
 
     return 0;
 }
