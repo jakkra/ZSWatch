@@ -24,3 +24,5 @@ void sensors_summary_ui_set_rel_height(float rel_height);
 void sensors_summary_ui_set_light(float light);
 
 void sensors_summary_ui_set_iaq(float iaq);
+
+void sensors_summary_ui_set_co2(float co2);

@@ -15,6 +15,7 @@ static lv_obj_t *temp_label;
 static lv_obj_t *rel_height_label;
 static lv_obj_t *iaq_label;
 static lv_obj_t *light_label;
+static lv_obj_t *co2_label;
 
 static void event_set_reference_button(lv_event_t *e)
 {
@@ -88,6 +89,14 @@ static void create_ui(lv_obj_t *parent)
     lv_obj_set_align(light_label, LV_ALIGN_LEFT_MID);
     lv_label_set_text(light_label, "Light:");
 
+    co2_label = lv_label_create(parent);
+    lv_obj_set_width(co2_label, LV_SIZE_CONTENT);
+    lv_obj_set_height(co2_label, LV_SIZE_CONTENT);
+    lv_obj_set_x(co2_label, 15);
+    lv_obj_set_y(co2_label, 35);
+    lv_obj_set_align(co2_label, LV_ALIGN_LEFT_MID);
+    lv_label_set_text(co2_label, "CO2:");
+
     lv_obj_add_event_cb(set_ref_btn, event_set_reference_button, LV_EVENT_CLICKED, NULL);
 }
 
@@ -141,4 +150,9 @@ void sensors_summary_ui_set_light(float light)
 void sensors_summary_ui_set_iaq(float iaq)
 {
     lv_label_set_text_fmt(iaq_label, "IAQ:\t%.2f", iaq);
+}
+
+void sensors_summary_ui_set_co2(float co2)
+{
+    lv_label_set_text_fmt(co2_label, "CO2:\t%.2f ppm", co2);
 }

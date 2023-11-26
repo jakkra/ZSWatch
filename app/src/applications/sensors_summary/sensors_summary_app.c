@@ -64,9 +64,11 @@ static void timer_callback(lv_timer_t *timer)
     float humidity = 0.0;
     float light = -1.0;
     float iaq = -1.0;
+    float co2 = -1.0;
 
     zsw_environment_sensor_get(&temperature, &humidity, &pressure);
     zsw_environment_sensor_get_iaq(&iaq);
+    zsw_environment_sensor_get_co2(&co2);
     zsw_pressure_sensor_get_pressure(&pressure);
     zsw_light_sensor_get_light(&light);
 
@@ -74,6 +76,7 @@ static void timer_callback(lv_timer_t *timer)
     sensors_summary_ui_set_temp(temperature);
     sensors_summary_ui_set_humidity(humidity);
     sensors_summary_ui_set_iaq(iaq);
+    sensors_summary_ui_set_co2(co2);
     sensors_summary_ui_set_light(light);
     sensors_summary_ui_set_rel_height(get_relative_height_m(relative_pressure, pressure, temperature));
 }
