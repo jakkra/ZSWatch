@@ -15,6 +15,7 @@ static void compass_app_stop(void);
 
 // Functions related to app functionality
 static void timer_callback(lv_timer_t *timer);
+static void on_start_calibration(void);
 
 LV_IMG_DECLARE(move);
 
@@ -31,13 +32,9 @@ static uint32_t cal_start_ms;
 
 static void compass_app_start(lv_obj_t *root, lv_group_t *group)
 {
-    compass_ui_show(root);
+    compass_ui_show(root, on_start_calibration);
     refresh_timer = lv_timer_create(timer_callback, CONFIG_DEFAULT_CONFIGURATION_COMPASS_REFRESH_INTERVAL_MS,  NULL);
     zsw_magnetometer_set_enable(true);
-    zsw_magnetometer_start_calibration();
-    is_calibrating = true;
-    cal_start_ms = lv_tick_get();
-    zsw_popup_show("Calibration", "Spin around 360 degrees for 10.", NULL, 100, false);
 }
 
 static void compass_app_stop(void)
@@ -49,6 +46,15 @@ static void compass_app_stop(void)
     if (is_calibrating) {
         zsw_popup_remove();
     }
+}
+
+static void on_start_calibration(void)
+{
+    zsw_magnetometer_start_calibration();
+    is_calibrating = true;
+    cal_start_ms = lv_tick_get();
+    zsw_popup_show("Calibration",
+                   "Spin the watch around 360 degrees\nand do some random rotations in 3D space for 10 seconds.", NULL, 10, false);
 }
 
 static void timer_callback(lv_timer_t *timer)
