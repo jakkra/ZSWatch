@@ -21,7 +21,7 @@
 #include <zephyr/device.h>
 #include <zephyr/retention/retention.h>
 
-const struct device *retention_area = DEVICE_DT_GET(DT_NODELABEL(retention1));
+const struct device *retention_area = DEVICE_DT_GET(DT_NODELABEL(retention0));
 
 struct retained_data retained;
 
