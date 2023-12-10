@@ -20,7 +20,7 @@
 #include <zephyr/drivers/rtc.h>
 
 #include "zsw_clock.h"
-
+#include "zsw_rtc_alarm_id.h"
 #include "../drivers/sensor/bmi270/bosch_bmi270.h"
 
 #include "events/zsw_periodic_event.h"
@@ -126,7 +126,7 @@ static void bmi270_trigger_handler(const struct device *dev, const struct sensor
 static void rtc_alarm_reset_step_counter(const struct device *dev, uint16_t id,
                                          void *user_data)
 {
-    LOG_ERR("RTC alarm callback. Reset time.");
+    LOG_DBG("RTC alarm callback. Reset time.");
     zsw_imu_reset_step_count();
 }
 
@@ -155,13 +155,13 @@ int zsw_imu_init(void)
     step_counter_alarm_time.tm_sec = 59;
     alarm_time_mask_set = (RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR | RTC_ALARM_TIME_MASK_SECOND);
 
-    ret = rtc_alarm_set_time(rtc, 0, alarm_time_mask_set, &step_counter_alarm_time);
+    ret = rtc_alarm_set_time(rtc, ZSW_RTC_ALARM_ID_IMU_STEP_RESET, alarm_time_mask_set, &step_counter_alarm_time);
     if (ret != 0) {
         LOG_ERR("Failed to set alarm time: %d", ret);
         return ret;
     }
 
-    ret = rtc_alarm_set_callback(rtc, 0, rtc_alarm_reset_step_counter, NULL);
+    ret = rtc_alarm_set_callback(rtc, ZSW_RTC_ALARM_ID_IMU_STEP_RESET, rtc_alarm_reset_step_counter, NULL);
     if (ret != 0) {
         LOG_ERR("Failed to set alarm callback time: %d", ret);
         return ret;
