@@ -5,6 +5,8 @@
 
 static struct k_work_delayable periodic_slow_work;
 static struct k_work_delayable periodic_fast_work;
+static struct k_work_delayable periodic_mid_work;
+
 
 ZBUS_CHAN_DEFINE(periodic_event_slow_chan,
                  struct periodic_event,
@@ -18,6 +20,14 @@ ZBUS_CHAN_DEFINE(periodic_event_fast_chan,
                  struct periodic_event,
                  NULL,
                  &periodic_fast_work,
+                 ZBUS_OBSERVERS_EMPTY,
+                 ZBUS_MSG_INIT()
+                );
+
+ZBUS_CHAN_DEFINE(periodic_event_mid_chan,
+                 struct periodic_event,
+                 NULL,
+                 &periodic_mid_work,
                  ZBUS_OBSERVERS_EMPTY,
                  ZBUS_MSG_INIT()
                 );
