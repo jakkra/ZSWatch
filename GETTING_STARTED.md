@@ -66,8 +66,6 @@ There are two approaches to deal with Zephyr based projects:
 - [Using the command line](#using-the-command-line)
 
 ### Compiling
-Due to a bug in nRF Connect VSCode plugin at the moment it's necessary to do the first build using the command line. Afterwards everything can be done withing VSCode in the nRF Connect Plugin.
-
 ### Using the command line
 - Set revision zswatch_nrf5340_cpuapp@\<revision\> to 1 or 3 depending on what version of ZSWatch is used. If your watch is built before Aug. 1 2023 it's revision 1, otherwise revision 3.
 - Replace release.conf with debug.conf if the build is for development.
