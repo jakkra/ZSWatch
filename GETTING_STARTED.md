@@ -53,7 +53,7 @@ By downloading (running below commands) you approve this [License](https://www.b
 west config manifest.group-filter +bsec2
 west update
 ```
-To enable the feature add below to prj.conf or build with boards/bsec.conf or use Kconfig to enable it.
+To enable the feature add below to `prj.conf` or build with `boards/bsec.conf` or use Kconfig to enable it.
 ```
 CONFIG_BME680=n
 CONFIG_EXTERNAL_USE_BOSCH_BSEC=y
@@ -86,7 +86,7 @@ Follow the steps below to open and build the ZSWatch application:
 - Press `Create new build configuration` and fill in zswatch board, revision, and any config files wanted, for example debug.conf.
 - Now press the `Build Configuration` button and it will compile.
 
-__NOTE__
+__NOTE (Not applicable for nRF Connect)__
 <br>
 Since the nRF5340 is a dual core microcontroller where the second core is designed to serve the Bluetooth Controller, the second image needs to be flashed for BLE operation.
 If you are building with Zephyr you need in addition manually compile and flash the `zephyr/samples/bluetooth/hci_rpmsg` sample and flash that to the NET core. For convenience I have also uploaded a pre-compiled [hex image for NET CPU](app/child_image/GENERATED_CP_NETWORK_merged_domains.hex) if you don't want to recompile it yourself. Flash it using following:
