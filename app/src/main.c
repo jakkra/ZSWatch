@@ -279,7 +279,7 @@ int main(void)
     }
 
     task_wdt_init(hw_wdt_dev);
-    kernal_wdt_id = task_wdt_add(TASK_WDT_FEED_INTERVAL_MS * 2, NULL, NULL);
+    kernal_wdt_id = task_wdt_add(TASK_WDT_FEED_INTERVAL_MS * 5, NULL, NULL);
 
     k_work_schedule(&wdt_work, K_NO_WAIT);
 #endif
