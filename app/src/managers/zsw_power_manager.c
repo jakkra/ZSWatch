@@ -52,7 +52,6 @@ K_WORK_DELAYABLE_DEFINE(idle_work, handle_idle_timeout);
 
 ZBUS_CHAN_DECLARE(activity_state_data_chan);
 
-ZBUS_CHAN_DECLARE(accel_data_chan);
 ZBUS_LISTENER_DEFINE(power_manager_accel_lis, zbus_accel_data_callback);
 
 ZBUS_CHAN_DECLARE(battery_sample_data_chan);
