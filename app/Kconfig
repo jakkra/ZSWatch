@@ -222,6 +222,7 @@ menu "ZSWatch"
         source "subsys/logging/Kconfig.template.log_config"
 
         rsource "src/sensors/Kconfig"
+        rsource "src/sensor_fusion/Kconfig"
         rsource "src/ble/Kconfig"
         rsource "src/applications/settings/Kconfig"
         rsource "src/applications/template/Kconfig"
@@ -229,5 +230,6 @@ menu "ZSWatch"
         rsource "src/applications/notification/Kconfig"
         rsource "src/applications/trivia/Kconfig"
         rsource "src/applications/ppt_remote/Kconfig"
+        rsource "src/applications/speedometer/Kconfig"
     endmenu
 endmenu
