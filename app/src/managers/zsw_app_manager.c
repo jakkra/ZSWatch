@@ -146,7 +146,7 @@ static void scroll_event_cb(lv_event_t *e)
     lv_area_t cont_a;
     lv_obj_get_coords(cont, &cont_a);
     lv_coord_t cont_y_center = cont_a.y1 + lv_area_get_height(&cont_a) / 2;
-    lv_coord_t r = lv_obj_get_height(cont) * 5 / 10;
+    lv_coord_t r = lv_obj_get_height(cont) * 5 / 9;
 
     uint32_t i;
     uint32_t child_cnt = lv_obj_get_child_cnt(cont);
