@@ -447,6 +447,7 @@ static void watchface_show(watchface_app_evt_listener evt_cb, zsw_settings_watch
     lv_obj_set_height(ui_notification_icon, LV_SIZE_CONTENT);
     lv_obj_set_align(ui_notification_icon, LV_ALIGN_CENTER);
     lv_obj_clear_flag(ui_notification_icon, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(ui_notification_icon, LV_OBJ_FLAG_HIDDEN);
 
     ui_notification_count_label = lv_label_create(ui_notification_icon);
     lv_obj_set_width(ui_notification_count_label, LV_SIZE_CONTENT);
@@ -463,6 +464,7 @@ static void watchface_show(watchface_app_evt_listener evt_cb, zsw_settings_watch
     lv_obj_set_height(ui_bt_icon, LV_SIZE_CONTENT);
     lv_obj_set_align(ui_bt_icon, LV_ALIGN_CENTER);
     lv_obj_clear_flag(ui_bt_icon, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_add_flag(ui_bt_icon, LV_OBJ_FLAG_HIDDEN);
     lv_obj_set_style_img_recolor(ui_bt_icon, lv_color_hex(0x0082FC), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_img_recolor_opa(ui_bt_icon, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
