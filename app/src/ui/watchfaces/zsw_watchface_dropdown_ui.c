@@ -27,6 +27,8 @@ static lv_obj_t *ui_settings_label;
 static lv_obj_t *ui_bri_slider;
 static lv_obj_t *ui_LightLabel;
 static lv_obj_t *ui_dropdown_bg_panel;
+static lv_obj_t *ui_battery_state;
+static lv_obj_t *ui_battery_charge_state;
 
 static lv_obj_t *dropdown_root;
 
@@ -37,6 +39,26 @@ static watchface_app_evt_listener evt_cb;
 
 LV_FONT_DECLARE(ui_font_iconfont34);
 LV_FONT_DECLARE(lv_font_montserrat_14_full);
+
+ZSW_LV_IMG_DECLARE(light);
+
+ZSW_LV_IMG_DECLARE(face_goog_20_61728_0);
+ZSW_LV_IMG_DECLARE(face_goog_20_61728_1);
+ZSW_LV_IMG_DECLARE(face_goog_20_61728_2);
+ZSW_LV_IMG_DECLARE(face_goog_20_61728_3);
+ZSW_LV_IMG_DECLARE(face_goog_20_61728_4);
+ZSW_LV_IMG_DECLARE(face_goog_20_61728_5);
+ZSW_LV_IMG_DECLARE(face_goog_20_61728_6);
+
+static const void *face_goog_battery[] = {
+    ZSW_LV_IMG_USE(face_goog_20_61728_0),
+    ZSW_LV_IMG_USE(face_goog_20_61728_1),
+    ZSW_LV_IMG_USE(face_goog_20_61728_2),
+    ZSW_LV_IMG_USE(face_goog_20_61728_3),
+    ZSW_LV_IMG_USE(face_goog_20_61728_4),
+    ZSW_LV_IMG_USE(face_goog_20_61728_5),
+    ZSW_LV_IMG_USE(face_goog_20_61728_6),
+};
 
 void ui_event_light_slider(lv_event_t *e)
 {
@@ -112,7 +134,7 @@ static void on_lvgl_screen_gesture_event_callback_drop(lv_event_t *e)
 void zsw_watchface_dropdown_ui_add(lv_obj_t *root_page,
                                    watchface_app_evt_listener callback /*, TODO input starting state of buttons and sliders */)
 {
-    __ASSERT(ui_down_bg_panel == NULL, "ui_down_bg_panel is not NULL");
+    __ASSERT(dropdown_root == NULL, "dropdown_root is not NULL");
 
     evt_cb = callback;
     dropdown_root = root_page;
@@ -149,7 +171,7 @@ void zsw_watchface_dropdown_ui_add(lv_obj_t *root_page,
     lv_label_set_text(ui_music_info_label, "");
     lv_obj_set_style_text_align(ui_music_info_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_align(ui_music_info_label, LV_ALIGN_TOP_MID);
-    lv_obj_set_y(ui_music_info_label, 10);
+    lv_obj_set_y(ui_music_info_label, 14);
     lv_obj_set_width(ui_music_info_label, 150);
     lv_obj_set_style_text_font(ui_music_info_label, &lv_font_montserrat_14_full, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_label_set_long_mode(ui_music_info_label, LV_LABEL_LONG_SCROLL_CIRCULAR);
@@ -266,6 +288,19 @@ void zsw_watchface_dropdown_ui_add(lv_obj_t *root_page,
     lv_obj_set_style_border_color(ui_dropdown_bg_panel, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(ui_dropdown_bg_panel, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+    ui_battery_state = lv_img_create(ui_down_bg_panel);
+    lv_img_set_src(ui_battery_state, ZSW_LV_IMG_USE(face_goog_20_61728_5));
+    lv_obj_set_width(ui_battery_state, LV_SIZE_CONTENT);
+    lv_obj_set_height(ui_battery_state, LV_SIZE_CONTENT);
+    lv_obj_align(ui_battery_state, LV_ALIGN_TOP_MID, 0, 0);
+
+    ui_battery_charge_state = lv_img_create(ui_battery_state);
+    lv_img_set_src(ui_battery_charge_state, ZSW_LV_IMG_USE(light));
+    lv_obj_set_width(ui_battery_charge_state, LV_SIZE_CONTENT);
+    lv_obj_set_height(ui_battery_charge_state, LV_SIZE_CONTENT);
+    lv_obj_align(ui_battery_charge_state, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_add_flag(ui_battery_charge_state, LV_OBJ_FLAG_HIDDEN);
+
     lv_obj_add_event_cb(ui_music_button, ui_event_button, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_flashlight_button, ui_event_button, LV_EVENT_ALL, NULL);
     lv_obj_add_event_cb(ui_shutdown_button, ui_event_button, LV_EVENT_ALL, NULL);
@@ -278,13 +313,49 @@ void zsw_watchface_dropdown_ui_add(lv_obj_t *root_page,
 
 void zsw_watchface_dropdown_ui_set_music_info(char *track_name, char *artist)
 {
+    if (!dropdown_root) {
+        return;
+    }
     lv_label_set_text_fmt(ui_music_info_label, "%s - %s", artist, track_name);
+}
+
+void zsw_watchface_dropdown_ui_set_battery_info(uint8_t battery_percent, bool is_charging)
+{
+    if (!dropdown_root) {
+        return;
+    }
+    int battery_index;
+
+    // Can't just use lv_map as I want to have a different range for each battery icon to make it look better
+    if (battery_percent <= 10) {
+        battery_index = 0;
+    } else if (battery_percent <= 20) {
+        battery_index = 1;
+    } else if (battery_percent <= 40) {
+        battery_index = 2;
+    } else if (battery_percent <= 60) {
+        battery_index = 3;
+    } else if (battery_percent <= 80) {
+        battery_index = 4;
+    } else if (battery_percent <= 90) {
+        battery_index = 5;
+    } else {
+        battery_index = 6;
+    }
+
+    lv_img_set_src(ui_battery_state, face_goog_battery[battery_index]);
+
+    if (is_charging) {
+        lv_obj_clear_flag(ui_battery_charge_state, LV_OBJ_FLAG_HIDDEN);
+    } else {
+        lv_obj_add_flag(ui_battery_charge_state, LV_OBJ_FLAG_HIDDEN);
+    }
 }
 
 void zsw_watchface_dropdown_ui_remove(void)
 {
     lv_obj_remove_event_cb(dropdown_root, on_lvgl_screen_gesture_event_callback);
     lv_obj_del(ui_down_bg_panel);
-    ui_down_bg_panel = NULL;
+    dropdown_root = NULL;
     is_shown = false;
 }
