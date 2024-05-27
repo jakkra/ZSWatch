@@ -1,5 +1,5 @@
 menuconfig GC9A01
-    bool "GC9A01 compatible display controller driver"
+    bool "GC9A01 Display"
     default n
     select SPI
     help

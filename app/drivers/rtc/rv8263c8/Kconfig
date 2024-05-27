@@ -1,0 +1,58 @@
+# RV-8263-C8 RTC configuration options.
+
+# Copyright (c) 240, Daniel Kampert
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RV_8263_C8
+    bool "RV-8263-C8 RTC"
+    depends on DT_HAS_MICROCRYSTAL_RV_8263_C8_ENABLED
+    default y
+    select I2C
+    help
+        Enable the driver for the RV-8263-C8 RTC.
+
+if RV_8263_C8
+
+module = MICROCRYSTAL_RV_8263_C8
+module-str = MICROCRYSTAL_RV_8263_C8
+source "subsys/logging/Kconfig.template.log_config"
+
+    config RV_8263_C8_THREAD_STACK_SIZE
+        int "RTC delayed work thread stack size"
+        depends on RV_8263_C8_INTERRUPT_OWN_THREAD
+        default 1024
+
+    config RV_8263_C8_THREAD_PRIORITY
+        int "RV-8263-C8 thread priority"
+        depends on RV_8263_C8_INTERRUPT_OWN_THREAD
+        default 10
+
+    choice
+        prompt "RV-8263-C8 interrupt mode"
+        default RV_8263_C8_INTERRUPT_NONE
+
+        config RV_8263_C8_INTERRUPT_NONE
+            bool "No interrupt"
+            help
+                Disable the INTERRUPT interface.
+
+        config RV_8263_C8_INTERRUPT_GLOBAL_THREAD
+            depends on GPIO
+            select RV_8263_C8_INTERRUPT
+            bool "Use workqueue"
+            help
+                Use the global workqueue to process the interrupts from the RV-8263-C8.
+
+        config RV_8263_C8_INTERRUPT_OWN_THREAD
+            depends on GPIO
+            select RV_8263_C8_INTERRUPT
+            bool "Use driver thread"
+            help
+                Use a separate thread to process the interrupts from the RV-8263-C8.
+    endchoice
+
+    config RV_8263_C8_INTERRUPT
+        bool
+
+endif

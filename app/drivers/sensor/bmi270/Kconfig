@@ -27,25 +27,24 @@ if BMI270_PLUS
         prompt "BMI270 trigger mode"
         default BMI270_PLUS_TRIGGER_NONE
 
-    config BMI270_PLUS_TRIGGER_NONE
-        bool "No trigger"
-        help
-            Disable the trigger interface.
+        config BMI270_PLUS_TRIGGER_NONE
+            bool "No trigger"
+            help
+                Disable the trigger interface.
 
-    config BMI270_PLUS_TRIGGER_GLOBAL_THREAD
-        depends on GPIO
-        select BMI270_PLUS_TRIGGER
-        bool "Use workqueue"
-        help
-            Use the global workqueue to process the interrupts from the BMI270.
+        config BMI270_PLUS_TRIGGER_GLOBAL_THREAD
+            depends on GPIO
+            select BMI270_PLUS_TRIGGER
+            bool "Use workqueue"
+            help
+                Use the global workqueue to process the interrupts from the BMI270.
 
-    config BMI270_PLUS_TRIGGER_OWN_THREAD
-        depends on GPIO
-        select BMI270_PLUS_TRIGGER
-        bool "Use driver thread"
-        help
-            Use a separate thread to process the interrupts from the BMI270.
-
+        config BMI270_PLUS_TRIGGER_OWN_THREAD
+            depends on GPIO
+            select BMI270_PLUS_TRIGGER
+            bool "Use driver thread"
+            help
+                Use a separate thread to process the interrupts from the BMI270.
     endchoice
 
     config BMI270_PLUS_TRIGGER

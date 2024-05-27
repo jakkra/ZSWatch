@@ -25,6 +25,7 @@ properties:
       type: boolean
       description: |
         Invert the y axis.
+
     rotation:
       type: int
       default: 0
