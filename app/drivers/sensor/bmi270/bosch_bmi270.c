@@ -542,7 +542,7 @@ static int bmi270_pm_action(const struct device *p_dev, enum pm_device_action ac
         .swap_xy = DT_INST_PROP(inst, swap_xy),                                     \
         .invert_x = DT_INST_PROP(inst, invert_x),                                   \
         .invert_y = DT_INST_PROP(inst, invert_y),                                   \
-        .rotation = DT_INST_PROP(inst, rotation),                       \
+        .rotation = DT_INST_PROP(inst, rotation),                                   \
         IF_ENABLED(CONFIG_BMI270_PLUS_TRIGGER,                                      \
             (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, { 0 }),))        \
     };                                                                              \

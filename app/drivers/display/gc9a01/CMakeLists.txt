@@ -1,1 +1,1 @@
-zephyr_sources(gc9a01.c)
+zephyr_sources(buydisplay_gc9a01.c)

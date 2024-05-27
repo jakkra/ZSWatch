@@ -1,0 +1,3 @@
+if RTC
+    rsource "rv8263c8/Kconfig"
+endif

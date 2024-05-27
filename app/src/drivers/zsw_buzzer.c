@@ -71,22 +71,6 @@ static void buzzer_off_work_handler(struct k_work *work);
 static void run_next_tone_state(note_duration_t *state);
 static void pattern_timer_timeout(struct k_timer *timer_id);
 
-static struct note_duration_t funkytown_song[] = {
-    {.note = C5, .duration = quarter},
-    {.note = REST, .duration = eigth},
-    {.note = C5, .duration = quarter},
-    {.note = Bb4, .duration = quarter},
-    {.note = C5, .duration = quarter},
-    {.note = REST, .duration = quarter},
-    {.note = G4, .duration = quarter},
-    {.note = REST, .duration = quarter},
-    {.note = G4, .duration = quarter},
-    {.note = C5, .duration = quarter},
-    {.note = F5, .duration = quarter},
-    {.note = E5, .duration = quarter},
-    {.note = C5, .duration = quarter}
-};
-
 static struct note_duration_t mario_song[] = {
     {.note = E6, .duration = quarter},
     {.note = REST, .duration = eigth},

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig INPUT_MODIFIED_CST816S
-	bool "Use modified out of tree CST816S capacitive touch panel driver"
+	bool "CST816S Capacitive touch panel driver"
 	default y
 	depends on DT_HAS_HYNITRON_CST816S_ENABLED
 	select I2C
@@ -26,4 +26,4 @@ config INPUT_CST816S_INTERRUPT
 	help
 	  Enable interrupt support (requires GPIO).
 
-endif # INPUT_CST816S
+endif

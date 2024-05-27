@@ -39,7 +39,7 @@ static void sensors_summary_app_start(lv_obj_t *root, lv_group_t *group)
 
     // Increase ODR since we want high accuracy here.
     zsw_pressure_sensor_set_odr(BOSCH_BMP581_ODR_160_HZ);
-    refresh_timer = lv_timer_create(timer_callback, CONFIG_DEFAULT_CONFIGURATION_SENSORS_SUMMARY_REFRESH_INTERVAL_MS,
+    refresh_timer = lv_timer_create(timer_callback, CONFIG_APPLICATIONS_CONFIGURATION_SENSORS_SUMMARY_REFRESH_INTERVAL_MS,
                                     NULL);
 }
 

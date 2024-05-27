@@ -309,7 +309,7 @@ static void watchface_show(lv_obj_t *parent, watchface_app_evt_listener evt_cb, 
     lv_obj_add_flag(ui_battery_arc, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_obj_clear_flag(ui_battery_arc, LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_SNAPPABLE |
                       LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC | LV_OBJ_FLAG_SCROLL_MOMENTUM |
-                      LV_OBJ_FLAG_SCROLL_CHAIN);
+                      LV_OBJ_FLAG_SCROLL_CHAIN | LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_style_arc_width(ui_battery_arc, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     lv_obj_set_style_arc_color(ui_battery_arc, lv_color_hex(0xFFB140), LV_PART_INDICATOR | LV_STATE_DEFAULT);
@@ -324,8 +324,9 @@ static void watchface_show(lv_obj_t *parent, watchface_app_evt_listener evt_cb, 
     lv_obj_set_width(ui_battery_arc_icon, LV_SIZE_CONTENT);
     lv_obj_set_height(ui_battery_arc_icon, LV_SIZE_CONTENT);
     lv_obj_set_align(ui_battery_arc_icon, LV_ALIGN_CENTER);
+    lv_obj_add_flag(ui_battery_arc_icon, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CLICK_FOCUSABLE);
     lv_obj_clear_flag(ui_battery_arc_icon,
-                      LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC |
+                      LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC |
                       LV_OBJ_FLAG_SCROLL_MOMENTUM | LV_OBJ_FLAG_SCROLL_CHAIN);
     lv_obj_set_style_img_recolor(ui_battery_arc_icon, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_img_recolor_opa(ui_battery_arc_icon, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -348,10 +349,9 @@ static void watchface_show(lv_obj_t *parent, watchface_app_evt_listener evt_cb, 
     lv_obj_set_x(ui_step_arc, -52);
     lv_obj_set_y(ui_step_arc, 67);
     lv_obj_set_align(ui_step_arc, LV_ALIGN_CENTER);
-    lv_obj_add_flag(ui_step_arc, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_obj_clear_flag(ui_step_arc, LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_SNAPPABLE |
                       LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC | LV_OBJ_FLAG_SCROLL_MOMENTUM |
-                      LV_OBJ_FLAG_SCROLL_CHAIN);
+                      LV_OBJ_FLAG_SCROLL_CHAIN | LV_OBJ_FLAG_CLICKABLE);
     lv_obj_set_style_arc_width(ui_step_arc, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     lv_obj_set_style_arc_color(ui_step_arc, lv_color_hex(0x9D3BE0), LV_PART_INDICATOR | LV_STATE_DEFAULT);
@@ -367,6 +367,7 @@ static void watchface_show(lv_obj_t *parent, watchface_app_evt_listener evt_cb, 
     lv_obj_set_width(ui_step_arc_icon, LV_SIZE_CONTENT);
     lv_obj_set_height(ui_step_arc_icon, LV_SIZE_CONTENT);
     lv_obj_set_align(ui_step_arc_icon, LV_ALIGN_CENTER);
+    lv_obj_add_flag(ui_step_arc_icon, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CLICK_FOCUSABLE);
     lv_obj_clear_flag(ui_step_arc_icon, LV_OBJ_FLAG_PRESS_LOCK | LV_OBJ_FLAG_CLICK_FOCUSABLE | LV_OBJ_FLAG_SCROLLABLE |
                       LV_OBJ_FLAG_SCROLL_ELASTIC | LV_OBJ_FLAG_SCROLL_MOMENTUM | LV_OBJ_FLAG_SCROLL_CHAIN);
     lv_obj_set_style_img_recolor(ui_step_arc_icon, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -465,8 +466,8 @@ static void watchface_show(lv_obj_t *parent, watchface_app_evt_listener evt_cb, 
 #endif
 
     // Listeners
-    lv_obj_add_event_cb(ui_battery_arc, arc_event_pressed, LV_EVENT_CLICKED, NULL);
-    lv_obj_add_event_cb(ui_step_arc, arc_event_pressed, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(ui_battery_arc_icon, arc_event_pressed, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(ui_step_arc_icon, arc_event_pressed, LV_EVENT_CLICKED, NULL);
 }
 
 static void watchface_remove(void)
@@ -645,10 +646,10 @@ static const void *watchface_get_preview_img(void)
 static void arc_event_pressed(lv_event_t *e)
 {
     watchface_app_evt_t evt = {.type = WATCHFACE_APP_EVENT_OPEN_APP};
-    if (lv_event_get_target(e) == ui_battery_arc) {
+    if (lv_event_get_target(e) == ui_battery_arc_icon) {
         evt.data.app = WATCHFACE_APP_EVT_CLICK_BATT;
         ui_evt_cb(evt);
-    } else if (lv_event_get_target(e) == ui_step_arc) {
+    } else if (lv_event_get_target(e) == ui_step_arc_icon) {
         evt.data.app = WATCHFACE_APP_EVT_CLICK_STEP;
         ui_evt_cb(evt);
     }
