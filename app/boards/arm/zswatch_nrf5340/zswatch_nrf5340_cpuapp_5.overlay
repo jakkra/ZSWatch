@@ -193,7 +193,8 @@
 		compatible = "microcrystal,rv-8263-c8";
 		reg = <0xA2>;
 		status = "okay";
-		clkout = <7>;
+		clkout = <0>;
+		int-gpios = <&gpio1 13 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 	};
 
 	bmi270: bmi270@68 {

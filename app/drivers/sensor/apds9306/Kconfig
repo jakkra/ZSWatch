@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig APDS9306
-    bool "APDS9306 Sensor"
+    bool "Avago APDS9306 Sensor"
     default y
     depends on DT_HAS_AVAGO_APDS9306_ENABLED
     select I2C
