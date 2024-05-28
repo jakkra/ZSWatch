@@ -19,7 +19,7 @@
 /** @brief 
 */
 struct bmi270_config {
-    struct i2c_dt_spec i2c;
+	struct i2c_dt_spec i2c;
 #ifdef CONFIG_BMI270_PLUS_TRIGGER
 	struct gpio_dt_spec int_gpio;
 #endif
@@ -48,25 +48,23 @@ struct bmi270_data {
 	sensor_trigger_handler_t motion;
 #endif
 
-#ifdef CONFIG_BMI270_PLUS_TRIGGER_OWN_THREAD
+#if defined(CONFIG_BMI270_PLUS_TRIGGER_OWN_THREAD)
 	struct k_sem sem;
-#endif
-
-#ifdef CONFIG_BMI270_PLUS_TRIGGER_GLOBAL_THREAD
+#elif defined(CONFIG_BMI270_PLUS_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
 #endif
 
 	int16_t ax;
-    int16_t ay;
-    int16_t az;
-    int16_t gx;
-    int16_t gy;
-    int16_t gz;
-    uint16_t temp;
+	int16_t ay;
+	int16_t az;
+	int16_t gx;
+	int16_t gy;
+	int16_t gz;
+	uint16_t temp;
 	uint8_t acc_range;
-    uint8_t acc_odr;
+	uint8_t acc_odr;
 	uint16_t gyr_range;
-    uint8_t gyr_odr;
-    uint8_t gyr_osr;
+	uint8_t gyr_odr;
+	uint8_t gyr_osr;
 	struct bmi2_dev bmi2;
 };

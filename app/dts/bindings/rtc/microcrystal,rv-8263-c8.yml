@@ -24,15 +24,15 @@ properties:
 
     clkout:
       type: int
-      default: 7
+      default: 0
+      required: false
       enum:
-        - 0
+        - 32768
+        - 8192
+        - 1024
+        - 64
+        - 32
         - 1
-        - 2
-        - 3
-        - 4
-        - 5
-        - 6
-        - 7
+        - 0
       description:
-        CLKOUT frequency selection. Set to 7 to disable it.
+        CLKOUT frequency selection. Set to 0 to disable the CLKOUT signal (CLKOUT pin is LOW).

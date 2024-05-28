@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BMI270_PLUS
-    bool "BMI270 Plus Sensor"
+    bool "Bosch BMI270 Plus Sensor"
     depends on DT_HAS_BOSCH_BMI270_PLUS_ENABLED
     default y
     select I2C

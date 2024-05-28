@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BMP581
-    bool "BMP581 Sensor"
+    bool "Bosch BMP581 Sensor"
     depends on DT_HAS_BOSCH_BMP581_ENABLED
     default y
     select I2C

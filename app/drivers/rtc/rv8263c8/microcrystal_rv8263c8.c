@@ -1,17 +1,21 @@
-/* microcrystal_rv8263c8.c - Driver for Micro Crystal RV-8263-C8 RTC. */
-
-/*
- * Copyright (c) 2024, Daniel Kampert
+/* microcrystal_rv8263c8.c - Driver for Micro Crystal RV-8263-C8 RTC.
  *
- * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2024 Daniel Kampert
+ * Author: Daniel Kampert <DanielKampert@kampis-Elektroecke.de>
  */
 
-#include "microcrystal_rv8263c8.h"
-#include "private/microcrystal_rv8263c8_types.h"
-#include "interrupt/microcrystal_rv8263c8_interrupt.h"
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/rtc.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
 
-#define RV8263C8_REGISTER_CONTROL1          0x00
-#define RV8263C8_REGISTER_CONTROL2          0x01
+#define RV8263C8_REGISTER_CONTROL_1         0x00
+#define RV8263C8_REGISTER_CONTROL_2         0x01
 #define RV8263C8_REGISTER_OFFSET            0x02
 #define RV8263C8_REGISTER_RAM               0x03
 #define RV8263C8_REGISTER_SECONDS           0x04
@@ -29,19 +33,19 @@
 #define RV8263C8_REGISTER_TIMER_VALUE       0x10
 #define RV8263C8_REGISTER_TIMER_MODE        0x11
 
-#define RV8263C8_24H_MODE_ENABLE            (0x00 << 0x01)
-#define RV8263C8_24H_MODE_DISABLE           (0x00 << 0x01)
-#define RV8263C8_CLOCK_ENABLE               (0x00 << 0x05)
-#define RV8263C8_CLOCK_DISABLE              (0x01 << 0x05)
-#define RV8263C8_ALARM_INT_ENABLE           (0x01 << 0x07)
-#define RV8263C8_ALARM_INT_DISABLE          (0x00 << 0x05)
-#define RV8263C8_MINUTE_INT_ENABLE          (0x01 << 0x05)
-#define RV8263C8_MINUTE_INT_DISABLE         (0x00 << 0x05)
-#define RV8263C8_HALF_MINUTE_INT_ENABLE     (0x01 << 0x04)
-#define RV8263C8_HALF_MINUTE_INT_DISABLE    (0x00 << 0x04)
-#define RV8263C8_ALARM_ENABLE               (0x00 << 0x07)
-#define RV8263C8_ALARM_DISABLE              (0x01 << 0x07)
-#define RV8263C8_SOFTWARE_RESET             (0x58)
+#define RV8263C8_BM_24H_MODE_ENABLE         (0x00 << 0x01)
+#define RV8263C8_BM_24H_MODE_DISABLE        (0x00 << 0x01)
+#define RV8263C8_BM_CLOCK_ENABLE            (0x00 << 0x05)
+#define RV8263C8_BM_CLOCK_DISABLE           (0x01 << 0x05)
+#define RV8263C8_BM_ALARM_INT_ENABLE        (0x01 << 0x07)
+#define RV8263C8_BM_ALARM_INT_DISABLE       (0x00 << 0x07)
+#define RV8263C8_BM_MINUTE_INT_ENABLE       (0x01 << 0x05)
+#define RV8263C8_BM_MINUTE_INT_DISABLE      (0x00 << 0x05)
+#define RV8263C8_BM_HALF_MINUTE_INT_ENABLE  (0x01 << 0x04)
+#define RV8263C8_BM_HALF_MINUTE_INT_DISABLE (0x00 << 0x04)
+#define RV8263C8_BM_ALARM_ENABLE            (0x00 << 0x07)
+#define RV8263C8_BM_ALARM_DISABLE           (0x01 << 0x07)
+#define RV8263C8_BM_SOFTWARE_RESET          (0x58)
 
 #define SECONDS_BITS                        GENMASK(6, 0)
 #define MINUTES_BITS                        GENMASK(7, 0)
@@ -69,142 +73,99 @@
 
 #define DT_DRV_COMPAT                       microcrystal_rv_8263_c8
 
-LOG_MODULE_REGISTER(microcrystal_rv8263c8, CONFIG_MICROCRYSTAL_RV_8263_C8_LOG_LEVEL);
+LOG_MODULE_REGISTER(microcrystal_rv8263c8, CONFIG_RTC_LOG_LEVEL);
 
-static void rv8263c8_isr(const struct device *p_dev)
-{
-    struct rv8263c8_data *const dev_data = p_dev->data;
-    const struct rv8263c8_config *config = p_dev->config;
-}
+struct rv8263c8_config {
+    struct i2c_dt_spec i2c_bus;
+    uint8_t clkout;
+    bool fast_mode;
+    int8_t offset;
+#ifdef CONFIG_RTC_ALARM
+    struct gpio_dt_spec int_gpio;
+#endif
+};
 
-static int rv8263c8_set_time(const struct device *p_dev, const struct rtc_time *p_tm)
-{
-    int err;
-    uint8_t regs[7];
+struct rv8263c8_data {
+    struct k_spinlock lock;
+#ifdef CONFIG_RTC_ALARM
+    const struct device *dev;
+    struct gpio_callback gpio_cb;
+    rtc_alarm_callback alarm_cb;
+    void *alarm_cb_data;
 
-    struct rv8263c8_data *data = p_dev->data;
-    const struct rv8263c8_config *config = p_dev->config;
+    bool is_alarm_pending;
+#if defined(CONFIG_RTC_RV8263_ALARM_OWN_THREAD)
+    struct k_sem alarm_sem;
+#elif defined(CONFIG_RTC_RV8263_ALARM_GLOBAL_THREAD)
+    struct k_work alarm_work;
+#endif
+#endif
+#ifdef CONFIG_RTC_UPDATE
+    struct k_sem update_sem;
+    rtc_update_callback update_cb;
+    void *update_cb_data;
+#endif
+};
 
-    k_spinlock_key_t key = k_spin_lock(&data->lock);
+#ifdef CONFIG_RTC_RV8263_ALARM_OWN_THREAD
+static K_KERNEL_STACK_MEMBER(rv8263c8_alarm_stack, CONFIG_RTC_RV8263_ALARM_THREAD_STACK_SIZE);
+static struct k_thread rv8263c8_alarm_thread;
+#endif
 
-    LOG_DBG("Set time: year = %u, mon = %u, mday = %u, wday = %u, hour = %u, min = %u, sec = %u",
-            p_tm->tm_year, p_tm->tm_mon, p_tm->tm_mday, p_tm->tm_wday, p_tm->tm_hour, p_tm->tm_min, p_tm->tm_sec);
-
-    regs[0] = bin2bcd(p_tm->tm_sec) & SECONDS_BITS;
-    regs[1] = bin2bcd(p_tm->tm_min);
-    regs[2] = bin2bcd(p_tm->tm_hour);
-    regs[3] = bin2bcd(p_tm->tm_wday);
-    regs[4] = bin2bcd(p_tm->tm_mday);
-    regs[5] = bin2bcd(p_tm->tm_mon);
-    regs[6] = bin2bcd((p_tm->tm_year % 100));
-
-    err = i2c_burst_write_dt(&config->i2c_bus, RV8263C8_REGISTER_SECONDS, regs, sizeof(regs));
-
-    k_spin_unlock(&data->lock, key);
-
-    return err;
-}
-
-static int rv8263c8_get_time(const struct device *p_dev, struct rtc_time *p_timeptr)
-{
-    int err;
-    uint8_t regs[7];
-
-    struct rv8263c8_data *data = p_dev->data;
-    const struct rv8263c8_config *config = p_dev->config;
-
-    k_spinlock_key_t key = k_spin_lock(&data->lock);
-
-    err = i2c_burst_read_dt(&config->i2c_bus, RV8263C8_REGISTER_SECONDS, regs, sizeof(regs));
-    if (err != 0) {
-        goto rv8263c8_get_time_exit;
-    }
-
-    p_timeptr->tm_sec = bcd2bin(regs[0] & SECONDS_BITS);
-    p_timeptr->tm_min = bcd2bin(regs[1] & MINUTES_BITS);
-    p_timeptr->tm_hour = bcd2bin(regs[2] & HOURS_BITS);
-    p_timeptr->tm_wday = bcd2bin(regs[3] & WEEKDAY_BITS);
-    p_timeptr->tm_mday = bcd2bin(regs[4] & DATE_BITS);
-    p_timeptr->tm_mon = bcd2bin(regs[5] & MONTHS_BITS);
-    p_timeptr->tm_year = bcd2bin(regs[6] & YEAR_BITS);
-    p_timeptr->tm_year = p_timeptr->tm_year + 100;
-
-    // Unused
-    p_timeptr->tm_nsec = 0;
-    p_timeptr->tm_isdst = -1;
-    p_timeptr->tm_yday = -1;
-
-    // Validate the chip in 24hr mode
-    if (regs[2] & VALIDATE_24HR) {
-        err = -ENODATA;
-        goto rv8263c8_get_time_exit;
-    }
-
-    LOG_DBG("get time: year = %d, mon = %d, mday = %d, wday = %d, hour = %d, min = %d, sec = %d",
-            p_timeptr->tm_year, p_timeptr->tm_mon, p_timeptr->tm_mday, p_timeptr->tm_wday, p_timeptr->tm_hour, p_timeptr->tm_min,
-            p_timeptr->tm_sec);
-
-rv8263c8_get_time_exit:
-    k_spin_unlock(&data->lock, key);
-
-    return err;
-}
-
-static int rv8263c8_init(const struct device *p_dev)
-{
-    int err;
-    struct rv8263c8_data *data = p_dev->data;
-    const struct rv8263c8_config *config = p_dev->config;
-
-    if (!i2c_is_ready_dt(&config->i2c_bus)) {
-        LOG_ERR("I2C bus not ready");
-        return -ENODEV;
-    }
-
-    LOG_DBG("Configure RV-8263-C8:");
-    LOG_DBG("	ClkOut: %u", config->clkout);
-    LOG_DBG("	Fast Mode: %u", config->fast_mode);
-    LOG_DBG("	Offset: %i", config->offset);
-
-    k_spinlock_key_t key = k_spin_lock(&data->lock);
-
-    // Configure the first config register
-    err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL1,
-                                RV8263C8_24H_MODE_DISABLE | RV8263C8_CLOCK_ENABLE);
-    if (err < 0) {
-        LOG_ERR("Error while writing CONTROL1! Error: %i", err);
-        goto rv8263c8_init_exit;
-    }
-
-    // Configure the second config register
-    err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL2,
-                                RV8263C8_ALARM_INT_ENABLE | RV8263C8_MINUTE_INT_DISABLE | RV8263C8_HALF_MINUTE_INT_DISABLE | (config->clkout << 0x00));
-    if (err < 0) {
-        LOG_ERR("Error while writing CONTROL2! Error: %i", err);
-        goto rv8263c8_init_exit;
-    }
-
-    // Configure the offset register
-    err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_OFFSET,
-                                config->fast_mode << 0x07 | (config->offset & 0x7F));
-    if (err < 0) {
-        LOG_ERR("Error while writing CONTROL2! Error: %i", err);
-    }
-
-    if (config->int_gpio.port) {
-        if (rv8263c8_init_interrupt(p_dev)) {
-            LOG_ERR("Could not initialize interrupts!");
-            return -EFAULT;
-        }
-    }
-
-rv8263c8_init_exit:
-    k_spin_unlock(&data->lock, key);
-
-    return err;
-}
+#ifdef CONFIG_RTC_UPDATE
+static K_KERNEL_STACK_MEMBER(rv8263c8_update_stack, CONFIG_RTC_RV8263_UPDATE_THREAD_STACK_SIZE);
+static struct k_thread rv8263c8_update_thread;
+#endif
 
 #ifdef CONFIG_RTC_ALARM
+static void rv8263c8_gpio_callback_handler(const struct device *p_port, struct gpio_callback *p_cb,
+                                           gpio_port_pins_t pins)
+{
+    ARG_UNUSED(p_port);
+    ARG_UNUSED(pins);
+
+    struct rv8263c8_data *data = CONTAINER_OF(p_cb, struct rv8263c8_data, gpio_cb);
+
+#if defined(CONFIG_RTC_RV8263_ALARM_OWN_THREAD)
+    k_sem_give(&data->alarm_sem);
+#elif defined(CONFIG_RTC_RV8263_ALARM_GLOBAL_THREAD)
+    k_work_submit(&data->alarm_work);
+#endif
+}
+
+static void rv8263_process_alarm(const struct device *p_dev)
+{
+    struct rv8263c8_data *data = p_dev->data;
+
+    // TODO: Check for pending alarm
+
+    if (data->alarm_cb != NULL) {
+        LOG_DBG("Calling alarm callback");
+        data->alarm_cb(p_dev, 0, data->alarm_cb_data);
+    }
+}
+
+#ifdef CONFIG_RTC_RV8263_ALARM_OWN_THREAD
+static void rv8263c8_alarm_thread_func(void *p_arg1, void *p_arg2, void *p_arg3)
+{
+    struct rv8263c8_data *data = p_arg1;
+
+    while (1) {
+        k_sem_take(&data->alarm_sem, K_FOREVER);
+        rv8263_process_alarm(data->dev);
+    }
+}
+#else
+static void rv8263c8_alarm_worker(struct k_work *p_work)
+{
+    struct rv8263c8_data *data = CONTAINER_OF(p_work, struct rv8263c8_data, alarm_work);
+
+    LOG_DBG("Process interrupt from worker");
+
+    rv8263_process_alarm(data->dev);
+}
+#endif
+
 static bool rv8263c8_validate_alarm(const struct rtc_time *p_timeptr, uint32_t mask)
 {
     if ((mask & RTC_ALARM_TIME_MASK_SECOND) &&
@@ -224,19 +185,204 @@ static bool rv8263c8_validate_alarm(const struct rtc_time *p_timeptr, uint32_t m
 
     return true;
 }
+#endif
 
+#ifdef CONFIG_RTC_UPDATE
+static void rv8263c8_update_thread_func(void *p_arg1, void *p_arg2, void *p_arg3)
+{
+    struct rv8263c8_data *data = p_arg1;
+
+    while (1) {
+        k_sem_take(&data->sem, K_FOREVER);
+        if (data->update_cb != NULL) {
+            LOG_DBG("Calling update callback");
+            data->update_cb(p_dev, 0, data->update_cb_data);
+        }
+    }
+}
+#endif
+
+static int rv8263c8_time_set(const struct device *p_dev, const struct rtc_time *p_timeptr)
+{
+    int err;
+    uint8_t regs[7];
+
+    struct rv8263c8_data *data = p_dev->data;
+    const struct rv8263c8_config *config = p_dev->config;
+
+    k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+    LOG_DBG("Set time: year = %u, mon = %u, mday = %u, wday = %u, hour = %u, min = %u, sec = %u",
+            p_timeptr->tm_year, p_timeptr->tm_mon, p_timeptr->tm_mday, p_timeptr->tm_wday, p_timeptr->tm_hour, p_timeptr->tm_min,
+            p_timeptr->tm_sec);
+
+    regs[0] = bin2bcd(p_timeptr->tm_sec) & SECONDS_BITS;
+    regs[1] = bin2bcd(p_timeptr->tm_min);
+    regs[2] = bin2bcd(p_timeptr->tm_hour);
+    regs[3] = bin2bcd(p_timeptr->tm_wday);
+    regs[4] = bin2bcd(p_timeptr->tm_mday);
+    regs[5] = bin2bcd(p_timeptr->tm_mon);
+    regs[6] = bin2bcd((p_timeptr->tm_year % 100));
+
+    err = i2c_burst_write_dt(&config->i2c_bus, RV8263C8_REGISTER_SECONDS, regs, sizeof(regs));
+
+    k_spin_unlock(&data->lock, key);
+
+    return err;
+}
+
+static int rv8263c8_time_get(const struct device *p_dev, struct rtc_time *p_timeptr)
+{
+    int err;
+    uint8_t regs[7];
+
+    struct rv8263c8_data *data = p_dev->data;
+    const struct rv8263c8_config *config = p_dev->config;
+
+    k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+    err = i2c_burst_read_dt(&config->i2c_bus, RV8263C8_REGISTER_SECONDS, regs, sizeof(regs));
+    if (err != 0) {
+        goto rv8263c8_time_get_exit;
+    }
+
+    p_timeptr->tm_sec = bcd2bin(regs[0] & SECONDS_BITS);
+    p_timeptr->tm_min = bcd2bin(regs[1] & MINUTES_BITS);
+    p_timeptr->tm_hour = bcd2bin(regs[2] & HOURS_BITS);
+    p_timeptr->tm_wday = bcd2bin(regs[3] & WEEKDAY_BITS);
+    p_timeptr->tm_mday = bcd2bin(regs[4] & DATE_BITS);
+    p_timeptr->tm_mon = bcd2bin(regs[5] & MONTHS_BITS);
+    p_timeptr->tm_year = bcd2bin(regs[6] & YEAR_BITS);
+    p_timeptr->tm_year = p_timeptr->tm_year + 100;
+
+    // Unused
+    p_timeptr->tm_nsec = 0;
+    p_timeptr->tm_isdst = -1;
+    p_timeptr->tm_yday = -1;
+
+    // Validate the chip in 24hr mode
+    if (regs[2] & VALIDATE_24HR) {
+        err = -ENODATA;
+        goto rv8263c8_time_get_exit;
+    }
+
+    LOG_DBG("get time: year = %d, mon = %d, mday = %d, wday = %d, hour = %d, min = %d, sec = %d",
+            p_timeptr->tm_year, p_timeptr->tm_mon, p_timeptr->tm_mday, p_timeptr->tm_wday, p_timeptr->tm_hour, p_timeptr->tm_min,
+            p_timeptr->tm_sec);
+
+rv8263c8_time_get_exit:
+    k_spin_unlock(&data->lock, key);
+
+    return err;
+}
+
+static int rv8263c8_init(const struct device *p_dev)
+{
+    int err;
+    struct rv8263c8_data *data = p_dev->data;
+    const struct rv8263c8_config *config = p_dev->config;
+
+    if (!i2c_is_ready_dt(&config->i2c_bus)) {
+        LOG_ERR("I2C bus not ready!");
+        return -ENODEV;
+    }
+
+    LOG_DBG("Configure RV-8263-C8:");
+    LOG_DBG("	ClkOut: %u", config->clkout);
+    LOG_DBG("	Fast Mode: %u", config->fast_mode);
+    LOG_DBG("	Offset: %i", config->offset);
+
+    k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+    // Configure the first config register
+    err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_1,
+                                RV8263C8_BM_24H_MODE_DISABLE | RV8263C8_BM_CLOCK_ENABLE);
+    if (err < 0) {
+        LOG_ERR("Error while writing CONTROL1! Error: %i", err);
+        goto rv8263c8_init_exit;
+    }
+
+    // Configure the second config register
+    err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2,
+                                RV8263C8_BM_ALARM_INT_ENABLE | RV8263C8_BM_MINUTE_INT_DISABLE | RV8263C8_BM_HALF_MINUTE_INT_DISABLE |
+                                (config->clkout << 0x00));
+    if (err < 0) {
+        LOG_ERR("Error while writing CONTROL2! Error: %i", err);
+        goto rv8263c8_init_exit;
+    }
+
+    // Configure the offset register
+    err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_OFFSET,
+                                config->fast_mode << 0x07 | (config->offset & 0x7F));
+    if (err < 0) {
+        LOG_ERR("Error while writing CONTROL2! Error: %i", err);
+    }
+
+rv8263c8_init_exit:
+    k_spin_unlock(&data->lock, key);
+
+#ifdef CONFIG_RTC_ALARM
+    data->dev = p_dev;
+
+    if (!gpio_is_ready_dt(&config->int_gpio)) {
+        LOG_ERR("GPIO not ready!");
+        return -ENODEV;
+    }
+
+    err = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);
+    if (err != 0) {
+        LOG_ERR("Failed to configure GPIO! Error: %u", err);
+        return -ENODEV;
+    }
+
+    err = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_INACTIVE);
+    if (err != 0) {
+        LOG_ERR("Failed to configure interrupt! Error: %u", err);
+        return -ENODEV;
+    }
+
+    gpio_init_callback(&data->gpio_cb, rv8263c8_gpio_callback_handler, BIT(config->int_gpio.pin));
+
+    err = gpio_add_callback_dt(&config->int_gpio, &data->gpio_cb);
+    if (err != 0) {
+        LOG_ERR("Failed to add GPIO callback! Error: %u", err);
+        return -ENODEV;
+    }
+
+#if defined(CONFIG_RTC_RV8263_ALARM_OWN_THREAD)
+    k_sem_init(&data->alarm_sem, 0, K_SEM_MAX_LIMIT);
+    k_thread_create(&rv8263c8_alarm_thread, rv8263c8_alarm_stack,
+                    K_THREAD_STACK_SIZEOF(rv8263c8_alarm_stack),
+                    rv8263c8_alarm_thread_func, data, NULL,
+                    NULL, CONFIG_RTC_RV8263_ALARM_THREAD_PRIORITY, 0, K_NO_WAIT);
+#elif defined(CONFIG_RTC_RV8263_ALARM_GLOBAL_THREAD)
+    data->alarm_work.handler = rv8263c8_alarm_worker;
+#endif
+#endif
+
+#ifdef CONFIG_RTC_UPDATE
+    k_sem_init(&data->update_sem, 0, K_SEM_MAX_LIMIT);
+    k_thread_create(&rv8263c8_update_thread, rv8263c8_update_stack,
+                    K_THREAD_STACK_SIZEOF(rv8263c8_update_stack),
+                    rv8263c8_update_thread_func, data, NULL,
+                    NULL, CONFIG_RTC_RV8263_UPDATE_THREAD_PRIORITY, 0, K_NO_WAIT);
+#endif
+
+    return err;
+}
+
+#ifdef CONFIG_RTC_ALARM
 static int rv8263c8_alarm_get_supported_fields(const struct device *p_dev, uint16_t id,
                                                uint16_t *p_mask)
 {
     ARG_UNUSED(p_dev);
 
-    if (id != 0) {
+    if ((p_dev == NULL) || (id != 0)) {
         return -EINVAL;
     }
 
-    (*p_mask) = (RTC_ALARM_TIME_MASK_SECOND
-                 | RTC_ALARM_TIME_MASK_MINUTE
-                 | RTC_ALARM_TIME_MASK_HOUR);
+    (*p_mask) = (RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |
+                 RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_WEEKDAY);
 
     return 0;
 }
@@ -245,20 +391,14 @@ static int rv8263c8_alarm_set_time(const struct device *p_dev, uint16_t id, uint
                                    const struct rtc_time *p_timeptr)
 {
     int err;
-    struct rv8263c8_data *const dev_data = p_dev->data;
+    struct rv8263c8_data *const data = p_dev->data;
     const struct rv8263c8_config *config = p_dev->config;
 
-    k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
-
-    if (id != 0) {
-        err = -EINVAL;
-        goto rv8263c8_alarm_set_time_exit;
+    if ((p_dev == NULL) || (p_timeptr == NULL) || (id != 0) || ((mask > 0) && (p_timeptr == NULL))) {
+        return -EINVAL;
     }
 
-    if ((mask > 0) && (p_timeptr == NULL)) {
-        err = -EINVAL;
-        goto rv8263c8_alarm_set_time_exit;
-    }
+    k_spinlock_key_t key = k_spin_lock(&data->lock);
 
     // Check time valid
     if (!rv8263c8_validate_alarm(p_timeptr, mask)) {
@@ -268,9 +408,9 @@ static int rv8263c8_alarm_set_time(const struct device *p_dev, uint16_t id, uint
 
     if (mask & RTC_ALARM_TIME_MASK_SECOND) {
         err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_SECONDS_ALARM,
-                                    RV8263C8_ALARM_ENABLE | p_timeptr->tm_sec);
+                                    RV8263C8_BM_ALARM_ENABLE | p_timeptr->tm_sec);
     } else {
-        err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_SECONDS_ALARM, RV8263C8_ALARM_DISABLE);
+        err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_SECONDS_ALARM, RV8263C8_BM_ALARM_DISABLE);
     }
 
     if (err < 0) {
@@ -279,10 +419,10 @@ static int rv8263c8_alarm_set_time(const struct device *p_dev, uint16_t id, uint
     }
 
     if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
-        err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_SECONDS_ALARM,
-                                    RV8263C8_ALARM_ENABLE | p_timeptr->tm_min);
+        err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_MINUTES_ALARM,
+                                    RV8263C8_BM_ALARM_ENABLE | p_timeptr->tm_min);
     } else {
-        err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_SECONDS_ALARM, RV8263C8_ALARM_DISABLE);
+        err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_MINUTES_ALARM, RV8263C8_BM_ALARM_DISABLE);
     }
 
     if (err < 0) {
@@ -291,10 +431,10 @@ static int rv8263c8_alarm_set_time(const struct device *p_dev, uint16_t id, uint
     }
 
     if (mask & RTC_ALARM_TIME_MASK_HOUR) {
-        err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_SECONDS_ALARM,
-                                    RV8263C8_ALARM_ENABLE | p_timeptr->tm_hour);
+        err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_HOURS_ALARM,
+                                    RV8263C8_BM_ALARM_ENABLE | p_timeptr->tm_hour);
     } else {
-        err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_SECONDS_ALARM, RV8263C8_ALARM_DISABLE);
+        err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_HOURS_ALARM, RV8263C8_BM_ALARM_DISABLE);
     }
 
     if (err < 0) {
@@ -302,16 +442,39 @@ static int rv8263c8_alarm_set_time(const struct device *p_dev, uint16_t id, uint
         goto rv8263c8_alarm_set_time_exit;
     }
 
-    err = i2c_reg_update_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL2, 0x01 << 0x07, RV8263C8_ALARM_INT_ENABLE);
+    if (mask & RTC_ALARM_TIME_MASK_MONTHDAY) {
+        err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_DATE_ALARM,
+                                    RV8263C8_BM_ALARM_ENABLE | p_timeptr->tm_mday);
+    } else {
+        err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_DATE_ALARM, RV8263C8_BM_ALARM_DISABLE);
+    }
+
+    if (err < 0) {
+        LOG_ERR("Error while writing DATE alarm! Error: %i", err);
+        goto rv8263c8_alarm_set_time_exit;
+    }
+
+    if (mask & RTC_ALARM_TIME_MASK_WEEKDAY) {
+        err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_WEEKDAY_ALARM,
+                                    RV8263C8_BM_ALARM_ENABLE | p_timeptr->tm_wday);
+    } else {
+        err = i2c_reg_write_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_WEEKDAY_ALARM, RV8263C8_BM_ALARM_DISABLE);
+    }
+
+    if (err < 0) {
+        LOG_ERR("Error while writing DATE alarm! Error: %i", err);
+        goto rv8263c8_alarm_set_time_exit;
+    }
+
+    err = i2c_reg_update_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2, RV8263C8_BM_ALARM_INT_ENABLE,
+                                 RV8263C8_BM_ALARM_INT_ENABLE);
     if (err < 0) {
         LOG_ERR("Error while writing CONTROL2! Error: %i", err);
         goto rv8263c8_alarm_set_time_exit;
     }
 
-    err = 0;
-
 rv8263c8_alarm_set_time_exit:
-    k_spin_unlock(&dev_data->lock, key);
+    k_spin_unlock(&data->lock, key);
 
     return err;
 }
@@ -320,26 +483,15 @@ static int rv8263c8_alarm_get_time(const struct device *p_dev, uint16_t id, uint
                                    struct rtc_time *p_timeptr)
 {
     int err;
-    struct rv8263c8_data *const dev_data = p_dev->data;
+    struct rv8263c8_data *const data = p_dev->data;
     const struct rv8263c8_config *config = p_dev->config;
-
-    rtc_alarm_callback cb;
-    void *cb_data;
-    rtc_update_callback update_cb;
-    void *update_cb_data;
     uint8_t value;
 
-    k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
-
-    if (id != 0) {
-        err = -EINVAL;
-        goto rv8263c8_alarm_get_time_exit;
+    if ((p_dev == NULL) || (p_timeptr == NULL) || (id != 0)) {
+        return -EINVAL;
     }
 
-    if (p_timeptr == NULL) {
-        err = -EINVAL;
-        goto rv8263c8_alarm_get_time_exit;
-    }
+    k_spinlock_key_t key = k_spin_lock(&data->lock);
 
     (*p_mask) = 0;
 
@@ -361,7 +513,7 @@ static int rv8263c8_alarm_get_time(const struct device *p_dev, uint16_t id, uint
     }
 
     if (value <= MAX_MIN) {
-        p_timeptr->tm_hour = value;
+        p_timeptr->tm_min = value;
         (*p_mask) |= RTC_ALARM_TIME_MASK_MINUTE;
     }
 
@@ -376,10 +528,30 @@ static int rv8263c8_alarm_get_time(const struct device *p_dev, uint16_t id, uint
         (*p_mask) |= RTC_ALARM_TIME_MASK_HOUR;
     }
 
-    err = 0;
+    err = i2c_reg_read_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_DATE_ALARM, &value);
+    if (err < 0) {
+        LOG_ERR("Error while reading SECONDS! Error: %i", err);
+        goto rv8263c8_alarm_get_time_exit;
+    }
+
+    if (value <= MAX_MDAY) {
+        p_timeptr->tm_mday = value;
+        (*p_mask) |= RTC_ALARM_TIME_MASK_MONTHDAY;
+    }
+
+    err = i2c_reg_read_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_WEEKDAY_ALARM, &value);
+    if (err < 0) {
+        LOG_ERR("Error while reading SECONDS! Error: %i", err);
+        goto rv8263c8_alarm_get_time_exit;
+    }
+
+    if (value <= MAX_WDAY) {
+        p_timeptr->tm_hour = value;
+        (*p_mask) |= RTC_ALARM_TIME_MASK_WEEKDAY;
+    }
 
 rv8263c8_alarm_get_time_exit:
-    k_spin_unlock(&dev_data->lock, key);
+    k_spin_unlock(&data->lock, key);
 
     return err;
 }
@@ -388,25 +560,27 @@ static int rv8263c8_alarm_set_callback(const struct device *p_dev, uint16_t id,
                                        rtc_alarm_callback callback, void *p_user_data)
 {
     int err;
-    struct rv8263c8_data *const dev_data = p_dev->data;
+    struct rv8263c8_data *const data = p_dev->data;
     const struct rv8263c8_config *config = p_dev->config;
 
-    if (id != 0) {
+    if ((p_dev == NULL) || (id != 0)) {
         return -EINVAL;
     }
 
-    k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
+    k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-    dev_data->cb = callback;
-    dev_data->cb_data = p_user_data;
+    data->alarm_cb = callback;
+    data->alarm_cb_data = p_user_data;
 
     if (callback != NULL) {
-        err = i2c_reg_update_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL2, 0x01 << 0x07, RV8263C8_ALARM_INT_ENABLE);
+        err = i2c_reg_update_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2, RV8263C8_BM_ALARM_INT_ENABLE,
+                                     RV8263C8_BM_ALARM_INT_ENABLE);
     } else {
-        err = i2c_reg_update_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL2, 0x01 << 0x07, RV8263C8_ALARM_INT_DISABLE);
+        err = i2c_reg_update_byte_dt(&config->i2c_bus, RV8263C8_REGISTER_CONTROL_2, RV8263C8_BM_ALARM_INT_ENABLE,
+                                     RV8263C8_BM_ALARM_INT_DISABLE);
     }
 
-    k_spin_unlock(&dev_data->lock, key);
+    k_spin_unlock(&data->lock, key);
 
     if (err < 0) {
         LOG_ERR("Error while writing CONTROL2! Error: %i", err);
@@ -419,51 +593,73 @@ static int rv8263c8_alarm_set_callback(const struct device *p_dev, uint16_t id,
 static int rv8263c8_alarm_is_pending(const struct device *p_dev, uint16_t id)
 {
     int ret;
-    struct rv8263c8_data *const dev_data = p_dev->data;
+    struct rv8263c8_data *const data = p_dev->data;
 
-    if (id != 0) {
+    if ((p_dev == NULL) || (id != 0)) {
         return -EINVAL;
     }
 
-    k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
+    k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-    ret = dev_data->alarm_pending ? 1 : 0;
-    dev_data->alarm_pending = false;
+    ret = data->is_alarm_pending ? 1 : 0;
+    data->is_alarm_pending = false;
 
-    k_spin_unlock(&dev_data->lock, key);
+    k_spin_unlock(&data->lock, key);
 
     return ret;
 }
 #endif
 
 #ifdef CONFIG_RTC_UPDATE
-static int rv8263c8_update_set_callback(const struct device *p_dev,
-                                        rtc_update_callback callback, void *p_user_data)
+int rv8263_update_callback(const struct device *p_dev, rtc_update_callback callback, void *p_user_data)
 {
-    struct rv8263c8_data *const dev_data = p_dev->data;
+    struct rv8263c8_data *const data = p_dev->data;
 
-#error Not supported
-
-    k_spinlock_key_t key = k_spin_lock(&dev_data->lock);
-
-    dev_data->update_cb = callback;
-    dev_data->update_cb_data = p_user_data;
-
-    if (callback != NULL) {
-        // TODO: Enable
-    } else {
-        // TODO: Disable
+    if (p_dev == NULL) {
+        return -EINVAL;
     }
 
-    k_spin_unlock(&dev_data->lock, key);
+    k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+    data->update_callback = callback;
+    data->update_user_data = user_data;
+
+    // TODO: Enable 1 Hz output and interrupts
+    // This can be done with the timer
+
+    k_spin_unlock(&data->lock, key);
+
+    return 0;
+}
+#endif
+
+#ifdef CONFIG_RTC_CALIBRATION
+int rv8263c8_calibration_set(const struct device *p_dev, int32_t calibration)
+{
+    struct rv8263c8_data *const data = p_dev->data;
+
+    if (p_dev == NULL) {
+        return -EINVAL;
+    }
+
+    return 0;
+}
+
+int rv8263c8_calibration_get(const struct device *p_dev, int32_t *p_calibration)
+{
+    struct rv8263c8_data *const data = p_dev->data;
+
+    if ((p_dev == NULL) || (p_calibration ==  NULL)) {
+        return -EINVAL;
+    }
 
     return 0;
 }
 #endif
 
 static const struct rtc_driver_api rv8263c8_driver_api = {
-    .set_time = rv8263c8_set_time,
-    .get_time = rv8263c8_get_time,
+    .set_time = rv8263c8_time_set,
+    .get_time = rv8263c8_time_get,
 #ifdef CONFIG_RTC_ALARM
     .alarm_get_supported_fields = rv8263c8_alarm_get_supported_fields,
     .alarm_set_time = rv8263c8_alarm_set_time,
@@ -471,9 +667,12 @@ static const struct rtc_driver_api rv8263c8_driver_api = {
     .alarm_is_pending = rv8263c8_alarm_is_pending,
     .alarm_set_callback = rv8263c8_alarm_set_callback,
 #endif
-
 #ifdef CONFIG_RTC_UPDATE
-    .update_set_callback = rv8263c8_update_set_callback,
+    .update_set_callback = rv8263_update_callback,
+#endif
+#ifdef CONFIG_RTC_CALIBRATION
+    .set_calibration = rv8263c8_calibration_set,
+    .get_calibration = rv8263c8_calibration_get,
 #endif
 };
 

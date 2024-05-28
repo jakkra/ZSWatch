@@ -193,7 +193,7 @@
 		compatible = "microcrystal,rv-8263-c8";
 		reg = <0xA2>;
 		status = "okay";
-		clkout = <7>;
+		clkout = <0>;
 	};
 
 	bmi270: bmi270@68 {
