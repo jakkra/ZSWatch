@@ -13,19 +13,21 @@ properties:
 
     fast_mode:
       type: boolean
+      required: false
       description: |
         Enable fast offset mode (Offset every 4 minutes).
 
     offset:
       type: int
+      required: false
       default: 0
       description:
         Offset for timer compensation.
 
     clkout:
       type: int
-      default: 0
       required: false
+      default: 0
       enum:
         - 32768
         - 8192
