@@ -1,4 +1,3 @@
 rsource "display/Kconfig"
 rsource "input/Kconfig"
-rsource "rtc/Kconfig"
 rsource "sensor/Kconfig"

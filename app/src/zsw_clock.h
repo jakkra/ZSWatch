@@ -20,10 +20,17 @@
 #include <inttypes.h>
 #include <time.h>
 
+typedef void (*zsw_clock_on_update)(void);
+
 typedef struct {
     struct tm   tm;                 /**< Modified time object with 1900 added to the year and the month increased by one. */
     uint32_t    tv_usec;
 } zsw_timeval_t;
 
+void zsw_clock_add_update(zsw_clock_on_update callback);
+
+void zsw_clock_set_time(zsw_timeval_t *ztm);
+
 void zsw_clock_get_time(zsw_timeval_t *ztm);
+
 time_t zsw_clock_get_time_unix(void);

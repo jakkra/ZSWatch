@@ -185,13 +185,16 @@
             pwms = <&pwm2 0 PWM_HZ(880) PWM_POLARITY_NORMAL>;
         };
     };
+};
 
+&uart0 {
+    status = "disabled";
 };
 
 &i2c1 {
-	rv_8263_c8: rv-8263-c8@A2 {
+	rv_8263_c8: rv-8263-c8@51 {
 		compatible = "microcrystal,rv-8263-c8";
-		reg = <0xA2>;
+		reg = <0x51>;
 		status = "okay";
 		clkout = <0>;
 		int-gpios = <&gpio1 13 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;

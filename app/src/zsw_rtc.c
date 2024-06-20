@@ -19,7 +19,8 @@
 #include <zephyr/init.h>
 #include <zephyr/zbus/zbus.h>
 #include <zephyr/logging/log.h>
-#include <sys/time.h>
+#include <zephyr/drivers/rtc.h>
+#include <zephyr/devicetree.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,67 +28,69 @@
 #include <unistd.h>
 
 #include "zsw_clock.h"
-#include "zsw_retained_ram_storage.h"
 #include "events/zsw_periodic_event.h"
 
-static void zbus_periodic_slow_callback(const struct zbus_channel *chan);
+const struct device *const rtc = DEVICE_DT_GET(DT_NODELABEL(rv_8263_c8));
 
-ZBUS_CHAN_DECLARE(periodic_event_1s_chan);
-ZBUS_LISTENER_DEFINE(zsw_clock_lis, zbus_periodic_slow_callback);
+LOG_MODULE_REGISTER(zsw_clock, LOG_LEVEL_DBG);
+
+void zsw_clock_add_update(zsw_clock_on_update callback)
+{
+
+}
 
 void zsw_clock_set_time(zsw_timeval_t *ztm)
 {
-    struct timespec tspec;
+    struct rtc_time time;
 
-    tspec.tv_sec = ztm->tm.tm_sec;
-    tspec.tv_nsec = 0;
+    time.tm_sec = ztm->tm.tm_sec;
+    time.tm_min = ztm->tm.tm_min;
+    time.tm_hour = ztm->tm.tm_hour;
+    time.tm_wday = ztm->tm.tm_wday;
+    time.tm_mday = ztm->tm.tm_mday;
+    time.tm_mon = ztm->tm.tm_mon - 1;
+    time.tm_year = ztm->tm.tm_year - 1900;
 
-    clock_settime(CLOCK_REALTIME, &tspec);
+    //rtc_set_time(rtc, &time);
 }
 
 void zsw_clock_get_time(zsw_timeval_t *ztm)
 {
-    struct timeval tv;
-    struct tm *tm;
-    gettimeofday(&tv, NULL);
-    tm = localtime(&tv.tv_sec);
-    memcpy(ztm, tm, sizeof(struct tm));
+    struct rtc_time time;
+
+    //rtc_get_time(rtc, &time);
+
+    ztm->tm.tm_sec = time.tm_sec;
+    ztm->tm.tm_min = time.tm_min;
+    ztm->tm.tm_hour = time.tm_hour;
+    ztm->tm.tm_wday = time.tm_wday;
+    ztm->tm.tm_mday = time.tm_mday;
 
     // Add one to the month because we want to count from December instead of January
-    ztm->tm.tm_mon += 1;
+    ztm->tm.tm_mon = time.tm_mon + 1;
 
-    // Add 1900 to the year because we want to count from 1900
-    ztm->tm.tm_year += 1900;
+    // Add 1900 to the year because we want to count from 0
+    ztm->tm.tm_year = time.tm_year + 1900;
 }
 
 time_t zsw_clock_get_time_unix(void)
 {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-
-    return tv.tv_sec;
+    // TODO:
+    return 0;
 }
 
-static void zbus_periodic_slow_callback(const struct zbus_channel *chan)
+void on_rtc_update(const struct device *dev, void *user_data)
 {
-    retained.current_time_seconds = zsw_clock_get_time_unix();
-    zsw_retained_ram_update();
 }
 
 static int zsw_clock_init(void)
 {
-    struct timespec tspec;
-
-    tspec.tv_sec = retained.current_time_seconds;
-    tspec.tv_nsec = 0;
-
-    clock_settime(CLOCK_REALTIME, &tspec);
-    if (strlen(retained.timezone) > 0) {
-        setenv("TZ", retained.timezone, 1);
-        tzset();
+    if (!device_is_ready(rtc)) {
+        LOG_ERR("Device not ready!");
+        return -1;
     }
 
-    zsw_periodic_chan_add_obs(&periodic_event_1s_chan, &zsw_clock_lis);
+    rtc_update_set_callback(rtc, on_rtc_update, NULL);
 
     return 0;
 }

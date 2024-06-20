@@ -127,6 +127,10 @@
 
 };
 
+&uart0 {
+    status = "disabled";
+};
+
 &i2c1 {
     bmi270: bmi270@68 {
         compatible = "bosch,bmi270-plus";
