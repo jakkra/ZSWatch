@@ -61,6 +61,10 @@
 #include "ble/ble_cts.h"
 #include <zsw_coredump.h>
 
+#ifdef CONFIG_APPLICATIONS_USE_LEA_ASSISTANT
+#include "applications/lea_assistant/broadcast_assistant.h"
+#endif
+
 LOG_MODULE_REGISTER(main, CONFIG_ZSW_APP_LOG_LEVEL);
 
 #define TASK_WDT_FEED_INTERVAL_MS  3000
@@ -344,6 +348,10 @@ static void enable_bluetooth(void)
     ble_ams_init();
     ble_cts_init();
     ble_ancs_init();
+
+#ifdef CONFIG_APPLICATIONS_USE_LEA_ASSISTANT
+    broadcast_assistant_init();
+#endif
 }
 
 static void print_retention_ram(void)
