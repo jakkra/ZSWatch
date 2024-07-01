@@ -66,6 +66,17 @@ menu "ZSWatch"
         prompt "Activate the application 'PPT remote'"
         default n
 
+        config APPLICATIONS_USE_LEA_ASSISTANT
+            bool
+            select BT_CENTRAL
+            select BT_AUDIO
+            select BT_BAP_BROADCAST_ASSISTANT
+            select BT_TINYCRYPT_ECC
+            # CONFIG_BT_BAP_SCAN_DELEGATOR=y is required until the following
+            # bug is fixed: https://github.com/zephyrproject-rtos/zephyr/issues/68338
+            select BT_BAP_SCAN_DELEGATOR
+        prompt "Activate the application 'LE Audio Assistant'"
+        default n
     endmenu
 
     menu "Watchface"
@@ -252,5 +263,6 @@ menu "ZSWatch"
         rsource "src/applications/notification/Kconfig"
         rsource "src/applications/trivia/Kconfig"
         rsource "src/applications/ppt_remote/Kconfig"
+        rsource "src/applications/lea_assistant/Kconfig"
     endmenu
 endmenu
