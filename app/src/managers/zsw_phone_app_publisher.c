@@ -58,7 +58,7 @@ static void zbus_battery_sample_data_callback(const struct zbus_channel *chan)
 {
     struct battery_sample_event *event = zbus_chan_msg(chan);
     bt_bas_set_battery_level(event->percent);
-    send_battery_state_update(event->mV, event->percent, false);
+    send_battery_state_update(event->mV, event->percent, event->is_charging);
 }
 
 static void connected(struct bt_conn *conn, uint8_t err)
