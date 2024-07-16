@@ -60,6 +60,7 @@
 #include "ble/ble_ancs.h"
 #include "ble/ble_cts.h"
 #include <zsw_coredump.h>
+#include "fuel_gauge/zsw_pmic.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_ZSW_APP_LOG_LEVEL);
 
@@ -82,7 +83,7 @@ static void run_input_work(struct k_work *item);
 static void run_init_work(struct k_work *item);
 
 static void run_wdt_work(struct k_work *item);
-static void enable_bluetoth(void);
+static void enable_bluetooth(void);
 static void print_retention_ram(void);
 static void enocoder_read(struct _lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
 static void click_feedback(struct _lv_indev_drv_t *drv, uint8_t e);
@@ -137,7 +138,7 @@ static void run_input_work(struct k_work *item)
     switch (container->event.code) {
         // Button event
         case (INPUT_KEY_Y): {
-#ifdef CONFIG_MENU_ENABLE_SYSTEM_RESET
+#ifdef CONFIG_MISC_ENABLE_SYSTEM_RESET
             LOG_INF("Force restart");
 
             retained.off_count += 1;
@@ -213,7 +214,7 @@ static void run_init_work(struct k_work *item)
     zsw_display_control_sleep_ctrl(true);
     print_retention_ram();
     zsw_notification_manager_init();
-    enable_bluetoth();
+    enable_bluetooth();
     zsw_imu_init();
     zsw_magnetometer_init();
     zsw_pressure_sensor_init();
@@ -297,10 +298,20 @@ int main(void)
     // it has the required amount of stack.
     k_work_submit(&init_work);
 
+    // Workaround due to https://github.com/zephyrproject-rtos/zephyr/issues/71410
+    // we need to run lv_task_handler from main thread and disable CONFIG_LV_Z_FLUSH_THREAD
+#ifdef CONFIG_BOARD_NATIVE_POSIX
+    int64_t next_update_in_ms;
+    while (true) {
+        next_update_in_ms = lv_task_handler();
+        k_msleep(next_update_in_ms);
+    }
+#endif
+
     return 0;
 }
 
-static void enable_bluetoth(void)
+static void enable_bluetooth(void)
 {
     int err;
 
@@ -541,7 +552,12 @@ static void on_watchface_app_event_callback(watchface_app_evt_t evt)
                 sys_reboot(SYS_REBOOT_COLD);
                 break;
             case WATCHFACE_APP_EVENT_SHUTDOWN:
-                // TODO enter nPM1300 ship mode or hibernate
+#if CONFIG_DT_HAS_NORDIC_NPM1300_ENABLED
+                int ret = zsw_pmic_power_down();
+                if (ret) {
+                    LOG_ERR("Failed to power down the system");
+                }
+#endif
                 break;
         }
     }

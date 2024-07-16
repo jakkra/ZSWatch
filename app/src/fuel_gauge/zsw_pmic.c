@@ -1,6 +1,18 @@
 /*
- * Copyright (c) 2023 Nordic Semiconductor ASA
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ * This file is part of ZSWatch project <https://github.com/jakkra/ZSWatch/>.
+ * Copyright (c) 2023 Jakob Krantz.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdlib.h>
@@ -10,6 +22,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/mfd/npm1300.h>
+#include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/sensor/npm1300_charger.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/zbus/zbus.h>
@@ -22,6 +35,9 @@
 LOG_MODULE_REGISTER(zsw_pmic, LOG_LEVEL_WRN);
 
 #define ZSW_NOT_WORN_STATIONARY_CURRENT 0.0005 // 50uA. TODO remeasure this value and make Kconfig
+
+/* nPM1300 CHARGER.BCHGCHARGESTATUS.CONSTANTCURRENT register bitmask */
+#define NPM1300_CHG_STATUS_CC_MASK BIT_MASK(3)
 
 typedef enum {
     CHG_STATUS_BATTERYDETECTED = 1, // Battery is connected
@@ -48,15 +64,17 @@ ZBUS_LISTENER_DEFINE(zsw_pmic_slow_lis, zbus_periodic_slow_10s_callback);
 
 ZBUS_CHAN_DECLARE(battery_sample_data_chan);
 
-static const struct device *pmic = DEVICE_DT_GET(DT_NODELABEL(npm1300_ek_pmic));
-static const struct device *charger = DEVICE_DT_GET(DT_NODELABEL(npm1300_ek_charger));
+static const struct device *pmic = DEVICE_DT_GET(DT_NODELABEL(npm1300_pmic));
+static const struct device *charger = DEVICE_DT_GET(DT_NODELABEL(npm1300_charger));
+static const struct device *regulators = DEVICE_DT_GET(DT_NODELABEL(npm1300_regulators));
 
 static float max_charge_current;
 static float term_charge_current;
 static int64_t ref_time;
+static bool vbus_connected;
 
 static const struct battery_model battery_model = {
-#include "battery_model.inc"
+#include "ld403533.inc"
 };
 
 static void zbus_activity_event_callback(const struct zbus_channel *chan)
@@ -92,6 +110,14 @@ static bool is_charging_from_status(int status)
            (status & CHG_STATUS_TRICKLECHARGE);
 }
 
+static void check_battery_voltage_cutoff(int mV)
+{
+    if (mV <= CONFIG_ZSW_PMIC_BATTERY_CUTOFF_VOLTAGE_MV) {
+        LOG_WRN("Battery voltage below cutoff, entering power down mode\n");
+        zsw_pmic_power_down();
+    }
+}
+
 static void zbus_periodic_slow_10s_callback(const struct zbus_channel *chan)
 {
     int ret;
@@ -104,6 +130,8 @@ static void zbus_periodic_slow_10s_callback(const struct zbus_channel *chan)
     }
 
     zbus_chan_pub(&battery_sample_data_chan, &evt, K_MSEC(50));
+
+    check_battery_voltage_cutoff(evt.mV);
 }
 
 static int read_sensors(const struct device *charger, float *voltage, float *current, float *temp, int *status,
@@ -142,7 +170,7 @@ static int read_sensors(const struct device *charger, float *voltage, float *cur
 static int fuel_gauge_init(const struct device *charger)
 {
     struct sensor_value value;
-    struct nrf_fuel_gauge_init_parameters parameters = { .model = &battery_model };
+    struct nrf_fuel_gauge_init_parameters parameters = { .model = &battery_model, .opt_params = NULL };
     int ret;
 
     ret = read_sensors(charger, &parameters.v0, &parameters.i0, &parameters.t0, NULL, NULL);
@@ -157,15 +185,9 @@ static int fuel_gauge_init(const struct device *charger)
 
     nrf_fuel_gauge_init(&parameters, NULL);
 
-    ref_time = k_uptime_get();
+    LOG_WRN("nRF Fuel Gauge version: %s", nrf_fuel_gauge_version);
 
-    struct battery_sample_event evt;
-    ret = zsw_pmic_get_full_state(&evt);
-    if (ret == 0) {
-        zbus_chan_pub(&battery_sample_data_chan, &evt, K_MSEC(50));
-    } else {
-        LOG_ERR("Error: Could not publish inital battery data.\n");
-    }
+    ref_time = k_uptime_get();
 
     return 0;
 }
@@ -177,9 +199,11 @@ static void event_callback(const struct device *dev, struct gpio_callback *cb, u
         LOG_DBG("Charging completed\n");
     }
     if (BIT(NPM1300_EVENT_VBUS_DETECTED) & pins) {
+        vbus_connected = true;
         LOG_DBG("VBUS detected\n");
     }
     if (BIT(NPM1300_EVENT_VBUS_REMOVED) & pins) {
+        vbus_connected = false;
         LOG_DBG("VBUS removed\n");
     }
     if (BIT(NPM1300_EVENT_CHG_ERROR) & pins) {
@@ -199,6 +223,7 @@ int zsw_pmic_get_full_state(struct battery_sample_event *sample)
     float tte;
     float ttf;
     float delta;
+    bool cc_charging;
 
     ret = read_sensors(charger, &voltage, &current, &temp, &status, &error);
     if (ret < 0) {
@@ -206,11 +231,13 @@ int zsw_pmic_get_full_state(struct battery_sample_event *sample)
         return ret;
     }
 
+    cc_charging = (status & NPM1300_CHG_STATUS_CC_MASK) != 0;
+
     delta = (float) k_uptime_delta(&ref_time) / 1000.f;
 
     soc = nrf_fuel_gauge_process(voltage, current, temp, delta, NULL);
     tte = nrf_fuel_gauge_tte_get();
-    ttf = nrf_fuel_gauge_ttf_get(-max_charge_current, -term_charge_current);
+    ttf = nrf_fuel_gauge_ttf_get(cc_charging, -term_charge_current);
 
     LOG_DBG("V: %.3f, I: %.3f, T: %.2f, ", voltage, current, temp);
     LOG_DBG("SoC: %.2f, TTE: %.0f, TTF: %.0f\n", soc, tte, ttf);
@@ -228,6 +255,14 @@ int zsw_pmic_get_full_state(struct battery_sample_event *sample)
     sample->pmic_data_valid = true;
 
     return ret;
+}
+
+int zsw_pmic_power_down(void)
+{
+    if (vbus_connected) {
+        LOG_WRN("Can't enter power down/shipping mode while VBUS is connected");
+    }
+    return regulator_parent_ship_mode(regulators);
 }
 
 static int zsw_pmic_init(void)
@@ -253,6 +288,17 @@ static int zsw_pmic_init(void)
     mfd_npm1300_add_callback(pmic, &event_cb);
 
     zsw_periodic_chan_add_obs(&periodic_event_10s_chan, &zsw_pmic_slow_lis);
+
+    struct battery_sample_event evt;
+    int ret = zsw_pmic_get_full_state(&evt);
+    if (ret == 0) {
+        zbus_chan_pub(&battery_sample_data_chan, &evt, K_MSEC(50));
+    } else {
+        LOG_ERR("Error: Could not publish inital battery data.\n");
+    }
+
+    check_battery_voltage_cutoff(evt.mV);
+
     return 0;
 }
 

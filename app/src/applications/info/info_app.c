@@ -120,9 +120,14 @@ static void timer_callback(lv_timer_t *timer)
 
 static void param_updated(struct bt_conn *conn, uint16_t interval, uint16_t latency, uint16_t timeout)
 {
+    ble_info.connection_interval = interval;
+    ble_info.connection_latency = latency;
+    ble_info.connection_timeout = timeout;
+
     if (!running) {
         return;
     }
+
     LOG_INF("Updated => Interval: %d, latency: %d, timeout: %d", interval, latency, timeout);
     info_app_ui_set_conn_params(interval, latency, timeout);
 }

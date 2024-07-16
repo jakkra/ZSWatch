@@ -71,25 +71,40 @@ static int trivia_app_add(void)
     return 0;
 }
 
-static void http_rsp_cb(ble_http_status_code_t status, cJSON *response)
+static void http_rsp_cb(ble_http_status_code_t status, char *response)
 {
     if (status == BLE_HTTP_STATUS_OK && active) {
-        cJSON *question = cJSON_GetObjectItem(response, "question");
-        cJSON *correct_answer = cJSON_GetObjectItem(response, "correct_answer");
-        if (question == NULL || correct_answer == NULL) {
-            LOG_ERR("Failed to parse JSON data");
-            return;
+        cJSON *parsed_response = cJSON_Parse(response);
+        if (parsed_response == NULL) {
+            LOG_ERR("Failed to parse JSON rsp data from HTTP request");
+        } else {
+            cJSON *results = cJSON_GetObjectItem(parsed_response, "results");
+            if (cJSON_GetArraySize(results) == 1) {
+                cJSON *result = cJSON_GetArrayItem(results, 0);
+                cJSON *question = cJSON_GetObjectItem(result, "question");
+                cJSON *correct_answer = cJSON_GetObjectItem(result, "correct_answer");
+                if (question == NULL || correct_answer == NULL) {
+                    LOG_ERR("Failed to parse JSON data");
+                    return;
+                }
+                memset(trivia_app_question.question, 0, sizeof(trivia_app_question.question));
+                strncpy(trivia_app_question.question, question->valuestring, sizeof(trivia_app_question.question) - 1);
+                trivia_app_question.correct_answer = (correct_answer->valuestring[0] == 'F') ? false : true;
+                trivia_ui_update_question(trivia_app_question.question);
+            } else {
+                LOG_ERR("Unexpected number of results: %d, expected 1", cJSON_GetArraySize(results));
+            }
         }
-        memset(trivia_app_question.question, 0, sizeof(trivia_app_question.question));
-        strncpy(trivia_app_question.question, question->valuestring, sizeof(trivia_app_question.question));
-        trivia_app_question.correct_answer = (correct_answer->valuestring[0] == 'F') ? false : true;
-        trivia_ui_update_question(trivia_app_question.question);
+        cJSON_Delete(parsed_response);
     }
 }
 
 static void request_new_question()
 {
-    zsw_ble_http_get(HTTP_REQUEST_URL, http_rsp_cb);
+    /// @todo create a more generic error code that would cover when GadgetBridge doesn't allow HTTP over BLE, potentially a Systemwide pop-up
+    if (zsw_ble_http_get(HTTP_REQUEST_URL, http_rsp_cb) == -EINVAL) {
+        trivia_ui_not_supported();
+    }
 }
 
 static void on_button_click(trivia_button_t trivia_button)
