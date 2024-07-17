@@ -590,6 +590,7 @@ static void on_zbus_ble_data_callback(const struct zbus_channel *chan)
     switch (event->data.type) {
         case BLE_COMM_DATA_TYPE_SET_TIME: {
             if (event->data.data.time.seconds > 0) {
+                // TODO: Replace with set time
                 struct timespec tspec;
                 tspec.tv_sec = event->data.data.time.seconds;
                 tspec.tv_nsec = 0;

@@ -35,7 +35,7 @@ static uint32_t cal_start_ms;
 static void compass_app_start(lv_obj_t *root, lv_group_t *group)
 {
     compass_ui_show(root, on_start_calibration);
-    refresh_timer = lv_timer_create(timer_callback, CONFIG_DEFAULT_CONFIGURATION_COMPASS_REFRESH_INTERVAL_MS,  NULL);
+    refresh_timer = lv_timer_create(timer_callback, CONFIG_APPLICATIONS_CONFIGURATION_COMPASS_REFRESH_INTERVAL_MS,  NULL);
     zsw_sensor_fusion_init();
 }
 
@@ -59,14 +59,14 @@ static void on_start_calibration(void)
     cal_start_ms = lv_tick_get();
     zsw_popup_show("Calibration",
                    "Rotate the watch 360 degrees\naround each x,y,z.\n a few times.", NULL,
-                   CONFIG_DEFAULT_CONFIGURATION_COMPASS_CALIBRATION_TIME_S, false);
+                   CONFIG_APPLICATIONS_CONFIGURATION_COMPASS_CALIBRATION_TIME_S, false);
 }
 
 static void timer_callback(lv_timer_t *timer)
 {
     float heading;
     if (is_calibrating &&
-        (lv_tick_elaps(cal_start_ms) >= (CONFIG_DEFAULT_CONFIGURATION_COMPASS_CALIBRATION_TIME_S * 1000UL))) {
+        (lv_tick_elaps(cal_start_ms) >= (CONFIG_APPLICATIONS_CONFIGURATION_COMPASS_CALIBRATION_TIME_S * 1000UL))) {
         zsw_magnetometer_stop_calibration();
         is_calibrating = false;
         zsw_popup_remove();

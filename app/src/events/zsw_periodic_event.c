@@ -105,6 +105,7 @@ static int zsw_timer_init(void)
     k_work_init_delayable(work, handle_slow_timeout);
     zbus_chan_finish(&periodic_event_10s_chan);
 
+    // TODO: Use the RTC instead of the timer in rev 5 to generate this
     zbus_chan_claim(&periodic_event_1s_chan, K_FOREVER);
     work = (struct k_work_delayable *)zbus_chan_user_data(&periodic_event_1s_chan);
     k_work_init_delayable(work, handle_mid_timeout);

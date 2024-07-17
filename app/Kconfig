@@ -66,6 +66,30 @@ menu "ZSWatch"
         prompt "Activate the application 'PPT remote'"
         default n
 
+        menu "Configuration"
+            menu "Compass"
+                depends on APPLICATIONS_USE_COMPASS
+
+                config APPLICATIONS_CONFIGURATION_COMPASS_REFRESH_INTERVAL_MS
+                    int
+                prompt "Refresh interval in milliseconds"
+                default 50
+
+                config APPLICATIONS_CONFIGURATION_COMPASS_CALIBRATION_TIME_S
+                    int
+                prompt "Calibration time in seconds"
+                default 30
+            endmenu
+
+            menu "Sensors Summary"
+                depends on APPLICATIONS_USE_SENSORS_SUMMARY
+
+                config APPLICATIONS_CONFIGURATION_SENSORS_SUMMARY_REFRESH_INTERVAL_MS
+                    int
+                prompt "Refresh interval in milliseconds"
+                default 100
+            endmenu
+        endmenu
     endmenu
 
     menu "Watchface"
@@ -105,29 +129,6 @@ menu "ZSWatch"
             config DEFAULT_CONFIGURATION_DRIVER_INIT_PRIORITY
                 int
                 default 85
-        endmenu
-
-        menu "Sensors Summary"
-            depends on APPLICATIONS_USE_SENSORS_SUMMARY
-
-            config DEFAULT_CONFIGURATION_SENSORS_SUMMARY_REFRESH_INTERVAL_MS
-                int
-            prompt "Refresh interval in milliseconds"
-            default 100
-        endmenu
-
-        menu "Compass"
-            depends on APPLICATIONS_USE_COMPASS
-
-            config DEFAULT_CONFIGURATION_COMPASS_REFRESH_INTERVAL_MS
-                int
-            prompt "Refresh interval in milliseconds"
-            default 50
-
-            config DEFAULT_CONFIGURATION_COMPASS_CALIBRATION_TIME_S
-                int
-            prompt "Calibration time in seconds"
-            default 30
         endmenu
 
         menu "Power Management"

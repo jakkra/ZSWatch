@@ -1,6 +1,3 @@
 rsource "display/Kconfig"
 rsource "input/Kconfig"
-
-menu "Drivers"
-    rsource "sensor/Kconfig"
-endmenu
+rsource "sensor/Kconfig"
