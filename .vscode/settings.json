@@ -21,5 +21,8 @@
     "search.useIgnoreFiles": false,
     "[c]": {
         "editor.defaultFormatter": "chiehyu.vscode-astyle"
+    },
+    "files.associations": {
+        "inttypes.h": "c"
     }
 }

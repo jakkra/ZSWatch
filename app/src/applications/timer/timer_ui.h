@@ -43,6 +43,8 @@ void timer_ui_add_timer(timer_app_timer_t timer);
 
 void timer_ui_update_timer(timer_app_timer_t timer);
 
+void timer_ui_set_time(int hour, int min, int second);
+
 void timer_ui_remove_timer(timer_app_timer_t timer);
 
 

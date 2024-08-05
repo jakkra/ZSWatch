@@ -21,7 +21,7 @@ static lv_obj_t *led2;
 
 // SCREEN: Timer Screen
 static void timer_screen_init(lv_obj_t *ui_Screen1);
-static void create_time_popup(lv_obj_t* ui_root_container);
+static void create_timer_popup(lv_obj_t* ui_root_container);
 static void create_timer_item(lv_obj_t* ui_root_container, timer_app_timer_t timer);
 static void ui_event_start_pause_pressed(lv_event_t * e);
 static void ui_event_reset_pressed(lv_event_t * e);
@@ -43,6 +43,9 @@ static uint8_t picker_digits[sizeof("HHMMSS") - 1];
 // SCREEN: Alarm Screen
 static void alarm_screen_init(lv_obj_t *ui_Screen2);
 static lv_obj_t* ui_alarm_page;
+static lv_obj_t * ui_add_alarm_button;
+static lv_obj_t * ui_alarm_list_container;
+
 // TODO
 
 static timer_item_ui_t ui_timers[TIMER_UI_MAX_TIMERS];
@@ -81,6 +84,8 @@ void timer_ui_show(lv_obj_t *root, on_timer_created on_create, on_timer_event on
     alarm_screen_init(ui_alarm_page);
     create_page_indicator(root_page);
 
+    create_timer_popup(root_page);
+
     // Add callback to tileview when new page changed, call set_indicator_page
     lv_obj_add_event_cb(tv, on_tileview_change, LV_EVENT_VALUE_CHANGED, NULL);
 }
@@ -93,6 +98,12 @@ void timer_ui_remove(void)
 }
 
 void timer_ui_add_timer(timer_app_timer_t timer)
+{
+    assert(root_page != NULL);
+    create_timer_item(ui_timer_list_container, timer);
+}
+
+void timer_ui_add_alarm(timer_app_timer_t timer)
 {
     assert(root_page != NULL);
     create_timer_item(ui_timer_list_container, timer);
@@ -114,6 +125,11 @@ void timer_ui_update_timer(timer_app_timer_t timer) {
     default:
         break;
     }    
+}
+
+void timer_ui_set_time(int hour, int min, int second)
+{
+    lv_label_set_text_fmt(ui_label_clock, "%02d:%02d", hour, min);
 }
 
 void timer_ui_remove_timer(timer_app_timer_t timer)
@@ -165,7 +181,7 @@ static void set_indicator_page(int page)
     }
 }
 
-void timer_screen_init(lv_obj_t *ui_root_container)
+static void timer_screen_init(lv_obj_t *ui_root_container)
 {
     lv_obj_clear_flag(ui_root_container, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
     lv_obj_set_style_border_width(ui_root_container, 0, LV_PART_MAIN);
@@ -184,7 +200,7 @@ void timer_screen_init(lv_obj_t *ui_root_container)
     lv_obj_set_width(ui_label_clock, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_label_clock, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_align(ui_label_clock, LV_ALIGN_TOP_MID);
-    lv_label_set_text(ui_label_clock, "23:49");
+    lv_label_set_text(ui_label_clock, "-:-");
     lv_obj_set_style_text_color(ui_label_clock, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_opa(ui_label_clock, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_left(ui_label_clock, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -228,8 +244,6 @@ void timer_screen_init(lv_obj_t *ui_root_container)
     lv_obj_set_flex_align(ui_timer_list_container, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_row(ui_timer_list_container, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_column(ui_timer_list_container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    create_time_popup(ui_root_container);
 
     lv_obj_add_event_cb(ui_add_timer_button, ui_event_open_popup, LV_EVENT_CLICKED, NULL);
 }
@@ -343,7 +357,7 @@ static void create_timer_item(lv_obj_t* ui_root_container, timer_app_timer_t tim
     lv_obj_add_event_cb(ui_delete_button, ui_event_delete_pressed, LV_EVENT_CLICKED, (void*)timer.timer_id);
 }
 
-static void create_time_popup(lv_obj_t* ui_root_container)
+static void create_timer_popup(lv_obj_t* ui_root_container)
 {
     assert(root_page != NULL);
     ui_time_popup = lv_obj_create(ui_root_container);
@@ -541,29 +555,71 @@ static void create_time_popup(lv_obj_t* ui_root_container)
     lv_obj_add_event_cb(ui_time_popup, ui_event_close_popup, LV_EVENT_ALL, NULL);
 }
 
-void alarm_screen_init(lv_obj_t *ui_root_container)
+static void alarm_screen_init(lv_obj_t *ui_root_container)
 {
     lv_obj_clear_flag(ui_root_container, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
-    lv_obj_set_style_border_width(ui_root_container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui_root_container, 0, LV_PART_MAIN);
 
-    ui_root_container = lv_obj_create(ui_root_container);
     lv_obj_set_style_border_width(ui_root_container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_width(ui_root_container, lv_pct(100));
     lv_obj_set_height(ui_root_container, lv_pct(100));
     lv_obj_set_align(ui_root_container, LV_ALIGN_CENTER);
     lv_obj_clear_flag(ui_root_container, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+
+    lv_obj_clear_flag(ui_root_container, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
     lv_obj_set_style_bg_color(ui_root_container, lv_color_hex(0x333131), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_root_container, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    lv_obj_t* ui_Label4 = lv_label_create(ui_root_container);
-    lv_obj_set_width(ui_Label4, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_Label4, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_x(ui_Label4, 20);
-    lv_obj_set_y(ui_Label4, 2);
-    lv_obj_set_align(ui_Label4, LV_ALIGN_TOP_MID);
-    lv_label_set_text(ui_Label4, "Alarms page goes here");
-    lv_obj_set_style_text_color(ui_Label4, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_opa(ui_Label4, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_t* ui_label_clock = lv_label_create(ui_root_container);
+    lv_obj_set_width(ui_label_clock, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_label_clock, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_align(ui_label_clock, LV_ALIGN_TOP_MID);
+    lv_label_set_text(ui_label_clock, "-:-");
+    lv_obj_set_style_text_color(ui_label_clock, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui_label_clock, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui_label_clock, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui_label_clock, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui_label_clock, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui_label_clock, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_t* ui_Label12 = lv_label_create(ui_root_container);
+    lv_obj_set_width(ui_Label12, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_Label12, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_x(ui_Label12, -3);
+    lv_obj_set_y(ui_Label12, -85);
+    lv_obj_set_align(ui_Label12, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_Label12, "Alarms");
+    lv_obj_set_style_text_color(ui_Label12, lv_color_hex(0xAAADFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(ui_Label12, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui_Label12, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_add_alarm_button = lv_btn_create(ui_root_container);
+    lv_obj_set_width(ui_add_alarm_button, 40);
+    lv_obj_set_height(ui_add_alarm_button, 40);
+    lv_obj_set_x(ui_add_alarm_button, 0);
+    lv_obj_set_y(ui_add_alarm_button, -25);
+    lv_obj_set_align(ui_add_alarm_button, LV_ALIGN_BOTTOM_MID);
+    lv_obj_set_style_radius(ui_add_alarm_button, 90, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_t* ui_Label6 = lv_label_create(ui_add_alarm_button);
+    lv_obj_set_width(ui_Label6, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_Label6, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_align(ui_Label6, LV_ALIGN_CENTER);
+    lv_label_set_text(ui_Label6, LV_SYMBOL_PLUS);
+
+    ui_alarm_list_container = lv_obj_create(ui_root_container);
+    lv_obj_remove_style_all(ui_alarm_list_container);
+    lv_obj_set_width(ui_alarm_list_container, 240);
+    lv_obj_set_height(ui_alarm_list_container, 123);
+    lv_obj_set_x(ui_alarm_list_container, 0);
+    lv_obj_set_y(ui_alarm_list_container, -8);
+    lv_obj_set_align(ui_alarm_list_container, LV_ALIGN_CENTER);
+    lv_obj_set_flex_flow(ui_alarm_list_container, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(ui_alarm_list_container, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_row(ui_alarm_list_container, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_column(ui_alarm_list_container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_add_event_cb(ui_add_timer_button, ui_event_open_popup, LV_EVENT_CLICKED, NULL);
 }
 
 static void ui_event_open_popup(lv_event_t * e)

@@ -11,7 +11,7 @@
 #include "drivers/zsw_vibration_motor.h"
 #include "events/zsw_periodic_event.h"
 #include "ui/popup/zsw_popup_window.h"
-
+#include "zsw_clock.h"
 LOG_MODULE_REGISTER(timer_app, LOG_LEVEL_DBG);
 
 #define SETTINGS_NAME_TIMER_APP     "timer_app"
@@ -35,7 +35,7 @@ static timer_app_timer_t timers[TIMER_UI_MAX_TIMERS];
 static bool app_is_open;
 
 static application_t app = {
-    .name = "Timer",
+    .name = "Timers",
     .icon = ZSW_LV_IMG_USE(timer_app_icon),
     .start_func = timer_app_start,
     .stop_func = timer_app_stop
@@ -53,12 +53,14 @@ static void timer_app_start(lv_obj_t *root, lv_group_t *group)
         }
     }
     app_is_open = true;
+    zsw_periodic_chan_add_obs(&periodic_event_1s_chan, &timer_app_1s_event_listener);
 }
 
 static void timer_app_stop(void)
 {
     app_is_open = false;
     timer_ui_remove();
+    zsw_periodic_chan_rm_obs(&periodic_event_1s_chan, &timer_app_1s_event_listener);
 }
 
 static void alarm_triggered_cb(void* user_data) {
@@ -194,17 +196,15 @@ static void zbus_periodic_1s_callback(const struct zbus_channel *chan)
 {
     // Re-calculate remanining for all timers
     for (int i = 0; i < TIMER_UI_MAX_TIMERS; i++) {
-        if (timers[i].used) {
-            LOG_DBG("Timer[%d]: timer_id=%d, hour=%d, min=%d, sec=%d, remaining_hour=%d, remaining_min=%d, remaining_sec=%d, state=%d",
-                i, timers[i].timer_id, timers[i].hour, timers[i].min, timers[i].sec,
-                timers[i].remaining_hour, timers[i].remaining_min, timers[i].remaining_sec,
-                timers[i].state);
-        }
         if (timers[i].used && timers[i].state == TIMER_STATE_PLAYING) {
             zsw_alarm_get_remaining(timers[i].zsw_alarm_timer_id, &timers[i].remaining_hour, &timers[i].remaining_min, &timers[i].remaining_sec);
             timer_ui_update_timer(timers[i]);
         }
     }
+
+    zsw_timeval_t time;
+    zsw_clock_get_time(&time);
+    timer_ui_set_time(time.tm.tm_hour, time.tm.tm_min, time.tm.tm_sec);
 }
 
 static int timers_settings_load_cb(const char *p_key, size_t len,
@@ -251,8 +251,6 @@ static int timer_app_add(void)
         LOG_ERR("Error during settings_load_subtree!");
         return -EFAULT;
     }
-
-    zsw_periodic_chan_add_obs(&periodic_event_1s_chan, &timer_app_1s_event_listener);
 
     return 0;
 }
