@@ -18,7 +18,7 @@
 #include "events/music_event.h"
 #include "ble_gadgetbridge.h"
 
-LOG_MODULE_REGISTER(ble_gadgetbridge, CONFIG_ZSW_BLE_LOG_LEVEL);
+LOG_MODULE_REGISTER(ble_gadgetbridge, LOG_LEVEL_DBG);
 
 typedef enum parse_state {
     WAIT_GB,

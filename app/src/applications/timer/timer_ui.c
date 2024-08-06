@@ -19,6 +19,12 @@ static lv_obj_t *ui_page_indicator;
 static lv_obj_t *led1;
 static lv_obj_t *led2;
 
+static lv_obj_t * ui_time_popup;
+static lv_obj_t * ui_picker_container;
+static lv_obj_t * ui_picker_new_alarm_time;
+static uint8_t num_picker_digits;
+static uint8_t picker_digits[sizeof("HHMMSS") - 1];
+
 // SCREEN: Timer Screen
 static void timer_screen_init(lv_obj_t *ui_Screen1);
 static void create_timer_popup(lv_obj_t* ui_root_container);
@@ -34,11 +40,6 @@ static lv_obj_t* ui_timer_page;
 static lv_obj_t * ui_label_clock;
 static lv_obj_t * ui_add_timer_button;
 static lv_obj_t * ui_timer_list_container;
-static lv_obj_t * ui_time_popup;
-static lv_obj_t * ui_picker_container;
-static lv_obj_t * ui_picker_new_alarm_time;
-static uint8_t num_picker_digits;
-static uint8_t picker_digits[sizeof("HHMMSS") - 1];
 
 // SCREEN: Alarm Screen
 static void alarm_screen_init(lv_obj_t *ui_Screen2);
@@ -46,7 +47,6 @@ static lv_obj_t* ui_alarm_page;
 static lv_obj_t * ui_add_alarm_button;
 static lv_obj_t * ui_alarm_list_container;
 
-// TODO
 
 static timer_item_ui_t ui_timers[TIMER_UI_MAX_TIMERS];
 
@@ -100,13 +100,11 @@ void timer_ui_remove(void)
 void timer_ui_add_timer(timer_app_timer_t timer)
 {
     assert(root_page != NULL);
-    create_timer_item(ui_timer_list_container, timer);
-}
-
-void timer_ui_add_alarm(timer_app_timer_t timer)
-{
-    assert(root_page != NULL);
-    create_timer_item(ui_timer_list_container, timer);
+    if (timer.type == TYPE_TIMER) {
+        create_timer_item(ui_timer_list_container, timer);
+    } else {
+        create_timer_item(ui_alarm_list_container, timer);
+    }
 }
 
 void timer_ui_update_timer(timer_app_timer_t timer) {
@@ -310,26 +308,30 @@ static void create_timer_item(lv_obj_t* ui_root_container, timer_app_timer_t tim
     lv_obj_set_align(ui_start_pause_button_label, LV_ALIGN_CENTER);
     lv_label_set_text(ui_start_pause_button_label, LV_SYMBOL_PLAY);
 
-    lv_obj_t* ui_reset_button = lv_btn_create(ui_timer);
-    lv_obj_set_width(ui_reset_button, 33);
-    lv_obj_set_height(ui_reset_button, 33);
-    lv_obj_set_align(ui_reset_button, LV_ALIGN_CENTER);
-    lv_obj_add_flag(ui_reset_button, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
-    lv_obj_clear_flag(ui_reset_button, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
-    lv_obj_set_style_radius(ui_reset_button, 80, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(ui_reset_button, lv_color_hex(0xFF8427), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui_reset_button, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(ui_reset_button, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_opa(ui_reset_button, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(ui_reset_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_spread(ui_reset_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    if (timer.type == TYPE_TIMER) {
+        lv_obj_t* ui_reset_button = lv_btn_create(ui_timer);
+        lv_obj_set_width(ui_reset_button, 33);
+        lv_obj_set_height(ui_reset_button, 33);
+        lv_obj_set_align(ui_reset_button, LV_ALIGN_CENTER);
+        lv_obj_add_flag(ui_reset_button, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
+        lv_obj_clear_flag(ui_reset_button, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+        lv_obj_set_style_radius(ui_reset_button, 80, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(ui_reset_button, lv_color_hex(0xFF8427), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(ui_reset_button, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_color(ui_reset_button, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_opa(ui_reset_button, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_shadow_width(ui_reset_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_shadow_spread(ui_reset_button, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        
+        ui_timers[timer.timer_id].ui_resest_button_label = lv_label_create(ui_reset_button);
+        lv_obj_t* ui_resest_button_label = ui_timers[timer.timer_id].ui_resest_button_label;
+        lv_obj_set_width(ui_resest_button_label, LV_SIZE_CONTENT);   /// 1
+        lv_obj_set_height(ui_resest_button_label, LV_SIZE_CONTENT);    /// 1
+        lv_obj_set_align(ui_resest_button_label, LV_ALIGN_CENTER);
+        lv_label_set_text(ui_resest_button_label, LV_SYMBOL_REFRESH);
 
-    ui_timers[timer.timer_id].ui_resest_button_label = lv_label_create(ui_reset_button);
-    lv_obj_t* ui_resest_button_label = ui_timers[timer.timer_id].ui_resest_button_label;
-    lv_obj_set_width(ui_resest_button_label, LV_SIZE_CONTENT);   /// 1
-    lv_obj_set_height(ui_resest_button_label, LV_SIZE_CONTENT);    /// 1
-    lv_obj_set_align(ui_resest_button_label, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_resest_button_label, LV_SYMBOL_REFRESH);
+        lv_obj_add_event_cb(ui_reset_button, ui_event_reset_pressed, LV_EVENT_CLICKED, (void*)timer.timer_id);
+    }
 
     lv_obj_t* ui_delete_button = lv_btn_create(ui_timer);
     lv_obj_set_width(ui_delete_button, 33);
@@ -353,7 +355,6 @@ static void create_timer_item(lv_obj_t* ui_root_container, timer_app_timer_t tim
     lv_label_set_text(ui_delete_button_label, LV_SYMBOL_TRASH);
 
     lv_obj_add_event_cb(ui_start_pause_button, ui_event_start_pause_pressed, LV_EVENT_CLICKED, (void*)timer.timer_id);
-    lv_obj_add_event_cb(ui_reset_button, ui_event_reset_pressed, LV_EVENT_CLICKED, (void*)timer.timer_id);
     lv_obj_add_event_cb(ui_delete_button, ui_event_delete_pressed, LV_EVENT_CLICKED, (void*)timer.timer_id);
 }
 
@@ -619,7 +620,7 @@ static void alarm_screen_init(lv_obj_t *ui_root_container)
     lv_obj_set_style_pad_row(ui_alarm_list_container, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_column(ui_alarm_list_container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    lv_obj_add_event_cb(ui_add_timer_button, ui_event_open_popup, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_event_cb(ui_add_alarm_button, ui_event_open_popup, LV_EVENT_CLICKED, NULL);
 }
 
 static void ui_event_open_popup(lv_event_t * e)
@@ -641,6 +642,16 @@ static void ui_event_close_popup(lv_event_t * e)
     }
 }
 
+static ui_timer_type_t get_current_page_type(void)
+{
+    lv_obj_t *current = lv_tileview_get_tile_act(tv);
+    if (current == ui_alarm_page) {
+        return TYPE_ALARM;
+    } else {
+        return TYPE_TIMER;
+    }
+}
+
 static void ui_event_create_timer(lv_event_t * e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
@@ -649,7 +660,9 @@ static void ui_event_create_timer(lv_event_t * e)
         uint8_t hour = picker_digits[5] * 10 + picker_digits[4];
         uint8_t min = picker_digits[3] * 10 + picker_digits[2];
         uint8_t sec = picker_digits[1] * 10 + picker_digits[0];
-        on_timer_created_cb(hour, min, sec);
+
+
+        on_timer_created_cb(hour, min, sec, get_current_page_type());
     }
 }
 
@@ -700,11 +713,12 @@ static void ui_event_delete_pressed(lv_event_t * e) {
 static void on_tileview_change(lv_event_t *e)
 {
     lv_event_code_t event_code = lv_event_get_code(e);
+    printk("Tileview changed: %d\n", event_code);
     if (event_code == LV_EVENT_VALUE_CHANGED) {
-        lv_obj_t *curent = lv_tileview_get_tile_act(tv);
-        if (curent == ui_timer_page) {
+        lv_obj_t *current = lv_tileview_get_tile_act(tv);
+        if (current == ui_timer_page) {
             set_indicator_page(0);
-        } else if (curent == ui_alarm_page) {
+        } else if (current == ui_alarm_page) {
             set_indicator_page(1);
         } else {
             LV_LOG_ERROR("Failed finding parent!\n");

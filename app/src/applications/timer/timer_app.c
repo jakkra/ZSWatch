@@ -21,9 +21,9 @@ LOG_MODULE_REGISTER(timer_app, LOG_LEVEL_DBG);
 static void timer_app_start(lv_obj_t *root, lv_group_t *group);
 static void timer_app_stop(void);
 
-static void on_timer_created_cb(uint32_t hour, uint32_t min, uint32_t sec);
-static void on_timer_event_cb(timer_event_type_t type, uint32_t timer_id);
-
+static void on_timer_created_cb(uint32_t hour, uint32_t min, uint32_t sec, ui_timer_type_t type);
+static void on_timer_event_cb(timer_event_type_t evt_type, uint32_t timer_id);
+static void alarm_triggered_cb(void* user_data);
 static void zbus_periodic_1s_callback(const struct zbus_channel *chan);
 
 ZBUS_CHAN_DECLARE(periodic_event_1s_chan);
@@ -43,9 +43,6 @@ static application_t app = {
 
 static void timer_app_start(lv_obj_t *root, lv_group_t *group)
 {
-    // TODO
-    // Load timers from flash
-    // Load alarms from flash
     timer_ui_show(root, on_timer_created_cb, on_timer_event_cb);
     for (int i = 0; i < TIMER_UI_MAX_TIMERS; i++) {
         if (timers[i].used) {
@@ -63,15 +60,18 @@ static void timer_app_stop(void)
     zsw_periodic_chan_rm_obs(&periodic_event_1s_chan, &timer_app_1s_event_listener);
 }
 
-static void alarm_triggered_cb(void* user_data) {
+static void alarm_triggered_cb(void* user_data)
+{
     // TODO also check:
     // Check so alarm still valid, it could have been deleted/state changed
     // While the alarm was queued up
     uint32_t timer_id = (uint32_t)user_data;
-    timers[timer_id].state = TIMER_STATE_STOPPED;
-    timers[timer_id].remaining_hour = timers[timer_id].hour;
-    timers[timer_id].remaining_min = timers[timer_id].min;
-    timers[timer_id].remaining_sec = timers[timer_id].sec;
+    if (timers[timer_id].type == TYPE_TIMER) {
+        timers[timer_id].state = TIMER_STATE_STOPPED;
+        timers[timer_id].remaining_hour = timers[timer_id].hour;
+        timers[timer_id].remaining_min = timers[timer_id].min;
+        timers[timer_id].remaining_sec = timers[timer_id].sec;
+    }
 
     if (app_is_open) {
         timer_ui_update_timer(timers[timer_id]);
@@ -95,7 +95,7 @@ static int find_free_timer_slot(void) {
     return -ENOMEM;
 }
 
-static void on_timer_created_cb(uint32_t hour, uint32_t min, uint32_t sec) {
+static void on_timer_created_cb(uint32_t hour, uint32_t min, uint32_t sec, ui_timer_type_t type) {
     // Save timer to flash
     // Add timer to UI
     LOG_DBG("Timer created: %d:%d:%d", hour, min, sec);
@@ -115,7 +115,8 @@ static void on_timer_created_cb(uint32_t hour, uint32_t min, uint32_t sec) {
         .remaining_hour = hour,
         .remaining_min = min,
         .remaining_sec = sec,
-        .state = TIMER_STATE_STOPPED
+        .state = TIMER_STATE_STOPPED,
+        .type = type,
     };
     
     timers[alarm_index] = timer;
@@ -124,15 +125,25 @@ static void on_timer_created_cb(uint32_t hour, uint32_t min, uint32_t sec) {
     settings_save_one(SETTINGS_TIMERS_LIST, &timers, sizeof(timers));
 }
 
-static void on_timer_event_cb(timer_event_type_t type, uint32_t timer_id) {
-    // Handle timer event
-    switch (type) {
+static void on_timer_event_cb(timer_event_type_t evt_type, uint32_t timer_id) {
+    ui_timer_type_t timer_type = timers[timer_id].type;
+
+    switch (evt_type) {
         case TIMER_EVT_START_PAUSE_RESUME:
         {
             LOG_DBG("Timer %d start/pause/resume", timer_id);
             if (timers[timer_id].state == TIMER_STATE_STOPPED || timers[timer_id].state == TIMER_STATE_PAUSED) {
                 timers[timer_id].state = TIMER_STATE_PLAYING;
-                int zsw_timer_id = zsw_alarm_add_timer(timers[timer_id].remaining_hour, timers[timer_id].remaining_min, timers[timer_id].remaining_sec, alarm_triggered_cb, (void*)timer_id);
+                int zsw_timer_id;
+                if (timers[timer_id].type == TYPE_ALARM) {
+                    struct rtc_time time = {0};
+                    time.tm_hour = timers[timer_id].hour;
+                    time.tm_min = timers[timer_id].min;
+                    time.tm_sec = timers[timer_id].sec;
+                    zsw_timer_id = zsw_alarm_add(time, alarm_triggered_cb, (void*)timer_id);
+                } else {
+                    zsw_timer_id = zsw_alarm_add_timer(timers[timer_id].remaining_hour, timers[timer_id].remaining_min, timers[timer_id].remaining_sec, alarm_triggered_cb, (void*)timer_id);
+                }
                 if (zsw_timer_id < 0) {
                     LOG_ERR("Failed to add timer");
                     return;
@@ -146,13 +157,14 @@ static void on_timer_event_cb(timer_event_type_t type, uint32_t timer_id) {
                     return;
                 }
             } else {
-                LOG_ERR("Invalid timer state %d for timer evnt type %d", timers[timer_id].state, type);
+                LOG_ERR("Invalid timer state %d for timer evnt type %d", timers[timer_id].state, evt_type);
             }
             break;
         }
         case TIMER_EVT_RESET:
         {
             LOG_DBG("Timer %d reset", timer_id);
+            __ASSERT(timer_type == TYPE_TIMER, "Invalid timer type for reset event");
             bool was_running = timers[timer_id].state == TIMER_STATE_PLAYING;
             timers[timer_id].remaining_hour = timers[timer_id].hour;
             timers[timer_id].remaining_min = timers[timer_id].min;
@@ -196,7 +208,7 @@ static void zbus_periodic_1s_callback(const struct zbus_channel *chan)
 {
     // Re-calculate remanining for all timers
     for (int i = 0; i < TIMER_UI_MAX_TIMERS; i++) {
-        if (timers[i].used && timers[i].state == TIMER_STATE_PLAYING) {
+        if (timers[i].used && timers[i].type == TYPE_TIMER && timers[i].state == TIMER_STATE_PLAYING) {
             zsw_alarm_get_remaining(timers[i].zsw_alarm_timer_id, &timers[i].remaining_hour, &timers[i].remaining_min, &timers[i].remaining_sec);
             timer_ui_update_timer(timers[i]);
         }
@@ -226,10 +238,19 @@ static int timers_settings_load_cb(const char *p_key, size_t len,
         if (timers[i].used) {
             // Reset the timer state as it may have been stored when it was running
             // We reset all timers at startup
-            timers[i].state = TIMER_STATE_STOPPED;
-            timers[i].remaining_hour = timers[i].hour;
-            timers[i].remaining_min = timers[i].min;
-            timers[i].remaining_sec = timers[i].sec;
+            // We don't reset alarms
+            if (timers[i].type == TYPE_TIMER) {
+                timers[i].state = TIMER_STATE_STOPPED;
+                timers[i].remaining_hour = timers[i].hour;
+                timers[i].remaining_min = timers[i].min;
+                timers[i].remaining_sec = timers[i].sec;
+            } else {
+                struct rtc_time time = {0};
+                time.tm_hour = timers[i].hour;
+                time.tm_min = timers[i].min;
+                time.tm_sec = timers[i].sec;
+                zsw_alarm_add(time, alarm_triggered_cb, (void*)i);
+            }
         }
     }
 
@@ -247,6 +268,7 @@ static int timer_app_add(void)
 
     memset(timers, 0, sizeof(timers));
 
+    // TODO move to ap start
     if (settings_load_subtree_direct(SETTINGS_TIMERS_LIST, timers_settings_load_cb, NULL)) {
         LOG_ERR("Error during settings_load_subtree!");
         return -EFAULT;
