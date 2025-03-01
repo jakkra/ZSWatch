@@ -139,6 +139,7 @@ static int zsw_clock_init(void)
     if (rtc_get_time(rtc, &tm) == -ENODATA) {
         LOG_WRN("RTC has no valid time, setting to 0");
         memset(&tm, 0, sizeof(struct rtc_time));
+        tm.tm_year = 100;
 #ifdef CONFIG_BOARD_NATIVE_POSIX
         struct tm *tp;
         time_t t;
