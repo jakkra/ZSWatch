@@ -20,8 +20,7 @@ const FeatureList = [
     image: <img className={styles.featureSvg} role="img" src={require('@site/static/img/ui_rund_demo_watchface.png').default} />,
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        Written from scratch in C, there are no binary blobs. Everything from high level application to the lowest level Bluetooth radio driver is open source.
       </>
     ),
   },
