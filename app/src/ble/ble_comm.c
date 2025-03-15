@@ -28,6 +28,7 @@
 
 #include "ui/zsw_ui.h"
 #include "gadgetbridge/ble_gadgetbridge.h"
+#include "chronos/ble_chronos.h"
 
 #include <bluetooth/services/ams_client.h>
 #include <bluetooth/services/ancs_client.h>
@@ -332,6 +333,7 @@ static void ble_connected(struct bt_conn *conn, uint8_t err)
             bt_conn_disconnect(conn, BT_HCI_ERR_AUTH_FAIL);
         }
     }
+    ble_chronos_state(true);
 }
 
 static void ble_disconnected(struct bt_conn *conn, uint8_t reason)
@@ -347,11 +349,14 @@ static void ble_disconnected(struct bt_conn *conn, uint8_t reason)
         bt_conn_unref(current_conn);
         current_conn = NULL;
     }
+
+    ble_chronos_state(false);
 }
 
 static void param_updated(struct bt_conn *conn, uint16_t interval, uint16_t latency, uint16_t timeout)
 {
     LOG_INF("Updated => Interval: %d, latency: %d, timeout: %d", interval, latency, timeout);
+    ble_chronos_connection_update();
 }
 
 static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint16_t len)
@@ -359,4 +364,6 @@ static void bt_receive_cb(struct bt_conn *conn, const uint8_t *const data, uint1
     LOG_HEXDUMP_DBG(data, len, "RX");
 
     ble_gadgetbridge_input(data, len);
+
+    ble_chronos_input(data, len);
 }
