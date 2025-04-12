@@ -198,4 +198,4 @@ class UploadFsWestCommand(WestCommand):
                 )
             )
         else:
-            sys.exit(self.write_to_qspi_flash(args.serial_number, hex_file, args.speed))
+            sys.exit(self.write_to_qspi_flash(args.serial_number, hex_file, 0 if args.speed == 'auto' else args.speed ))
