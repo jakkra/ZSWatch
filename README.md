@@ -1,6 +1,5 @@
-# [ZSWatch](https://zswatch.dev/)
-
-![ZSWatch_gh_banner](https://github.com/jakkra/ZSWatch/assets/4318648/dc3849d7-4618-47a4-8efe-8a909a47fd20)
+# [zswatch.dev](https://zswatch.dev/)
+<img alt="ZSWatch_logo_with_text" src="https://github.com/user-attachments/assets/6669a8eb-a4fd-424e-9a7c-201e0a571641" />
 
 <div align="center">
 
