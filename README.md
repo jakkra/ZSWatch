@@ -180,10 +180,19 @@ This project is partly funded through [NGI0 Commons Fund](https://nlnet.nl/commo
 
 ### Support
 
-<a href="https://www.segger.com/"><img width="10%" src=".github/images/SEGGER-Logo-the-embedded-experts-RGB.jpg" ></a>
+<p align="left">
+  <a href="https://www.pcbway.com/">
+    <img width="20%" src=".github/images/pcbway_logo.svg" alt="PCBWay Logo" style="vertical-align:middle;" />
+  </a>
+  <a href="https://www.segger.com/">
+    <img width="20%" src=".github/images/SEGGER-Logo-the-embedded-experts-RGB.jpg" alt="SEGGER Logo" style="vertical-align:middle; margin-right: 32px;" />
+  </a>
+</p>
 
-SEGGER for supporting SEGGER-OB licenses that make the dock a fully functional programmer and debugger for ZSWatch.
-Thanks to this the project will be much more approachable for persons without a J-Link debugger, letting them have full development and debugging capabilities.
+**PCBWay** for sponsoring the manufacturing and assembly of some prototype PCBs. PCBWay is the recommended manufacturer for PCBs and assembly of ZSWatch.
+
+**SEGGER** for supporting SEGGER-OB licenses that make the dock a fully functional programmer and debugger for ZSWatch. Thanks to this, the project is much more approachable for persons without a J-Link debugger, letting them have full development and debugging capabilities.
+
 
 ## Miscellaneous stuff
 
