@@ -1,0 +1,15 @@
+diff --git a/scripts/west_commands/runners/nrf_common.py b/scripts/west_commands/runners/nrf_common.py
+index a7401084ef3..9faee07fd2b 100644
+--- a/scripts/west_commands/runners/nrf_common.py
++++ b/scripts/west_commands/runners/nrf_common.py
+@@ -472,9 +472,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
+             xip_start, xip_end = xip_ranges[self.family]
+             if self.hex_refers_region(xip_start, xip_end):
+                 # Default to pages for the external memory
+-                ext_mem_erase_opt = self._get_erase_mode(self.ext_erase_mode) or \
+-                        (erase_arg if erase_arg == 'ERASE_ALL' else \
+-                                    'ERASE_RANGES_TOUCHED_BY_FIRMWARE')
++                ext_mem_erase_opt = 'ERASE_RANGES_TOUCHED_BY_FIRMWARE'
+ 
+         if not ext_mem_erase_opt and self.ext_erase_mode:
+             self.logger.warning('Option --ext-erase-mode ignored, no parts of the '
