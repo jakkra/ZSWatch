@@ -1,6 +1,8 @@
 # Copyright (c) 2025 ZSWatch Project
 # SPDX-License-Identifier: Apache-2.0
 
+set(BOARD_ROOT ${APP_DIR})
+
 # Apply patches before build
 function(apply_patches patch_dir target_dir)
     set(full_patch_dir "${APP_DIR}/${patch_dir}")
