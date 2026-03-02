@@ -23,23 +23,13 @@
 #
 # Analyze merged PR code changes and open a PR with documentation updates
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"907639af6c25adb5cb3c69f0a29299282201b774d685cc71b1c5511728774d80"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"a6d02d337b95308cb63457465d61bc44f4a01213f2fe1642a1f925eb3c10f9be"}
 
 name: "Documentation Sync Agent for ZSWatch"
 "on":
   pull_request:
     branches:
     - main
-    paths:
-    - app/src/**
-    - app/Kconfig
-    - app/prj.conf
-    - app/west.yml
-    - app/boards/**
-    - app/drivers/**
-    - app/dts/**
-    - app/CMakeLists.txt
-    - app/lvgl_editor/**
     types:
     - closed
 

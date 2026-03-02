@@ -4,16 +4,6 @@ on:
   pull_request:
     types: [closed]
     branches: [main]
-    paths:
-      - 'app/src/**'
-      - 'app/Kconfig'
-      - 'app/prj.conf'
-      - 'app/west.yml'
-      - 'app/boards/**'
-      - 'app/drivers/**'
-      - 'app/dts/**'
-      - 'app/CMakeLists.txt'
-      - 'app/lvgl_editor/**'
 tools:
   github:
     toolsets: [default]
@@ -35,6 +25,12 @@ and the documentation website (Docusaurus 3.7) is in `website/docs/`.
 
 This workflow runs when a pull request is **merged** (closed with merge) to `main`.
 If the PR was closed without merging, do nothing.
+
+### Docs-only PR handling
+
+If a merged PR changes only files under `website/docs/`, still analyze the PR for
+documentation consistency across related docs pages. In most docs-only PRs there will be
+no additional updates needed; in that case, do nothing.
 
 ## Your task
 
