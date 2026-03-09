@@ -4,6 +4,30 @@ sidebar_position: 9
 
 # Debugging
 
+## Debugger Hardware Setup (nRF54L15 DK)
+
+The recommended debugger is the Nordic **nRF54L15 DK** (~$35), connected via a 10-pin 1.27mm SWD cable.
+
+<div style={{padding: '0 20px'}}>
+
+![nRF54L15 DK debugger connection](/img/dk_debugger_connection.jpg)
+
+<div style={{textAlign: 'center', fontSize: '0.9em', marginBottom: '1em'}}>
+  SWD cable and UART debug pin connection between the WatchDK and the nRF54L15 DK.
+</div>
+
+</div>
+
+- **SWD cable**: Connect the 10-pin cable between the nRF54L15DK's Debug Out connector and the WatchDK's SWD header.
+- **UART logs**: Connect the WatchDK's **UART TxD** pin to **P0.00** on the nRF54L15 DK. This routes log output to **VCOM0** on the nRF54L15 DK. All pre-built firmwares use UART logging, open a serial terminal on VCOM0 at **115200 baud**.
+- **GND**: If no SWD cable is connected, also connect a GND wire between the two boards.
+
+:::tip No hardware for UART logs?
+If you don't have a debugger or serial adapter, compile the firmware with **RTT** enabled and view logs over the SWD connection instead. See [Compiling the Software](./compiling.md) for build options.
+:::
+
+---
+
 ## On-Target Debugging (WatchDK / ZSWatch)
 
 On-target debugging is handled through the **nRF Connect VS Code extension**, which provides GDB integration with the J-Link debugger.

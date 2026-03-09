@@ -11,6 +11,21 @@ This guide walks you through setting up your **ZSWatch Development Kit (WatchDK)
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
+:::warning Known Issues from Early Shipments
+We have received one report so far from early shipments:
+- **Back button not working**: Currently being investigated, reach out if you have this issue.
+- **Production test firmware still running (bootloader not flashed):** If your watch does not boot into the normal ZSWatch UI and appears to be running test firmware, the bootloader may not have been programmed during production. If this is the case you need to follow the debugger instructions below. Please reach out to us on [Discord](https://discord.gg/8XfNBmDfbY) (preferred) or send an email to [mail@zswatch.dev](mailto:mail@zswatch.dev) and we will help you resolve it.
+- **Missing jumper:** One report of a jumper missing from the board. Before starting, verify that the jumper is present at the flash chip (tip of arrow), if not move one according to the image below:
+
+<div style={{padding: '0 20px'}}>
+
+![WatchDK jumper location](/img/watchdk_elecrow_jumper.png)
+
+**If you did not have any of those issues, feel free to also let us know, so we can understand what went wrong in production.**
+
+</div>
+:::
+
 ## What You Need
 
 | Item | Required? | Notes |
@@ -20,6 +35,10 @@ import TabItem from '@theme/TabItem';
 | **Debugger** (recommended: Nordic **nRF54L15 DK**, ~**$35**) | Optional | Needed if you want to develop the FW and flash via SWD instead of USB/BLE. A SEGGER J-Link works too, but is more expensive |
 | **10-pin 1.27mm SWD cable** | Optional | Needed to connect the debugger to the WatchDK. Example cables: [Adafruit](https://www.adafruit.com/product/1675), [Amazon](https://www.amazon.com/Treedix-Ribbon-Connector-1-27mm-Connecting/dp/B09JK5HD3X) |
 | **Battery** (LiPo) | Optional | The DK runs fine from USB power alone. See [battery section](#optional-battery--rtc-jumper) at the end |
+
+## Optional: Debugger Setup (nRF54L15 DK)
+
+If you plan to develop firmware or flash via SWD, connect a Nordic **nRF54L15 DK** as a debugger. For full wiring details (SWD cable, GND, UART log pin connections, and RTT alternative), see the **[Debugger Hardware Setup](../development/debugging.md#debugger-hardware-setup-nrf54l15-dk)** section in the Debugging guide.
 
 ## Step 1 - Power On
 
@@ -96,6 +115,8 @@ nrfjprog -f nrf53 \
 ## Step 4 - Done!
 
 Your WatchDK should now be running the latest firmware with all icons and images visible. Navigate around the UI using the four buttons and the touchscreen.
+
+If you want to view logs or debug the firmware, see the **[Debugging guide](../development/debugging.md)**, including how to connect the nRF54L15 DK for UART logs or use RTT.
 
 ## Optional: Battery & RTC Jumper
 
