@@ -21,8 +21,7 @@ import TabItem from '@theme/TabItem';
 
   ![WatchDK jumper location](/img/watchdk_elecrow_jumper.png)
 
-
-**If you did not have any of those issues, feel free to also let us know, so we can understand what went wrong in production.**
+**If you have any further issue or question please reach out to us on [Discord](https://discord.gg/8XfNBmDfbY) (preferred) or send an email to [mail@zswatch.dev](mailto:mail@zswatch.dev) and we will help you resolve it.**
 :::
 
 ## What You Need
