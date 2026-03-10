@@ -12,18 +12,17 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 :::warning Known Issues from Early Shipments
-We have received one report so far from early shipments:
-- **Back button not working**: Currently being investigated, reach out if you have this issue.
-- **Production test firmware still running (bootloader not flashed):** If your watch does not boot into the normal ZSWatch UI and appears to be running test firmware, the bootloader may not have been programmed during production. If this is the case you need to follow the debugger instructions below. Please reach out to us on [Discord](https://discord.gg/8XfNBmDfbY) (preferred) or send an email to [mail@zswatch.dev](mailto:mail@zswatch.dev) and we will help you resolve it.
+- **Back button not working**: Some DKs have had this issue. Powering the RTC from USB is not reliable. Move the RTC power jumper so it matches the yellow position shown in the image below. This powers the RTC from VBAT, which means a battery must be connected for the RTC to work. We will soon send an email with a recommended battery to buy. Most features work without the RTC. If you are compiling firmware for now, add `app/boards/no_rtc.conf` to disable RTC support. We are investigation the real root cause...
+
+  ![RTC jumper location](/img/elecrow_rtc_dk.png)
+
+- **Production test firmware still running (bootloader not flashed):** If your watch does not boot into the normal ZSWatch UI and appears to be running test firmware, the bootloader may not have been programmed during production. If this is the case you need to follow the debugger instructions below.
 - **Missing jumper:** One report of a jumper missing from the board. Before starting, verify that the jumper is present at the flash chip (tip of arrow), if not move one according to the image below:
 
-<div style={{padding: '0 20px'}}>
+  ![WatchDK jumper location](/img/watchdk_elecrow_jumper.png)
 
-![WatchDK jumper location](/img/watchdk_elecrow_jumper.png)
 
 **If you did not have any of those issues, feel free to also let us know, so we can understand what went wrong in production.**
-
-</div>
 :::
 
 ## What You Need
