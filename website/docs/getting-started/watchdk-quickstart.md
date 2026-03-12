@@ -145,9 +145,13 @@ Connect a battery and move the RTC power jumper to the **VBAT** position. This g
 
 ### Suggested Batteries
 
-Search for `JST RC 3.7V 1S` batteries and pick a suitable reseller. Battery size and capacity do not matter. Just make sure the connector matches the WatchDK 2-pin battery header:
+Search for `JST RC 3.7V 1S` batteries and pick a suitable reseller. Just make sure the connector matches the WatchDK 2-pin battery header:
 
 ![Battery connector example](/img/images-dk-battery.png)
+
+:::note Battery percentage and time estimates
+The nPM1300 PMIC calculates battery state-of-charge (%), time-to-empty, and time-to-full based on a **profiled battery model**. The firmware ships with a profile for a specific battery, so using a different LiPo (especially one with a larger capacity, e.g. >300 mAh) will make these estimates inaccurate. The voltage reading stays correct regardless of which battery you use. For more details on battery profiling, see the [nRF Connect Power Manager documentation](https://docs.nordicsemi.com/bundle/nrf-connect-npm/page/profiling_battery.html).
+:::
 
 
 ## Next Steps
