@@ -5,7 +5,7 @@ sidebar_position: 6
 # Companion App
 
 :::info
-The **iOS** companion app is available on the [App Store](https://apps.apple.com/us/app/zswatch/id6759058602) and is the recommended way to use ZSWatch with an iPhone. The **Android** version is experimental, to get access, reach out on [Discord](https://discord.gg/8XfNBmDfbY) or email [mail@zswatch.dev](mailto:mail@zswatch.dev). For Android, [GadgetBridge](./phone_setup.md#option-1-gadgetbridge-recommended) remains a solid alternative.
+The **iOS** companion app is available on the [App Store](https://apps.apple.com/us/app/zswatch/id6759058602). The **Android** version is available on [Google Play](https://play.google.com/store/apps/details?id=com.zswatch.app) but currently requires an invite, see the [Android section](#android) below for details. If you run into issues on Android (especially with keeping the BLE connection alive in the background), [GadgetBridge](./phone_setup.md#option-1-gadgetbridge-recommended) is a good alternative.
 :::
 
 ZSWatch has an open-source companion app built with Flutter that works on both **Android** and **iOS**.
@@ -44,14 +44,14 @@ The companion app connects to ZSWatch over BLE and replaces GadgetBridge on Andr
 | Background BLE connection | ✅ | ✅ |
 
 :::note iOS
-On iOS, notification forwarding and media control are handled natively by the watch using Apple [ANCS](https://developer.apple.com/library/archive/documentation/CoreBluetooth/Reference/AppleNotificationCenterServiceSpecification/Specification/Specification.html) and [AMS](https://developer.apple.com/library/archive/documentation/CoreBluetooth/Reference/AppleMediaService_Reference/Specification/Specification.html) services — no app involvement needed for those features.
+On iOS, notification forwarding and media control are handled natively by the watch using Apple [ANCS](https://developer.apple.com/library/archive/documentation/CoreBluetooth/Reference/AppleNotificationCenterServiceSpecification/Specification/Specification.html) and [AMS](https://developer.apple.com/library/archive/documentation/CoreBluetooth/Reference/AppleMediaService_Reference/Specification/Specification.html) services, no app involvement needed for those features.
 :::
 
 ## Download
 
-### iOS (Recommended)
+### iOS
 
-Download the official ZSWatch companion app from the [App Store](https://apps.apple.com/us/app/zswatch/id6759058602).
+Download the ZSWatch companion app from the [App Store](https://apps.apple.com/us/app/zswatch/id6759058602).
 
 After installing:
 1. Open the app and grant the requested permissions (Bluetooth, Location).
@@ -59,13 +59,21 @@ After installing:
 3. Tap **Scan** in the app to find your watch.
 4. Tap the watch to connect and pair.
 
-### Android (Experimental)
+### Android
 
-:::warning Access Required
-The Android companion app is experimental and currently requires an invite. To request access, reach out on [Discord](https://discord.gg/8XfNBmDfbY) or email [mail@zswatch.dev](mailto:mail@zswatch.dev). For a stable experience, [GadgetBridge](./phone_setup.md#option-1-gadgetbridge-recommended) is recommended.
+The Android companion app is available on [Google Play](https://play.google.com/store/apps/details?id=com.zswatch.app), but it currently requires an invite to install.
+
+:::info How to get access
+Everyone who purchased a ZSWatch DevKit using a Google account email address has already been invited. If you used a different email or haven't received access, reach out on [Discord](https://discord.gg/8XfNBmDfbY) or email [mail@zswatch.dev](mailto:mail@zswatch.dev) and we'll add you. Once we have enough active testers, Google will approve the app for public release on the Play Store.
+
+There is also a **Demo mode** available in the app's settings that lets you explore the UI without a watch connected.
 :::
 
-After receiving access:
+:::warning Background connection
+The Android companion app may have issues keeping the BLE connection alive in the background on some devices. If you experience frequent disconnects, consider using [GadgetBridge](./phone_setup.md#option-1-gadgetbridge-recommended) instead.
+:::
+
+After receiving access and installing from the Play Store:
 1. Open the app and grant the requested permissions (Bluetooth, Location, Notifications).
 2. On ZSWatch, go to **Settings → Bluetooth** and enable **Pairable**.
 3. Tap **Scan** in the app to find your watch.

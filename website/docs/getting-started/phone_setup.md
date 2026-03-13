@@ -47,13 +47,15 @@ TBD
 
 ---
 
-### Option 2: ZSWatch Companion App (Experimental)
-
-:::warning Access Required
-The Android companion app is experimental and currently requires an invite. To request access, reach out on [Discord](https://discord.gg/8XfNBmDfbY) or email [mail@zswatch.dev](mailto:mail@zswatch.dev).
-:::
+### Option 2: ZSWatch Companion App
 
 The [ZSWatch Companion App](./companion_app.md) is an open-source Flutter app built specifically for ZSWatch. It provides notifications, music control, firmware updates, health tracking, and developer tools.
+
+Download it from [Google Play](https://play.google.com/store/apps/details?id=com.zswatch.app) (requires an invite, everyone who bought a DevKit with a Google account email has been added). If you need access, reach out on [Discord](https://discord.gg/8XfNBmDfbY) or email [mail@zswatch.dev](mailto:mail@zswatch.dev).
+
+:::note
+The Android companion app may have issues keeping the BLE connection alive in the background on some devices. If you experience this, use GadgetBridge instead and let us know.
+:::
 
 See the [Companion App](./companion_app.md) page for full details and setup instructions.
 

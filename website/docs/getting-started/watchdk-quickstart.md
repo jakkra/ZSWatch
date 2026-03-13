@@ -112,7 +112,16 @@ nrfjprog -f nrf53 \
 ```
 :::
 
-## Step 4 - Done!
+## Step 4 - Connect Your Phone
+
+To get notifications, music control, weather, and more on your watch, pair it with a companion app on your phone:
+
+- **iOS**: Download the [ZSWatch Companion App](https://apps.apple.com/us/app/zswatch/id6759058602) from the App Store.
+- **Android**: Download the [ZSWatch Companion App](https://play.google.com/store/apps/details?id=com.zswatch.app) from Google Play (invite required, DevKit buyers with a Google account email are already added; otherwise reach out on [Discord](https://discord.gg/8XfNBmDfbY) or email [mail@zswatch.dev](mailto:mail@zswatch.dev)). If you run into issues (especially with the background BLE connection), use [GadgetBridge](https://gadgetbridge.org/) instead.
+
+See [Phone Setup](./phone_setup.md) for detailed pairing instructions.
+
+## Step 5 - Done!
 
 Your WatchDK should now be running the latest firmware with all icons and images visible. Navigate around the UI using the four buttons and the touchscreen.
 
@@ -156,6 +165,7 @@ The nPM1300 PMIC calculates battery state-of-charge (%), time-to-empty, and time
 
 ## Next Steps
 
+- **[Phone Setup](./phone_setup.md)** - pair your watch with the companion app or GadgetBridge
 - **[Setting up the Development Toolchain](../development/toolchain.md)** - install VS Code, nRF Connect SDK, and build tools
 - **[Compiling the Software](../development/compiling.md)** - build custom firmware from source
 - **[Firmware Recovery](../firmware/firmware_recovery.md)** - if the watch becomes unresponsive
