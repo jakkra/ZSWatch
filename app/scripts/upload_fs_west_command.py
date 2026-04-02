@@ -8,6 +8,8 @@ from rtt_flash_loader import rtt_run_flush_loader, erase_external_flash
 from create_littlefs_resouce_image import create_littlefs_fs_image
 import sys
 import os
+import time
+import threading
 from pathlib import Path
 from pynrfjprog import HighLevel
 import intelhex
@@ -130,9 +132,17 @@ class UploadFsWestCommand(WestCommand):
                     verify=HighLevel.VerifyAction.VERIFY_READ,
                 )
 
-                print("# Programming:", hex_file)
+                start = time.time()
+                stop = threading.Event()
+                def _tick():
+                    while not stop.wait(1):
+                        print(f"\r# Programming: {hex_file} ({time.time() - start:.0f}s)", end="", flush=True)
+                t = threading.Thread(target=_tick, daemon=True)
+                t.start()
                 probe.program(hex_file, program_options=program_options)
-                print("# Programming done.")
+                stop.set()
+                t.join()
+                print(f"\r# Programming: {hex_file} done in {time.time() - start:.1f}s.")
 
     def erase_qspi_flash(self, serial_number, ini_file):
         if serial_number is None:
