@@ -181,7 +181,6 @@ static void periodic_calibration_handler(struct k_work *work)
         // No async continuation will occur for this cycle, retry sooner
         reschedule_calibration_work(false);
     }
-    // On success, the GPS/HTTP callback chain decides the next reschedule interval
 }
 
 static void http_rsp_cb(ble_http_status_code_t status, char *response)
