@@ -188,7 +188,7 @@ Incoming BLE data is parsed and published to `ble_comm_data_chan` with a **type 
 Outbound commands (e.g., music play/pause) flow in reverse: the app publishes to `music_control_data_chan`, and the BLE module picks it up and sends it to the phone.
 
 :::tip Custom Watchface Backgrounds
-The companion app can now upload custom watchface backgrounds via BLE. See the [GadgetBridge Protocol](./gadgetbridge.md#custom-watchface-backgrounds) guide for details.
+Custom watchface backgrounds can be uploaded via BLE. See the [Watch Tools background guide](../getting-started/watch-tools.md#background) for instructions.
 :::
 
 ## Audio System
