@@ -575,14 +575,14 @@ static int parse_notify(char *data, int len)
     if (cb.data.data.notify.sender) {
         if (!sender_is_base64) {
             cb.data.data.notify.sender_len = unescape_quotes(cb.data.data.notify.sender,
-                                                            cb.data.data.notify.sender_len);
+                                                             cb.data.data.notify.sender_len);
         }
         cb.data.data.notify.sender[cb.data.data.notify.sender_len] = '\0';
     }
     if (cb.data.data.notify.title) {
         if (!title_is_base64) {
             cb.data.data.notify.title_len = unescape_quotes(cb.data.data.notify.title,
-                                                           cb.data.data.notify.title_len);
+                                                            cb.data.data.notify.title_len);
         }
         cb.data.data.notify.title[cb.data.data.notify.title_len] = '\0';
     }
@@ -590,14 +590,14 @@ static int parse_notify(char *data, int len)
     if (cb.data.data.notify.subject) {
         if (!subject_is_base64) {
             cb.data.data.notify.subject_len = unescape_quotes(cb.data.data.notify.subject,
-                                                             cb.data.data.notify.subject_len);
+                                                              cb.data.data.notify.subject_len);
         }
         cb.data.data.notify.subject[cb.data.data.notify.subject_len] = '\0';
     }
     if (cb.data.data.notify.body) {
         if (!body_is_base64) {
             cb.data.data.notify.body_len = unescape_quotes(cb.data.data.notify.body,
-                                                          cb.data.data.notify.body_len);
+                                                           cb.data.data.notify.body_len);
         }
         cb.data.data.notify.body[cb.data.data.notify.body_len] = '\0';
     }
