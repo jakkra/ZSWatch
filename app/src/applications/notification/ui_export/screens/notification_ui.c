@@ -190,6 +190,8 @@ static void build_notification_entry(lv_obj_t *parent, zsw_not_mngr_notification
     lv_obj_set_style_text_opa(ui_LabelHeader, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_LabelHeader, &lv_font_montserrat_14_full,
                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_base_dir(ui_LabelHeader, LV_BASE_DIR_AUTO, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui_LabelHeader, LV_TEXT_ALIGN_AUTO, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_LabelBody = lv_label_create(ui_Panel);
     lv_obj_set_width(ui_LabelBody, 180);
@@ -206,6 +208,8 @@ static void build_notification_entry(lv_obj_t *parent, zsw_not_mngr_notification
     lv_obj_set_style_text_opa(ui_LabelBody, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui_LabelBody, &lv_font_montserrat_14_full,
                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_base_dir(ui_LabelBody, LV_BASE_DIR_AUTO, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui_LabelBody, LV_TEXT_ALIGN_AUTO, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui_LabelBody, zsw_color_gray(), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_LabelBody, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_color(ui_LabelBody, zsw_color_gray(), LV_PART_MAIN | LV_STATE_DEFAULT);

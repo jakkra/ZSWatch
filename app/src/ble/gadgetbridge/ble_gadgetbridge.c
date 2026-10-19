@@ -178,13 +178,16 @@ static void parse_time_zone(char *offset)
     }
 }
 
-static char *extract_value_str(char *key, char *data, int *value_len)
+static char *extract_value_str(char *key, char *data, int *value_len, bool *was_base64)
 {
     bool base64 = false;
     char *start;
     char *end;
     char *str = strstr(data, key);
     *value_len = 0;
+    if (was_base64 != NULL) {
+        *was_base64 = false;
+    }
     if (str == NULL) {
         return NULL;
     }
@@ -193,6 +196,9 @@ static char *extract_value_str(char *key, char *data, int *value_len)
     if (strncmp(str, "atob(", strlen("atob(")) == 0) {
         str += strlen("atob(");
         base64 = true;
+        if (was_base64 != NULL) {
+            *was_base64 = true;
+        }
     }
 
     if (*str != '\"') {
@@ -202,8 +208,14 @@ static char *extract_value_str(char *key, char *data, int *value_len)
     if (*str == '\0') {
         return NULL; // Got end of data
     }
-    end = strstr(str, "\"");
-    if (end == NULL) {
+    end = str;
+    while (*end != '\0' && *end != '\"') {
+        if (*end == '\\' && end[1] != '\0') {
+            end++; // Skip the escaped character so \" does not end the value.
+        }
+        end++;
+    }
+    if (*end == '\0') {
         return NULL; // No end of value
     }
 
@@ -520,18 +532,41 @@ static int convert_to_encoded_text(const char *data, size_t len, char *out_data,
     return j;
 }
 
+// Unescape \" and \\ in place, returns the new length.
+static int unescape_quotes(char *str, int len)
+{
+    int out = 0;
+
+    for (int i = 0; i < len; i++) {
+        if (str[i] == '\\' && i + 1 < len && (str[i + 1] == '\"' || str[i + 1] == '\\')) {
+            i++;
+        }
+        str[out++] = str[i];
+    }
+
+    return out;
+}
+
 static int parse_notify(char *data, int len)
 {
     struct ble_data_event cb;
+    bool sender_is_base64;
+    bool title_is_base64;
+    bool subject_is_base64;
+    bool body_is_base64;
     memset(&cb, 0, sizeof(cb));
 
     cb.data.type = BLE_COMM_DATA_TYPE_NOTIFY;
     cb.data.data.notify.id = extract_value_uint32("\"id\":", data);
-    cb.data.data.notify.src = extract_value_str("\"src\":", data, &cb.data.data.notify.src_len);
-    cb.data.data.notify.sender = extract_value_str("\"sender\":", data, &cb.data.data.notify.sender_len);
-    cb.data.data.notify.title = extract_value_str("\"title\":", data, &cb.data.data.notify.title_len);
-    cb.data.data.notify.subject = extract_value_str("\"subject\":", data, &cb.data.data.notify.subject_len);
-    cb.data.data.notify.body = extract_value_str("\"body\":", data, &cb.data.data.notify.body_len);
+    cb.data.data.notify.src = extract_value_str("\"src\":", data, &cb.data.data.notify.src_len, NULL);
+    cb.data.data.notify.sender = extract_value_str("\"sender\":", data, &cb.data.data.notify.sender_len,
+                                                   &sender_is_base64);
+    cb.data.data.notify.title = extract_value_str("\"title\":", data, &cb.data.data.notify.title_len,
+                                                  &title_is_base64);
+    cb.data.data.notify.subject = extract_value_str("\"subject\":", data, &cb.data.data.notify.subject_len,
+                                                    &subject_is_base64);
+    cb.data.data.notify.body = extract_value_str("\"body\":", data, &cb.data.data.notify.body_len,
+                                                 &body_is_base64);
 
     // Little hack since we know it's JSON, we can terminate all values in the data
     // which saves us some hassle and we can just pass all values null terminated
@@ -540,16 +575,32 @@ static int parse_notify(char *data, int len)
         cb.data.data.notify.src[cb.data.data.notify.src_len] = '\0';
     }
     if (cb.data.data.notify.sender) {
+        if (!sender_is_base64) {
+            cb.data.data.notify.sender_len = unescape_quotes(cb.data.data.notify.sender,
+                                                            cb.data.data.notify.sender_len);
+        }
         cb.data.data.notify.sender[cb.data.data.notify.sender_len] = '\0';
     }
     if (cb.data.data.notify.title) {
+        if (!title_is_base64) {
+            cb.data.data.notify.title_len = unescape_quotes(cb.data.data.notify.title,
+                                                           cb.data.data.notify.title_len);
+        }
         cb.data.data.notify.title[cb.data.data.notify.title_len] = '\0';
     }
 
     if (cb.data.data.notify.subject) {
+        if (!subject_is_base64) {
+            cb.data.data.notify.subject_len = unescape_quotes(cb.data.data.notify.subject,
+                                                             cb.data.data.notify.subject_len);
+        }
         cb.data.data.notify.subject[cb.data.data.notify.subject_len] = '\0';
     }
     if (cb.data.data.notify.body) {
+        if (!body_is_base64) {
+            cb.data.data.notify.body_len = unescape_quotes(cb.data.data.notify.body,
+                                                          cb.data.data.notify.body_len);
+        }
         cb.data.data.notify.body[cb.data.data.notify.body_len] = '\0';
     }
 
@@ -586,7 +637,7 @@ static int parse_weather(char *data, int len)
     cb.data.data.weather.weather_code = extract_value_uint32("\"code\":", data);
     cb.data.data.weather.wind = extract_value_uint32("\"wind\":", data);
     cb.data.data.weather.wind_direction = extract_value_uint32("\"wdir\":", data);
-    temp_value = extract_value_str("\"txt\":", data, &temp_len);
+    temp_value = extract_value_str("\"txt\":", data, &temp_len, NULL);
 
     strncpy(cb.data.data.weather.report_text, temp_value, MIN(temp_len, MAX_WEATHER_REPORT_TEXT_LENGTH - 1));
     cb.data.data.weather.report_text[MAX_WEATHER_REPORT_TEXT_LENGTH - 1] = '\0';
@@ -612,11 +663,11 @@ static int parse_musicinfo(char *data, int len)
     cb.data.data.music_info.duration = extract_value_int32("\"dur\":", data);
     cb.data.data.music_info.track_count = extract_value_int32("\"c\":", data);
     cb.data.data.music_info.track_num = extract_value_int32("\"n\":", data);
-    temp_value = extract_value_str("\"artist\":", data, &temp_len);
+    temp_value = extract_value_str("\"artist\":", data, &temp_len, NULL);
     strncpy(cb.data.data.music_info.artist, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
-    temp_value = extract_value_str("\"album\":", data, &temp_len);
+    temp_value = extract_value_str("\"album\":", data, &temp_len, NULL);
     strncpy(cb.data.data.music_info.album, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
-    temp_value = extract_value_str("\"track\":", data, &temp_len);
+    temp_value = extract_value_str("\"track\":", data, &temp_len, NULL);
     strncpy(cb.data.data.music_info.track_name, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
 
     send_ble_data_event(&cb);
@@ -637,7 +688,7 @@ static int parse_musicstate(char *data, int len)
     cb.data.data.music_state.shuffle = extract_value_int32("\"shuffle\":", data);
     cb.data.data.music_state.repeat = extract_value_int32("\"repeat\":", data);
 
-    temp_value = extract_value_str("\"state\":", data, &temp_len);
+    temp_value = extract_value_str("\"state\":", data, &temp_len, NULL);
     if (strncmp(temp_value, "play", temp_len) == 0) {
         cb.data.data.music_state.playing = true;
     } else {
@@ -1186,7 +1237,7 @@ static int parse_data_utf8(char *data, int len)
     int type_len;
     char *type;
 
-    type = extract_value_str("\"t\":", data, &type_len);
+    type = extract_value_str("\"t\":", data, &type_len, NULL);
     if (type == NULL) {
         return -1;
     }

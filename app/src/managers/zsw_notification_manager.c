@@ -109,6 +109,29 @@ static uint32_t find_newest_notification_idx(void)
     return newest_idx;
 }
 
+/** @brief          Copy a field into a zeroed notification field, never splitting a UTF-8 character.
+ *  @param dst      Destination field of ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN bytes, already zeroed
+ *  @param src      Source text, not required to be null terminated
+ *  @param src_len  Source length in bytes
+*/
+static void copy_field_utf8(char *dst, const char *src, int src_len)
+{
+    size_t len = MIN((size_t)MAX(src_len, 0), ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1);
+
+    if (src == NULL || len == 0) {
+        return;
+    }
+
+    if (len < (size_t)src_len) {
+        // Cut lands inside a multi-byte character, back off to its first byte.
+        while (len > 0 && (src[len] & 0xC0) == 0x80) {
+            len--;
+        }
+    }
+
+    memcpy(dst, src, len);
+}
+
 /** @brief
  *  @param item
 */
@@ -193,73 +216,73 @@ zsw_not_mngr_notification_t *zsw_notification_manager_add(const ble_comm_notify_
     if (strncmp(not->src, "Messenger", not->src_len) == 0) {
         notifications[idx].src = NOTIFICATION_SRC_FB_MESSENGER;
         notifications[idx].id = not->id;
-        memcpy(notifications[idx].body, not->body, MIN(not->body_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
-        memcpy(notifications[idx].sender, not->title, MIN(not->title_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
+        copy_field_utf8(notifications[idx].body, not->body, not->body_len);
+        copy_field_utf8(notifications[idx].sender, not->title, not->title_len);
     } else if (strncmp(not->src, "WhatsApp", not->src_len) == 0) {
         // {"t":"notify","id":1700974318,"src":"WhatsApp","title":"Daniel Kampert","subject":"","body":"H","sender":""}
 
         notifications[idx].src = NOTIFICATION_SRC_WHATSAPP;
         notifications[idx].id = not->id;
-        memcpy(notifications[idx].sender, not->title, MIN(not->title_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
-        memcpy(notifications[idx].body, not->body, MIN(not->body_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
+        copy_field_utf8(notifications[idx].sender, not->title, not->title_len);
+        copy_field_utf8(notifications[idx].body, not->body, not->body_len);
     } else if (strncmp(not->src, "Gmail", not->src_len) == 0) {
         // {t:"notify",id:1670967782,src:"Gmail",title:"Jakob Krantz",body:"Nytt test\nDetta YR NÖTT"
 
         // TODO Subject is before first \n in body so extract that into title field.
         notifications[idx].src = NOTIFICATION_SRC_GMAIL;
         notifications[idx].id = not->id;
-        memcpy(notifications[idx].body, not->body, MIN(not->body_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
-        memcpy(notifications[idx].sender, not->title, MIN(not->title_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
+        copy_field_utf8(notifications[idx].body, not->body, not->body_len);
+        copy_field_utf8(notifications[idx].sender, not->title, not->title_len);
     } else if (strncmp(not->src, "Home Assistant", not->src_len) == 0) {
         // {"t":"notify","id":1701847200,"src":"Home Assistant","title":"Message.","subject":"","body":"Gute Nacht","sender":""}
 
         notifications[idx].src = NOTIFICATION_SRC_HOME_ASSISTANT;
         notifications[idx].id = not->id;
-        memcpy(notifications[idx].body, not->body, MIN(not->body_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
-        memcpy(notifications[idx].sender, not->title, MIN(not->title_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
+        copy_field_utf8(notifications[idx].body, not->body, not->body_len);
+        copy_field_utf8(notifications[idx].sender, not->title, not->title_len);
     } else if (strncmp(not->src, "Discord", not->src_len) == 0) {
         // {"t":"notify","id":1701847200,"src":"Discord","title":"Message.","subject":"","body":"Gute Nacht","sender":""}
 
         notifications[idx].src = NOTIFICATION_SRC_DISCORD;
         notifications[idx].id = not->id;
-        memcpy(notifications[idx].body, not->body, MIN(not->body_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
-        memcpy(notifications[idx].sender, not->title, MIN(not->title_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
+        copy_field_utf8(notifications[idx].body, not->body, not->body_len);
+        copy_field_utf8(notifications[idx].sender, not->title, not->title_len);
     } else if (strncmp(not->src, "LinkedIn", not->src_len) == 0) {
         // {"t":"notify","id":1701847200,"src":"LinkedIn","title":"Message.","subject":"","body":"Gute Nacht","sender":""}
 
         notifications[idx].src = NOTIFICATION_SRC_LINKEDIN;
         notifications[idx].id = not->id;
-        memcpy(notifications[idx].body, not->body, MIN(not->body_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
-        memcpy(notifications[idx].sender, not->title, MIN(not->title_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
+        copy_field_utf8(notifications[idx].body, not->body, not->body_len);
+        copy_field_utf8(notifications[idx].sender, not->title, not->title_len);
     } else if (strncmp(not->src, "Reddit", not->src_len) == 0) {
         notifications[idx].src = NOTIFICATION_SRC_REDDIT;
         notifications[idx].id = not->id;
-        memcpy(notifications[idx].body, not->body, MIN(not->body_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
-        memcpy(notifications[idx].sender, not->title, MIN(not->title_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
+        copy_field_utf8(notifications[idx].body, not->body, not->body_len);
+        copy_field_utf8(notifications[idx].sender, not->title, not->title_len);
     } else if (strncmp(not->src, "YouTube", not->src_len) == 0) {
         notifications[idx].src = NOTIFICATION_SRC_YOUTUBE;
         notifications[idx].id = not->id;
-        memcpy(notifications[idx].body, not->body, MIN(not->body_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
-        memcpy(notifications[idx].sender, not->title, MIN(not->title_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
+        copy_field_utf8(notifications[idx].body, not->body, not->body_len);
+        copy_field_utf8(notifications[idx].sender, not->title, not->title_len);
     } else if (strncmp(not->src, "Messages", not->src_len) == 0) {
         notifications[idx].src = NOTIFICATION_SRC_COMMON_MESSENGER;
         notifications[idx].id = not->id;
-        memcpy(notifications[idx].body, not->body, MIN(not->body_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
-        memcpy(notifications[idx].sender, not->title, MIN(not->title_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
+        copy_field_utf8(notifications[idx].body, not->body, not->body_len);
+        copy_field_utf8(notifications[idx].sender, not->title, not->title_len);
     } else if (strncmp(not->src, "Calendar", not->src_len) == 0 || strncmp(not->src, "Kalender", not->src_len) == 0) {
         notifications[idx].src = NOTIFICATION_SRC_CALENDAR;
         notifications[idx].id = not->id;
-        memcpy(notifications[idx].body, not->body, MIN(not->body_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
-        memcpy(notifications[idx].sender, not->title, MIN(not->title_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
+        copy_field_utf8(notifications[idx].body, not->body, not->body_len);
+        copy_field_utf8(notifications[idx].sender, not->title, not->title_len);
     } else {
         // TODO add more
         // For example debug notfication
         // {t:"notify",id:1670967783,src:"Bangle.js Gadgetbridge",subject:"Testar",body:"Testar",sender:"Testar",tel:"Testar"}
         notifications[idx].src = NOTIFICATION_SRC_NONE;
         notifications[idx].id = not->id;
-        memcpy(notifications[idx].title, not->src, MIN(not->src_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
-        memcpy(notifications[idx].body, not->body, MIN(not->body_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
-        memcpy(notifications[idx].sender, not->sender, MIN(not->sender_len, ZSW_NOTIFICATION_MGR_MAX_FIELD_LEN - 1));
+        copy_field_utf8(notifications[idx].title, not->src, not->src_len);
+        copy_field_utf8(notifications[idx].body, not->body, not->body_len);
+        copy_field_utf8(notifications[idx].sender, not->sender, not->sender_len);
     }
 
     notifications[idx].timestamp = time(NULL);
