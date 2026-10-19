@@ -56,6 +56,7 @@ typedef enum display_state {
 static const struct pwm_dt_spec display_blk = PWM_DT_SPEC_GET_OR(DT_ALIAS(display_blk), {});
 static const struct device *counter_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(timer1));
 static const struct device *const reg_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(regulator_3v3));
+static const struct device *const level_shifter_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(display_en));
 static const struct device *display_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_display));
 static const struct device *touch_dev =  DEVICE_DT_GET_OR_NULL(DT_NODELABEL(cst816s));
 
@@ -214,13 +215,18 @@ int zsw_display_control_pwr_ctrl(bool on)
                 LOG_DBG("Display sleeping, power off");
                 if (device_is_ready(reg_dev)) {
                     display_state = DISPLAY_STATE_POWERED_OFF;
-#ifndef CONFIG_ARCH_POSIX
-                    regulator_disable(reg_dev);
-#endif
                     pm_device_action_run(display_dev, PM_DEVICE_ACTION_TURN_OFF);
                     if (device_is_ready(touch_dev)) {
                         pm_device_action_run(touch_dev, PM_DEVICE_ACTION_TURN_OFF);
                     }
+#ifndef CONFIG_ARCH_POSIX
+                    // Let the drivers finish shutdown I/O before removing their supply.
+                    // Disable the touch level shifter first, it leaks into the unpowered rail.
+                    if (device_is_ready(level_shifter_dev)) {
+                        regulator_disable(level_shifter_dev);
+                    }
+                    regulator_disable(reg_dev);
+#endif
                     res = 0;
                 }
             }
@@ -232,6 +238,9 @@ int zsw_display_control_pwr_ctrl(bool on)
                     display_state = DISPLAY_STATE_SLEEPING;
 #ifndef CONFIG_ARCH_POSIX
                     regulator_enable(reg_dev);
+                    if (device_is_ready(level_shifter_dev)) {
+                        regulator_enable(level_shifter_dev);
+                    }
 #endif
                     // As the device pm state after TURN_ON is SUSPENDED
                     pm_device_action_run(display_dev, PM_DEVICE_ACTION_TURN_ON);

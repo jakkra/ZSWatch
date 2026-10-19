@@ -13,6 +13,11 @@ zswatch_hardware:
   permalink: /zswatch_hardware
   description: ZSWatch hardware core
 
+zswatch_hr:
+  label: ZSWatch Heart Rate
+  permalink: /zswatch_hr
+  description: ZSWatch heart rate monitoring
+
 nlnet:
   label: NLnet Foundation
   permalink: /nlnet

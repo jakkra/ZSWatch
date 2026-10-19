@@ -36,6 +36,7 @@
 #include <lvgl.h>
 
 #include <zsw_clock.h>
+#include "zsw_clock_timezone.h"
 #include <zsw_cpu_freq.h>
 #include <zsw_retained_ram_storage.h>
 #include <zsw_coredump.h>
@@ -61,6 +62,7 @@
 #include "drivers/zsw_display_control.h"
 
 #include "managers/zsw_power_manager.h"
+#include "managers/zsw_hr_manager.h"
 #include "managers/zsw_app_manager.h"
 #include "managers/zsw_notification_manager.h"
 
@@ -104,6 +106,12 @@ static void run_init_work(struct k_work *item)
     zsw_notification_manager_init();
 
     enable_bluetooth();
+    if (IS_ENABLED(CONFIG_ZSW_HR_MANAGER)) {
+        int hr_rc = zsw_hr_manager_init();
+        if (hr_rc) {
+            LOG_ERR("HR manager initialization failed: %d", hr_rc);
+        }
+    }
 
     zsw_imu_init();
     zsw_magnetometer_init();
@@ -233,14 +241,17 @@ static void on_zbus_ble_data_callback(const struct zbus_channel *chan)
         case BLE_COMM_DATA_TYPE_SET_TIME: {
             if (event->data.data.time.seconds > 0) {
                 zsw_timeval_t ztm;
-                memcpy(&ztm.tm, localtime((const time_t *)&event->data.data.time.seconds), sizeof(ztm.tm));
+                time_t seconds = event->data.data.time.seconds;
+                memcpy(&ztm.tm, localtime(&seconds), sizeof(ztm.tm));
                 zsw_clock_set_time(&ztm);
             }
 
-            if (event->data.data.time.tz_offset != 0) {
-                char tz[sizeof("UTC+01")] = { '\0' };
-                char sign = (event->data.data.time.tz_offset < 0) ? '+' : '-';
-                snprintf(tz, sizeof(tz), "UTC%c%d", sign, MIN(abs(event->data.data.time.tz_offset), 99));
+            if (event->data.data.time.tz_offset_valid) {
+                char tz[16];
+                if (!zsw_clock_format_timezone(event->data.data.time.tz_offset, tz, sizeof(tz))) {
+                    LOG_WRN("Invalid timezone offset");
+                    break;
+                }
 
 #ifdef CONFIG_RTC
                 if (zsw_clock_rtc_available()) {

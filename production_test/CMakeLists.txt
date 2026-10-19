@@ -40,6 +40,11 @@ if (CONFIG_AUDIO_DMIC)
     )
 endif()
 
+if (CONFIG_MAX32664C_USE_FIRMWARE_LOADER)
+    # The hub firmware image ships with the MAX32664C driver module.
+    target_include_directories(app PRIVATE ${ZEPHYR_MAX32664C_MODULE_DIR}/samples/app/src/firmware)
+endif()
+
 target_sources(app PRIVATE 
     src/main.c
     src/production_test_runner.c

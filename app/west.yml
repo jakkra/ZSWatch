@@ -5,6 +5,8 @@ manifest:
   remotes:
     - name: sdk
       url-base: https://github.com/nrfconnect
+    - name: zswatch
+      url-base: https://github.com/ZSWatch
 
   projects:
     - name: sdk-nrf
@@ -48,4 +50,9 @@ manifest:
           - zscilib
           - wfa-qt-control-app
       clone-depth: 1
+
+    - name: Zephyr-MAX32664C
+      remote: zswatch
+      revision: 8a83f1b70b1c85bcc5c4505573e6825e3e586a0f
+      path: modules/lib/max32664c
 

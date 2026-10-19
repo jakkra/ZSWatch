@@ -30,7 +30,9 @@
 
 #include "ui/zsw_ui.h"
 #include "gadgetbridge/ble_gadgetbridge.h"
+#include "gadgetbridge/ble_find_device.h"
 #include "chronos/ble_chronos.h"
+#include "managers/zsw_smp_manager.h"
 
 #ifdef CONFIG_BT_AMS_CLIENT
 #include <bluetooth/services/ams_client.h>
@@ -40,8 +42,6 @@
 #endif
 LOG_MODULE_REGISTER(ble_comm, CONFIG_ZSW_BLE_LOG_LEVEL);
 
-#define BLE_COMM_LONG_INT_MIN_MS                (400 / 1.25)
-#define BLE_COMM_LONG_INT_MAX_MS                (500 / 1.25)
 #define BLE_COMM_CONN_INT_UPDATE_TIMEOUT_MS     5000
 
 static void ble_connected(struct bt_conn *conn, uint8_t err);
@@ -211,6 +211,10 @@ int ble_comm_send(const uint8_t *data, uint16_t len)
     uint16_t offset = 0;
     int ret = 0;
 
+    if (current_conn == NULL) {
+        return -ENOTCONN;
+    }
+
     while (offset < len) {
         uint16_t chunk_len = len - offset;
         if (chunk_len > max_send_len) {
@@ -219,6 +223,13 @@ int ble_comm_send(const uint8_t *data, uint16_t len)
 
         ret = ble_transport_send(current_conn, data + offset, chunk_len);
         if (ret < 0) {
+            // Running out of TX buffers mid-message leaves the phone with an incomplete
+            // message. -EINVAL before the phone enables notifications is expected.
+            if (offset > 0 || ret == -ENOMEM) {
+                LOG_ERR("BLE send failed after %u of %u bytes: %d", offset, len, ret);
+            } else {
+                LOG_DBG("BLE send failed: %d", ret);
+            }
             return ret;
         }
         offset += chunk_len;
@@ -250,6 +261,11 @@ int ble_comm_set_short_connection_interval(void)
     // don't change it back.
     k_work_cancel_delayable(&conn_interval_slow_work);
 
+    // Zephyr's SMP transport owns the connection parameters while SMP is enabled.
+    if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL) && zsw_smp_manager_is_enabled()) {
+        return 0;
+    }
+
     if (current_conn == NULL) {
         // Need context switch as this function can get called before
         // the connection is propogated to this file.
@@ -270,12 +286,21 @@ int ble_comm_set_short_connection_interval(void)
 
 int ble_comm_set_default_connection_interval(void)
 {
+    // Zephyr's SMP transport restores CONFIG_BT_PERIPHERAL_PREF_* itself after SMP traffic.
+    if (IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL) && zsw_smp_manager_is_enabled()) {
+        k_work_cancel_delayable(&conn_interval_slow_work);
+        return 0;
+    }
+    if (current_conn == NULL) {
+        return -ENOTCONN;
+    }
+
     int err;
     struct bt_le_conn_param param = {
-        .interval_min = BLE_COMM_LONG_INT_MIN_MS,
-        .interval_max = BLE_COMM_LONG_INT_MAX_MS,
+        .interval_min = CONFIG_BT_PERIPHERAL_PREF_MIN_INT,
+        .interval_max = CONFIG_BT_PERIPHERAL_PREF_MAX_INT,
         .latency = CONFIG_BT_PERIPHERAL_PREF_LATENCY,
-        .timeout = 500,
+        .timeout = CONFIG_BT_PERIPHERAL_PREF_TIMEOUT,
     };
 
     LOG_DBG("Set long conection interval");
@@ -410,7 +435,9 @@ static void ble_connected(struct bt_conn *conn, uint8_t err)
     // to let the peer discover services etc. quickly.
     // After some time assume the peer is done and change to longer intervals
     // to save power.
-    k_work_schedule(&conn_interval_slow_work, K_MSEC(BLE_COMM_CONN_INT_UPDATE_TIMEOUT_MS));
+    if (!IS_ENABLED(CONFIG_MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL) || !zsw_smp_manager_is_enabled()) {
+        k_work_schedule(&conn_interval_slow_work, K_MSEC(BLE_COMM_CONN_INT_UPDATE_TIMEOUT_MS));
+    }
 
     if (atomic_get(&pairing_enabled)) {
         int rc = bt_conn_set_security(conn, BT_SECURITY_L2);
@@ -430,8 +457,10 @@ static void ble_disconnected(struct bt_conn *conn, uint8_t reason)
 
     LOG_INF("Disconnected: %s (reason %u)", addr, reason);
 
-    if (current_conn) {
+    if (current_conn == conn) {
+        ble_find_device_disconnected();
         k_work_cancel_delayable(&conn_interval_slow_work);
+        k_work_cancel_delayable(&conn_interval_fast_work);
         bt_conn_unref(current_conn);
         current_conn = NULL;
     }

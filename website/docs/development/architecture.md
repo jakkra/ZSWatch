@@ -33,6 +33,7 @@ graph LR
         ENV[Environment]
         LIGHT[Light]
         BAT[Battery]
+        HR[Heart Rate]
     end
 
     subgraph Phone
@@ -63,6 +64,7 @@ graph LR
         WF[Watchface]
         MUSIC[Music Control]
         COMPASS[Compass]
+        HR_APP[Heart Rate]
         OTHER[Other Apps]
     end
 
@@ -79,6 +81,7 @@ graph LR
 
     SENSOR_CH --> WF
     SENSOR_CH --> COMPASS
+    SENSOR_CH --> HR_APP
     SENSOR_CH --> OTHER
 
     PM --> ACTIVITY_CH --> AM
@@ -145,7 +148,26 @@ The sensor data pipeline is straightforward:
 Periodic Timer → Sensor Driver → zbus channel → App Listener → k_work → UI Update
 ```
 
-Sensor modules (IMU, magnetometer, pressure, environment, light) are abstracted behind simple APIs in `app/src/sensors/`. The IMU is an exception: it is primarily **interrupt-driven** (gestures, step events) rather than polled.
+Sensor modules (IMU, magnetometer, pressure, environment, light) are abstracted behind simple APIs in `app/src/sensors/`. The IMU is an exception: it is primarily **interrupt-driven** (gestures, step events) rather than polled. The **Heart Rate (HR) driver** (`app/src/drivers/zsw_hr.c/h`) provides periodic or continuous heart rate measurements via callback, supporting modes for real-time biometric monitoring.
+
+### Heart Rate Manager
+
+The **HR Manager** (`app/src/managers/zsw_hr_manager.c/h`) orchestrates heart rate measurements with three configurable modes to balance power consumption and monitoring capabilities:
+
+| Mode | Behavior | Use Case | Power |
+|------|----------|----------|-------|
+| **Off** | No automatic measurements; manual UI requests only | Power saving | ~0 µA |
+| **Background** | Measures every 5 minutes while moving; stops after reading or 45-second timeout | Periodic monitoring | ~541 µA avg (on cycle) |
+| **Continuous** | Continuous measurement while moving; stops when stationary | Real-time monitoring | Variable based on activity |
+
+Key features:
+- **Mode control**: `zsw_hr_manager_set_mode()` to switch between Off/Background/Continuous
+- **Manual measurements**: `zsw_hr_manager_measure_now()` for on-demand readings
+- **History tracking**: Up to 32 historical HR readings accessible via `zsw_hr_manager_get_history()`
+- **State snapshot**: `zsw_hr_manager_get_snapshot()` provides current measurement status, latest sample, and next measurement time
+- **Motion-aware**: Background mode respects accelerometer data to avoid unnecessary measurements when stationary
+
+The HR app UI displays the current mode, status, latest reading, and historical trend via the HR Overview component.
 
 ## BLE Communication
 
@@ -166,7 +188,7 @@ Incoming BLE data is parsed and published to `ble_comm_data_chan` with a **type 
 Outbound commands (e.g., music play/pause) flow in reverse: the app publishes to `music_control_data_chan`, and the BLE module picks it up and sends it to the phone.
 
 :::tip Custom Watchface Backgrounds
-The companion app can now upload custom watchface backgrounds via BLE. See the [GadgetBridge Protocol](./gadgetbridge.md#custom-watchface-backgrounds) guide for details.
+Custom watchface backgrounds can be uploaded via BLE. See the [Watch Tools background guide](../getting-started/watch-tools.md#background) for instructions.
 :::
 
 ## Audio System

@@ -1,6 +1,6 @@
 /*
  * This file is part of ZSWatch project <https://github.com/zswatch/>.
- * Copyright (c) 2025 ZSWatch Project.
+ * Copyright (c) 2026 ZSWatch Project.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,12 +16,8 @@
  */
 
 #pragma once
+#include <lvgl.h>
+#include "managers/zsw_hr_manager.h"
 
-#include <stdint.h>
-
-/**
- * @brief Get the current simulated heart rate.
- *
- * @return Heart rate in BPM (simulated value).
- */
-int16_t zsw_health_data_get_heart_rate(void);
+lv_obj_t *hr_overview_ui_create(lv_obj_t *parent, lv_group_t *group);
+void hr_overview_ui_update(const struct zsw_hr_manager_snapshot *snapshot, int64_t now_ms);
