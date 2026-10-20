@@ -667,7 +667,6 @@ static int parse_musicinfo(char *data, int len)
     cb.data.data.music_info.duration = extract_value_int32("\"dur\":", data);
     cb.data.data.music_info.track_count = extract_value_int32("\"c\":", data);
     cb.data.data.music_info.track_num = extract_value_int32("\"n\":", data);
-<<<<<<< HEAD
     bool is_base64;
     temp_value = extract_value_str("\"artist\":", data, &temp_len, &is_base64);
     if (temp_value && !is_base64) {
@@ -683,13 +682,6 @@ static int parse_musicinfo(char *data, int len)
     if (temp_value && !is_base64) {
         temp_len = unescape_quotes(temp_value, temp_len);
     }
-=======
-    temp_value = extract_value_str("\"artist\":", data, &temp_len, NULL);
-    strncpy(cb.data.data.music_info.artist, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
-    temp_value = extract_value_str("\"album\":", data, &temp_len, NULL);
-    strncpy(cb.data.data.music_info.album, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
-    temp_value = extract_value_str("\"track\":", data, &temp_len, NULL);
->>>>>>> 3bc90e2521af645a499e6be9b3ffecf758d1c7b6
     strncpy(cb.data.data.music_info.track_name, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
 
     send_ble_data_event(&cb);
