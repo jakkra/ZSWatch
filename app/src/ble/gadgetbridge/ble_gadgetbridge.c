@@ -637,7 +637,11 @@ static int parse_weather(char *data, int len)
     cb.data.data.weather.weather_code = extract_value_uint32("\"code\":", data);
     cb.data.data.weather.wind = extract_value_uint32("\"wind\":", data);
     cb.data.data.weather.wind_direction = extract_value_uint32("\"wdir\":", data);
-    temp_value = extract_value_str("\"txt\":", data, &temp_len, NULL);
+    bool txt_is_base64;
+    temp_value = extract_value_str("\"txt\":", data, &temp_len, &txt_is_base64);
+    if (temp_value && !txt_is_base64) {
+        temp_len = unescape_quotes(temp_value, temp_len);
+    }
 
     strncpy(cb.data.data.weather.report_text, temp_value, MIN(temp_len, MAX_WEATHER_REPORT_TEXT_LENGTH - 1));
     cb.data.data.weather.report_text[MAX_WEATHER_REPORT_TEXT_LENGTH - 1] = '\0';
@@ -663,11 +667,21 @@ static int parse_musicinfo(char *data, int len)
     cb.data.data.music_info.duration = extract_value_int32("\"dur\":", data);
     cb.data.data.music_info.track_count = extract_value_int32("\"c\":", data);
     cb.data.data.music_info.track_num = extract_value_int32("\"n\":", data);
-    temp_value = extract_value_str("\"artist\":", data, &temp_len, NULL);
+    bool is_base64;
+    temp_value = extract_value_str("\"artist\":", data, &temp_len, &is_base64);
+    if (temp_value && !is_base64) {
+        temp_len = unescape_quotes(temp_value, temp_len);
+    }
     strncpy(cb.data.data.music_info.artist, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
-    temp_value = extract_value_str("\"album\":", data, &temp_len, NULL);
+    temp_value = extract_value_str("\"album\":", data, &temp_len, &is_base64);
+    if (temp_value && !is_base64) {
+        temp_len = unescape_quotes(temp_value, temp_len);
+    }
     strncpy(cb.data.data.music_info.album, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
-    temp_value = extract_value_str("\"track\":", data, &temp_len, NULL);
+    temp_value = extract_value_str("\"track\":", data, &temp_len, &is_base64);
+    if (temp_value && !is_base64) {
+        temp_len = unescape_quotes(temp_value, temp_len);
+    }
     strncpy(cb.data.data.music_info.track_name, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
 
     send_ble_data_event(&cb);
