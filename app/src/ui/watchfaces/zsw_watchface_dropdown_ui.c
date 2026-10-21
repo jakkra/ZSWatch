@@ -169,6 +169,7 @@ void zsw_watchface_dropdown_ui_add(lv_obj_t *root_page,
     lv_obj_set_y(ui_music_info_label, 14);
     lv_obj_set_width(ui_music_info_label, 150);
     lv_obj_set_style_text_font(ui_music_info_label, &lv_font_montserrat_14_full, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_base_dir(ui_music_info_label, LV_BASE_DIR_AUTO, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_label_set_long_mode(ui_music_info_label, LV_LABEL_LONG_SCROLL_CIRCULAR);
     //lv_obj_set_style_anim_speed(ui_music_info_label, 15, 0);
 
