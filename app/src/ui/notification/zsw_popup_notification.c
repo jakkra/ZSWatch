@@ -80,6 +80,8 @@ void zsw_notification_popup_show(char *title, char *body, zsw_notification_src_t
     lv_label_set_long_mode(notif_box.title, LV_LABEL_LONG_CLIP);
     lv_obj_set_style_text_color(notif_box.title, lv_palette_main(LV_PALETTE_GREY), 0);
     lv_obj_set_style_text_font(notif_box.title, &lv_font_montserrat_14_full, 0);
+    lv_obj_set_style_base_dir(notif_box.title, LV_BASE_DIR_AUTO, 0);
+    lv_obj_set_style_text_align(notif_box.title, LV_TEXT_ALIGN_AUTO, 0);
 
     // create body text
     if (strlen(body) > 0) {
@@ -92,6 +94,8 @@ void zsw_notification_popup_show(char *title, char *body, zsw_notification_src_t
         lv_label_set_long_mode(notif_box.body, LV_LABEL_LONG_DOT);
         lv_label_set_text(notif_box.body, body);
         lv_obj_set_style_text_font(notif_box.body, &lv_font_montserrat_14_full, 0);
+        lv_obj_set_style_base_dir(notif_box.body, LV_BASE_DIR_AUTO, 0);
+        lv_obj_set_style_text_align(notif_box.body, LV_TEXT_ALIGN_AUTO, 0);
     }
 
     // create close button

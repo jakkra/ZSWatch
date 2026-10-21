@@ -178,6 +178,10 @@ static void parse_time_zone(char *offset)
     }
 }
 
+static char *find_js_value(char *data, const char *key);
+static int decode_js_literal(const char *src, char *dst, size_t cap, bool truncate);
+static int extract_js_string(const char *key, char *data, char *dst, size_t cap, bool truncate);
+
 static char *extract_value_str(char *key, char *data, int *value_len)
 {
     bool base64 = false;
@@ -202,8 +206,14 @@ static char *extract_value_str(char *key, char *data, int *value_len)
     if (*str == '\0') {
         return NULL; // Got end of data
     }
-    end = strstr(str, "\"");
-    if (end == NULL) {
+    end = str;
+    while (*end != '\0' && *end != '\"') {
+        if (*end == '\\' && end[1] != '\0') {
+            end++; // Skip the escaped character so \" does not end the value.
+        }
+        end++;
+    }
+    if (*end == '\0') {
         return NULL; // No end of value
     }
 
@@ -520,6 +530,40 @@ static int convert_to_encoded_text(const char *data, size_t len, char *out_data,
     return j;
 }
 
+/* Decode a located string value in place; decoded text is never longer than the escaped text. */
+static char *decode_js_value_in_place(char *value, int *len)
+{
+    *len = 0;
+    if (value == NULL) {
+        return NULL;
+    }
+
+    const char *end = value;
+    if (strncmp(value, "atob(\"", strlen("atob(\"")) == 0) {
+        end += strlen("atob(\"");
+    } else if (*value == '"') {
+        end++;
+    } else {
+        return NULL;
+    }
+    while (*end != '\0' && *end != '"') {
+        if (*end == '\\' && end[1] != '\0') {
+            end++;
+        }
+        end++;
+    }
+    if (*end == '\0') {
+        return NULL;
+    }
+
+    int decoded_len = decode_js_literal(value, value, end - value + 1, false);
+    if (decoded_len < 0) {
+        return NULL;
+    }
+    *len = decoded_len;
+    return value;
+}
+
 static int parse_notify(char *data, int len)
 {
     struct ble_data_event cb;
@@ -527,31 +571,19 @@ static int parse_notify(char *data, int len)
 
     cb.data.type = BLE_COMM_DATA_TYPE_NOTIFY;
     cb.data.data.notify.id = extract_value_uint32("\"id\":", data);
-    cb.data.data.notify.src = extract_value_str("\"src\":", data, &cb.data.data.notify.src_len);
-    cb.data.data.notify.sender = extract_value_str("\"sender\":", data, &cb.data.data.notify.sender_len);
-    cb.data.data.notify.title = extract_value_str("\"title\":", data, &cb.data.data.notify.title_len);
-    cb.data.data.notify.subject = extract_value_str("\"subject\":", data, &cb.data.data.notify.subject_len);
-    cb.data.data.notify.body = extract_value_str("\"body\":", data, &cb.data.data.notify.body_len);
 
-    // Little hack since we know it's JSON, we can terminate all values in the data
-    // which saves us some hassle and we can just pass all values null terminated
-    // to the callback. Make sure to do it after finish parsing!
-    if (cb.data.data.notify.src) {
-        cb.data.data.notify.src[cb.data.data.notify.src_len] = '\0';
-    }
-    if (cb.data.data.notify.sender) {
-        cb.data.data.notify.sender[cb.data.data.notify.sender_len] = '\0';
-    }
-    if (cb.data.data.notify.title) {
-        cb.data.data.notify.title[cb.data.data.notify.title_len] = '\0';
-    }
+    /* Locate every field before decoding, decoding rewrites data and could create false key matches. */
+    char *src = find_js_value(data, "\"src\":");
+    char *sender = find_js_value(data, "\"sender\":");
+    char *title = find_js_value(data, "\"title\":");
+    char *subject = find_js_value(data, "\"subject\":");
+    char *body = find_js_value(data, "\"body\":");
 
-    if (cb.data.data.notify.subject) {
-        cb.data.data.notify.subject[cb.data.data.notify.subject_len] = '\0';
-    }
-    if (cb.data.data.notify.body) {
-        cb.data.data.notify.body[cb.data.data.notify.body_len] = '\0';
-    }
+    cb.data.data.notify.src = decode_js_value_in_place(src, &cb.data.data.notify.src_len);
+    cb.data.data.notify.sender = decode_js_value_in_place(sender, &cb.data.data.notify.sender_len);
+    cb.data.data.notify.title = decode_js_value_in_place(title, &cb.data.data.notify.title_len);
+    cb.data.data.notify.subject = decode_js_value_in_place(subject, &cb.data.data.notify.subject_len);
+    cb.data.data.notify.body = decode_js_value_in_place(body, &cb.data.data.notify.body_len);
 
     send_ble_data_event(&cb);
 
@@ -574,8 +606,6 @@ static int parse_notify_delete(char *data, int len)
 static int parse_weather(char *data, int len)
 {
     //{t:"weather",temp:268,hum:97,code:802,txt:"slightly cloudy",wind:2.0,wdir:14,loc:"MALMO"
-    int temp_len;
-    char *temp_value;
     float temperature;
     struct ble_data_event cb;
     memset(&cb, 0, sizeof(cb));
@@ -586,10 +616,8 @@ static int parse_weather(char *data, int len)
     cb.data.data.weather.weather_code = extract_value_uint32("\"code\":", data);
     cb.data.data.weather.wind = extract_value_uint32("\"wind\":", data);
     cb.data.data.weather.wind_direction = extract_value_uint32("\"wdir\":", data);
-    temp_value = extract_value_str("\"txt\":", data, &temp_len);
-
-    strncpy(cb.data.data.weather.report_text, temp_value, MIN(temp_len, MAX_WEATHER_REPORT_TEXT_LENGTH - 1));
-    cb.data.data.weather.report_text[MAX_WEATHER_REPORT_TEXT_LENGTH - 1] = '\0';
+    extract_js_string("\"txt\":", data, cb.data.data.weather.report_text,
+                      sizeof(cb.data.data.weather.report_text), true);
 
     // App sends temperature in Kelvin
     temperature = temperature_k - 273.15f;
@@ -603,8 +631,6 @@ static int parse_weather(char *data, int len)
 static int parse_musicinfo(char *data, int len)
 {
     // {t:"musicinfo",artist:"Ava Max",album:"Heaven & Hell",track:"Sweet but Psycho",dur:187,c:-1,n:-1}
-    char *temp_value;
-    int temp_len;
     struct ble_data_event cb;
     memset(&cb, 0, sizeof(cb));
 
@@ -612,12 +638,12 @@ static int parse_musicinfo(char *data, int len)
     cb.data.data.music_info.duration = extract_value_int32("\"dur\":", data);
     cb.data.data.music_info.track_count = extract_value_int32("\"c\":", data);
     cb.data.data.music_info.track_num = extract_value_int32("\"n\":", data);
-    temp_value = extract_value_str("\"artist\":", data, &temp_len);
-    strncpy(cb.data.data.music_info.artist, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
-    temp_value = extract_value_str("\"album\":", data, &temp_len);
-    strncpy(cb.data.data.music_info.album, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
-    temp_value = extract_value_str("\"track\":", data, &temp_len);
-    strncpy(cb.data.data.music_info.track_name, temp_value, MIN(temp_len, MAX_MUSIC_FIELD_LENGTH));
+    extract_js_string("\"artist\":", data, cb.data.data.music_info.artist,
+                      sizeof(cb.data.data.music_info.artist), true);
+    extract_js_string("\"album\":", data, cb.data.data.music_info.album,
+                      sizeof(cb.data.data.music_info.album), true);
+    extract_js_string("\"track\":", data, cb.data.data.music_info.track_name,
+                      sizeof(cb.data.data.music_info.track_name), true);
 
     send_ble_data_event(&cb);
 
@@ -695,19 +721,31 @@ static int hex_value(const char *src, int digits, uint32_t *value)
     return 0;
 }
 
-/* Decode the string value of key into dst as UTF-8. Gadgetbridge (Bangle.js) sends
- * JavaScript, not strict JSON: strings may use \xNN, \v and octal escapes, or be
- * replaced by atob("base64"). Strict JSON from the companion apps is a subset. */
-static int extract_js_string(const char *key, const char *data, char *dst, size_t cap)
+/* Return the value following key (leading spaces skipped), or NULL when key is absent. */
+static char *find_js_value(char *data, const char *key)
 {
-    const char *src = strstr(data, key);
-    size_t pos = 0;
-    if (!src || cap == 0) {
-        return -ENOENT;
+    char *value = strstr(data, key);
+    if (value == NULL) {
+        return NULL;
     }
-    src += strlen(key);
-    while (*src == ' ') {
-        src++;
+    value += strlen(key);
+    while (*value == ' ') {
+        value++;
+    }
+    return value;
+}
+
+/* Decode the JS string literal at src into dst as UTF-8. Gadgetbridge (Bangle.js) sends
+ * JavaScript, not strict JSON: strings may use \xNN, \v and octal escapes, or be
+ * replaced by atob("base64"). Strict JSON from the companion apps is a subset.
+ * dst may be src, output is never longer than input. With truncate, an overlong result is
+ * cut on a UTF-8 character boundary instead of failing with -ENOSPC. */
+static int decode_js_literal(const char *src, char *dst, size_t cap, bool truncate)
+{
+    size_t pos = 0;
+    size_t char_start = 0;
+    if (cap == 0) {
+        return -ENOSPC;
     }
     if (strncmp(src, "atob(\"", strlen("atob(\"")) == 0) {
         src += strlen("atob(\"");
@@ -776,12 +814,25 @@ static int extract_js_string(const char *key, const char *data, char *dst, size_
                     break;
             }
             if (utf8_put(cp, dst, &pos, cap)) {
+                if (truncate) {
+                    goto done;
+                }
                 return -ENOSPC;
             }
+            char_start = pos;
         } else {
             /* Raw bytes are already UTF-8 (or converted before parsing). */
             if (pos + 1 >= cap) {
-                return -ENOSPC;
+                if (!truncate) {
+                    return -ENOSPC;
+                }
+                if ((cp & 0xC0) == 0x80) {
+                    pos = char_start;
+                }
+                goto done;
+            }
+            if ((cp & 0xC0) != 0x80) {
+                char_start = pos;
             }
             dst[pos++] = cp;
         }
@@ -789,8 +840,18 @@ static int extract_js_string(const char *key, const char *data, char *dst, size_
     if (*src != '"') {
         return -EINVAL;
     }
+done:
     dst[pos] = '\0';
     return pos;
+}
+
+static int extract_js_string(const char *key, char *data, char *dst, size_t cap, bool truncate)
+{
+    char *value = find_js_value(data, key);
+    if (value == NULL) {
+        return -ENOENT;
+    }
+    return decode_js_literal(value, dst, cap, truncate);
 }
 
 static int parse_httpstate(char *data, int len)
@@ -819,7 +880,7 @@ static int parse_httpstate(char *data, int len)
 
     if (strstr(data, "\"err\":") ||
         extract_js_string("\"resp\":", data, cb.data.data.http_response.response,
-                          sizeof(cb.data.data.http_response.response)) <= 0) {
+                          sizeof(cb.data.data.http_response.response), false) <= 0) {
         /* Even an error or malformed relay result must finish the matching request. */
         snprintf(cb.data.data.http_response.err, sizeof(cb.data.data.http_response.err), "HTTP relay error");
         cb.data.data.http_response.response[0] = '\0';
